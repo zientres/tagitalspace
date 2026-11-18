@@ -16,7 +16,7 @@ fun tagitalSpaceIsDigit(value: int): bool {
 }
 
 fun tagitalSpacePlateStartPrice(plate: slice): int {
-    assert (plate.bits() == 48) throw 700;
+    assert (plate.remainingBitsCount() == 48) throw 700;
 
     var chars = plate;
     val firstLetter = chars.loadUint(8);
