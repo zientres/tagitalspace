@@ -1,5 +1,3 @@
-// Adapted from ton-blockchain/acton-contracts dns/contracts/DnsItem.tolk.
-// Original TON DNS implementation: ton-blockchain/dns-contract (GPL-3.0).
 import "auction"
 import "dns-utils"
 import "errors"
@@ -7,9 +5,9 @@ import "messages"
 import "storage"
 
 contract DnsItem {
-    author: "TON DNS contributors; Tolk port based on ton-blockchain/acton-contracts"
+    author: "The Tolk Team"
     version: "1.0.0"
-    description: "TON DNS NFT Item reference implementation with auction support"
+    description: "DNS NFT Item. Domain name with auction support"
     incomingMessages: AllowedItemMessage
     storage: ItemStorageInitialized
     storageAtDeployment: ItemStorageNotInitialized
@@ -27,18 +25,30 @@ type GovernanceDecision = GovernanceTransfer | GovernanceRelease
 
 fun onInternalMessage(in: InMessage) {
     val loadingStorage = startLoadingDnsItemStorage();
+
     if (!loadingStorage.isInitialized()) {
         val uninitStorage = loadingStorage.parseNotInitialized();
-        assert (in.senderAddress == uninitStorage.collectionAddress) throw ERROR_NOT_FROM_COLLECTION;
+        assert (
+            in.senderAddress == uninitStorage.collectionAddress
+        ) throw ERROR_NOT_FROM_COLLECTION;
+
         val initData = lazy ItemInitData.fromSlice(in.body);
+
         val now = blockchain.now();
+
         val seconds = now - AUCTION_START_TIME;
         var months = seconds / ONE_MONTH;
-        if (months > 12) { months = 12; }
+        if (months > 12) {
+            months = 12;
+        }
+
         val duration = AUCTION_START_DURATION -
+            // check-disable-next-line divide-before-multiply
             (AUCTION_START_DURATION - AUCTION_END_DURATION) * months / 12;
+
         val auctionEndTime = now + duration;
         val initialContent: DnsRecords = [];
+
         val initStorage = ItemStorageInitialized {
             index: uninitStorage.index,
             collectionAddress: uninitStorage.collectionAddress,
@@ -52,13 +62,16 @@ fun onInternalMessage(in: InMessage) {
             }.toCell(),
             lastFillUpTime: now,
         };
+
         initStorage.save();
         return;
     }
 
     var storage = loadingStorage.parseInitialized();
+
     if (in.senderAddress == storage.collectionAddress) {
         val initData = lazy ItemInitData.fromSlice(in.body);
+
         val returnMessage = createMessage({
             dest: initData.fromAddress,
             body: Op0WithQuery { queryId: blockchain.logicalTime() },
@@ -66,6 +79,7 @@ fun onInternalMessage(in: InMessage) {
             value: 0,
         });
         returnMessage.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+
         return;
     }
 
@@ -75,17 +89,30 @@ fun onInternalMessage(in: InMessage) {
     val isAuctionComplete = blockchain.now() > auction.auctionEndTime;
 
     if (in.body.isEmpty() || in.body.preloadUint(32) == 0) {
-        processBidOrTopUp(in.senderAddress, in.valueCoins, mutate storage, mutate auction, isAuctionComplete);
+        processBidOrTopUp(
+            in.senderAddress,
+            in.valueCoins,
+            mutate storage,
+            mutate auction,
+            isAuctionComplete,
+        );
         return;
     }
 
     var myBalance = contract.getOriginalBalance();
+
     if (isAuctionComplete && !isAuctionNull) {
         val parsedHeader = lazy MessageHeader.fromSlice(in.body);
+
         val balanceBeforeMsg = myBalance - in.valueCoins;
+
         var amountToSend = balanceBeforeMsg;
         val available = balanceBeforeMsg - MIN_TONS_FOR_STORAGE;
-        if (amountToSend > available) { amountToSend = available; }
+
+        if (amountToSend > available) {
+            amountToSend = available;
+        }
+
         if (amountToSend > 0) {
             val refundMsg = createMessage({
                 body: FillUp { queryId: parsedHeader.queryId },
@@ -94,52 +121,89 @@ fun onInternalMessage(in: InMessage) {
                 value: amountToSend,
             });
             refundMsg.send(SEND_MODE_IGNORE_ERRORS);
+
+            // since messages are processed at action phase, we need to manage
+            // balance in compute phase runtime ourselves
             myBalance -= amountToSend;
         }
+
         storage.ownerAddress = auction.maxBidAddress;
         storage.auction = null;
         storage.save();
     }
 
     var msg = lazy AllowedItemMessage.fromSlice(in.body);
+
     match (msg) {
         TransferOwnership => {
             assert (in.senderAddress == storage.ownerAddress!) throw ERROR_NOT_OWNER;
-            applyOwnershipTransfer(myBalance, mutate storage, msg.queryId, msg.transferData, in.originalForwardFee);
+
+            applyOwnershipTransfer(
+                myBalance,
+                mutate storage,
+                msg.queryId,
+                msg.transferData,
+                in.originalForwardFee,
+            );
         }
+
         EditContent => {
-            assert (in.senderAddress == storage.ownerAddress!) throw ERROR_ONLY_OWNER_CAN_EDIT_CONTENT;
+            assert (
+                in.senderAddress == storage.ownerAddress!
+            ) throw ERROR_ONLY_OWNER_CAN_EDIT_CONTENT;
+
             storage.content = msg.newContent;
             storage.lastFillUpTime = blockchain.now();
             storage.save();
         }
+
         ChangeDnsRecord => {
-            assert (in.senderAddress == storage.ownerAddress!) throw ERROR_ONLY_OWNER_CAN_CHANGE_DNS;
+            assert (
+                in.senderAddress == storage.ownerAddress!
+            ) throw ERROR_ONLY_OWNER_CAN_CHANGE_DNS;
+
             var dnsRecords = storage.content.load();
+
             if (msg.value.remainingRefsCount() > 0) {
                 dnsRecords.set(msg.key, msg.value.loadRef());
             } else {
                 dnsRecords.delete(msg.key);
             }
+
             storage.content = dnsRecords.toCell();
             storage.lastFillUpTime = blockchain.now();
             storage.save();
         }
+
         ProcessGovernanceDecision => {
             assert (isAuctionNull) throw ERROR_GOVERNANCE_REQUIRES_NO_AUCTION;
+
             val configCell = blockchain.configParam(DNS_CONFIG_ID);
             assert (configCell != null) throw ERROR_CONFIG_ENTRY_NOT_FOUND;
+
             val configDict = loadDnsConfigMap(configCell);
+
             val configValueLookup = configDict.get(storage.index);
             assert (configValueLookup.isFound) throw ERROR_CONFIG_ENTRY_NOT_FOUND;
+
             val configValue = configValueLookup.loadValue();
-            val decision = GovernanceDecision.fromSlice(configValue, {
-                throwIfOpcodeDoesNotMatch: ERROR_CONFIG_OPERATION_INVALID,
-            });
+            // no need for lazy here
+            val decision = GovernanceDecision.fromSlice(
+                configValue,
+                { throwIfOpcodeDoesNotMatch: ERROR_CONFIG_OPERATION_INVALID },
+            );
+
             match (decision) {
                 GovernanceTransfer => {
-                    applyOwnershipTransfer(myBalance, mutate storage, msg.queryId, decision.transferData, in.originalForwardFee);
+                    applyOwnershipTransfer(
+                        myBalance,
+                        mutate storage,
+                        msg.queryId,
+                        decision.transferData,
+                        in.originalForwardFee,
+                    );
                 }
+
                 GovernanceRelease => {
                     val fillMsg = createMessage({
                         body: FillUp { queryId: msg.queryId },
@@ -147,17 +211,25 @@ fun onInternalMessage(in: InMessage) {
                         dest: storage.collectionAddress,
                         value: 0,
                     });
+                    // SAFETY: governance release intentionally sends all remaining balance to the collection and destroys this item contract.
                     fillMsg.send(SEND_MODE_CARRY_ALL_BALANCE + SEND_MODE_DESTROY);
                 }
             }
         }
+
         DnsRecordRelease => {
             val now = blockchain.now();
-            assert (now - storage.lastFillUpTime > ONE_YEAR && isAuctionNull) throw ERROR_DNS_BALANCE_RELEASE_FORBIDDEN;
+
+            assert (
+                now - storage.lastFillUpTime > ONE_YEAR && isAuctionNull
+            ) throw ERROR_DNS_BALANCE_RELEASE_FORBIDDEN;
+
             val minPrice = getMinPrice(storage.domain.beginParse().remainingBitsCount(), now);
             assert (in.valueCoins >= minPrice) throw ERROR_BID_TOO_LOW;
+
             val balanceWithoutMsg = myBalance - in.valueCoins;
             val amountToSend = balanceWithoutMsg - MIN_TONS_FOR_STORAGE;
+
             if (amountToSend > 0) {
                 val responseMsg = createMessage({
                     body: DnsRecordRelease { queryId: msg.queryId },
@@ -167,6 +239,7 @@ fun onInternalMessage(in: InMessage) {
                 });
                 responseMsg.send(SEND_MODE_IGNORE_ERRORS);
             }
+
             storage.ownerAddress = null;
             storage.auction = AuctionState {
                 maxBidAddress: in.senderAddress,
@@ -174,8 +247,10 @@ fun onInternalMessage(in: InMessage) {
                 maxBidAmount: in.valueCoins,
             }.toCell();
             storage.lastFillUpTime = now;
+
             storage.save();
         }
+
         GetStaticData => {
             val responseMsg = createMessage({
                 body: ReportStaticData {
@@ -189,50 +264,87 @@ fun onInternalMessage(in: InMessage) {
             });
             responseMsg.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
+
         else => throw ERROR_UNKNOWN_OP,
     }
 }
 
 get fun get_nft_data(): NftDataReply {
     val loading = startLoadingDnsItemStorage();
+
     if (!loading.isInitialized()) {
         val st = loading.parseNotInitialized();
-        return { isInitialized: false, index: st.index, collectionAddress: st.collectionAddress, ownerAddress: null, content: null };
+
+        return {
+            isInitialized: false,
+            index: st.index,
+            collectionAddress: st.collectionAddress,
+            ownerAddress: null,
+            content: null,
+        };
     }
+
     val st = loading.parseInitialized();
-    return { isInitialized: true, index: st.index, collectionAddress: st.collectionAddress, ownerAddress: st.ownerAddress, content: st.content };
+    return {
+        isInitialized: true,
+        index: st.index,
+        collectionAddress: st.collectionAddress,
+        ownerAddress: st.ownerAddress,
+        content: st.content,
+    };
 }
 
 get fun get_editor(): address? {
     val loading = startLoadingDnsItemStorage();
-    if (!loading.isInitialized()) { return null; }
-    return loading.parseInitialized().ownerAddress;
+
+    if (!loading.isInitialized()) {
+        return null;
+    }
+
+    val st = loading.parseInitialized();
+    return st.ownerAddress;
 }
 
 get fun get_domain(): slice {
-    return startLoadingDnsItemStorage().parseInitialized().domain.beginParse();
+    // this will panic if storage is not init, but so does FunC impl
+    val st = startLoadingDnsItemStorage().parseInitialized();
+    return st.domain.beginParse();
 }
 
 get fun get_auction_info(): AuctionState {
-    return startLoadingDnsItemStorage().parseInitialized().unpackAuction().1;
+    val st = startLoadingDnsItemStorage().parseInitialized();
+
+    return st.unpackAuction().1;
 }
 
 get fun get_last_fill_up_time(): int {
-    return startLoadingDnsItemStorage().parseInitialized().lastFillUpTime;
+    val st = startLoadingDnsItemStorage().parseInitialized();
+    return st.lastFillUpTime;
 }
 
 get fun dnsresolve(subdomain: slice, category: uint256): DnsResolveResponse {
     val subdomainBits = subdomain.remainingBitsCount();
     assert (subdomainBits % BYTE_SIZE == 0) throw ERROR_DNS_INVALID_SUBDOMAIN_BITS;
+
     val st = startLoadingDnsItemStorage().parseInitialized();
+
     val dnsRecord = st.content.load();
+
     val startsWithZeroByte = subdomain.preloadInt(BYTE_SIZE) == 0;
     assert (startsWithZeroByte) throw ERROR_GOVERNANCE_REQUIRES_NO_AUCTION;
-    if (subdomainBits > BYTE_SIZE) { category = "dns_next_resolver".sha256(); }
+
+    if (subdomainBits > BYTE_SIZE) {
+        category = "dns_next_resolver".sha256();
+    }
+
     if (category == 0) {
         return { resolvedPrefixLengthBits: BYTE_SIZE, resolvedRecord: dnsRecord.toLowLevelDict() };
     }
+
     val value = dnsRecord.get(category);
-    if (!value.isFound) { return { resolvedPrefixLengthBits: BYTE_SIZE, resolvedRecord: null }; }
+    if (!value.isFound) {
+        return { resolvedPrefixLengthBits: BYTE_SIZE, resolvedRecord: null };
+    }
+
     return { resolvedPrefixLengthBits: BYTE_SIZE, resolvedRecord: value.loadValue() };
 }
