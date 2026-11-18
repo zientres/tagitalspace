@@ -1,0 +1,37 @@
+[
+  {
+    "case": "initial_duration",
+    "start_time": 1000000,
+    "expected_end_time": 1005400
+  },
+  {
+    "case": "bid_more_than_one_hour_remaining",
+    "current_time": 1000000,
+    "auction_end_time": 1003601,
+    "expected_end_time": 1003601
+  },
+  {
+    "case": "bid_exactly_one_hour_remaining",
+    "current_time": 1000000,
+    "auction_end_time": 1003600,
+    "expected_end_time": 1003600
+  },
+  {
+    "case": "bid_59m59s_remaining",
+    "current_time": 1000000,
+    "auction_end_time": 1003599,
+    "expected_end_time": 1003600
+  },
+  {
+    "case": "bid_30_minutes_remaining",
+    "current_time": 1000000,
+    "auction_end_time": 1001800,
+    "expected_end_time": 1003600
+  },
+  {
+    "case": "bid_1_second_remaining",
+    "current_time": 1000000,
+    "auction_end_time": 1000001,
+    "expected_end_time": 1003600
+  }
+]
