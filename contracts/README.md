@@ -27,7 +27,7 @@ The FunC helper accepts exactly six canonical ASCII characters. The Russian allo
 
 ## Source attribution and license
 
-The planned DNS/NFT foundation will be adapted from the official `ton-blockchain/dns-contract` project. Its original GPL-3.0 license and copyright notices must accompany any copied or modified source files. TagitalSpace-specific code must retain clear authorship and modification notices. Do not remove upstream license headers.
+The DNS/NFT Tolk reference modules are now present in `contracts/vendor/ton-dns/tolk/`, based on the official `ton-blockchain/acton-contracts` Tolk DNS implementation and the original `ton-blockchain/dns-contract` project. The original GPL-3.0 license is retained at `contracts/vendor/ton-dns/LICENSE`. TagitalSpace-specific changes and auction timing adaptations are documented in the vendor Tolk README. Do not remove upstream attribution or license notices.
 
 ## Auction timing
 
@@ -39,4 +39,4 @@ The reusable Tolk timing helper is `contracts/tolk/auction-timing.tolk`; boundar
 
 ## Tolk migration status
 
-New TagitalSpace-specific helpers are being ported to Tolk under `contracts/tolk/`. The upstream TON DNS FunC sources are retained temporarily as the migration reference and must not be deployed. The migration is not complete until the collection and item contracts, utility modules, opcodes, parameters, build script, and test coverage have all been ported and checked. The upstream GPL-3.0 license and required notices must remain available.
+New TagitalSpace-specific helpers are being ported to Tolk under `contracts/tolk/`. The upstream TON DNS FunC sources are retained temporarily as the migration reference and must not be deployed. The Tolk reference collection and item contracts, utility modules, opcodes/message layouts, error codes, and storage layouts have been added. Tolk stdlib functionality is supplied by the language/runtime rather than by a copied FunC stdlib file. The migration is not complete until these files are compiled, tested against the original behavior, integrated into the Acton build, and the remaining project-specific contracts and tests are migrated. The upstream GPL-3.0 license and required notices must remain available.
