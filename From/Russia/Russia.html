@@ -554,7 +554,9 @@
       const regionsCloseRow = regionsClose.parentElement;
       function positionRegionsCloseRow() {
         const fit = getRegionsFitSize();
+        const verticalOffset = Math.max(0, (regionsViewport.clientHeight - fit.height) / 2);
         regionsCloseRow.style.width = `${fit.width}px`;
+        regionsCloseRow.style.transform = `translateY(${verticalOffset}px)`;
       }
       function getRegionsFitSize() {
         const boxWidth = regionsViewport.clientWidth;
