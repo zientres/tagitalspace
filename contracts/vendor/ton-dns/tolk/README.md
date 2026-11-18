@@ -20,10 +20,10 @@ The original upstream license is GPL-3.0 and is retained at `../LICENSE`.
 
 ## TagitalSpace timing adaptation
 
-The upstream DNS auction schedule is adapted for TagitalSpace:
-- initial auction duration: 90 minutes (5,400 seconds);
-- minimum remaining duration after a late bid: 60 minutes (3,600 seconds);
-- an incoming bid extends the auction only when less than 60 minutes remain.
+TagitalSpace follows the current TON DNS auction timing:
+- initial auction duration: 60 minutes (3,600 seconds);
+- when a bid arrives with less than 60 minutes remaining, the end time is moved to now + 60 minutes;
+- when 60 minutes or more remain, the bid does not extend the deadline.
 
 The reference DNS name-pricing schedule and domain validation remain upstream reference behavior. TagitalSpace plate pricing is implemented separately in `contracts/tolk/plate-pricing.tolk`.
 
