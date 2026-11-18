@@ -1,0 +1,21 @@
+;; TagitalSpace auction timing policy.
+;; Initial auction duration: 90 minutes.
+;; If a valid bid arrives with less than one hour remaining, move the
+;; deadline so that one full hour remains after the bid.
+;;
+;; This mirrors the current TON DNS extension behavior, while preserving
+;; TagitalSpace's separately agreed 90-minute initial duration.
+
+const int tagitalspace_auction_initial_duration = 5400;
+const int tagitalspace_auction_extension_window = 3600;
+
+int tagitalspace_auction_end_time_after_bid(int current_time, int auction_end_time) inline {
+    throw_unless(702, auction_end_time > current_time);
+
+    int remaining = auction_end_time - current_time;
+    if (remaining < tagitalspace_auction_extension_window) {
+        return current_time + tagitalspace_auction_extension_window;
+    }
+
+    return auction_end_time;
+}
