@@ -23,7 +23,7 @@ Expected examples:
 - `M343YM` (М343УМ): 30 TON.
 - An ordinary pattern: 3 TON.
 
-The FunC helper accepts exactly six canonical ASCII characters. The Russian allowed letters are transliterated to their visually corresponding Latin characters: А→A, В→B, Е→E, К→K, М→M, Н→H, О→O, Р→P, С→C, Т→T, У→Y, Х→X. The region is stored and checked separately by the registry/collection contract.
+The Tolk helper accepts exactly six canonical ASCII characters. The Russian allowed letters are transliterated to their visually corresponding Latin characters: А→A, В→B, Е→E, К→K, М→M, Н→H, О→O, Р→P, С→C, Т→T, У→Y, Х→X. The region is stored and checked separately by the registry/collection contract.
 
 ## Source attribution and license
 
