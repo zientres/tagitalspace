@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061426">
+  <title>TagitalSpace</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .settings-button {
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid rgba(120, 186, 255, 0.35);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .settings-button:hover {
+      background: rgba(120, 186, 255, 0.1);
+      border-color: #78baff;
+    }
+
+    .settings-button span {
+      width: 19px;
+      height: 2px;
+      border-radius: 2px;
+      background: #f3f6fb;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.48);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s, visibility 0.25s;
+    }
+
+    .settings-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .settings-drawer {
+      position: fixed;
+      z-index: 101;
+      top: 0;
+      right: 0;
+      width: min(360px, 88vw);
+      height: 100vh;
+      height: 100dvh;
+      padding: 30px 26px;
+      overflow-y: auto;
+      background: #091a2e;
+      border-left: 1px solid rgba(120, 186, 255, 0.18);
+      box-shadow: -15px 0 45px rgba(0, 0, 0, 0.25);
+      transform: translateX(102%);
+      transition: transform 0.28s ease;
+    }
+
+    .settings-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .settings-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 38px;
+    }
+
+    .settings-drawer-title {
+      color: #f3f6fb;
+      font-size: 23px;
+      font-weight: 650;
+    }
+
+    .settings-close {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(120, 186, 255, 0.25);
+      border-radius: 8px;
+      color: #f3f6fb;
+      background: transparent;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .settings-close:hover {
+      background: rgba(120, 186, 255, 0.1);
+    }
+
+    .settings-label {
+      display: block;
+      margin-bottom: 14px;
+      color: #a8b8cc;
+      font-size: 13px;
+    }
+
+    .language-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .language-option {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(120, 186, 255, 0.18);
+      border-radius: 9px;
+      color: #dce7f5;
+      background: rgba(255, 255, 255, 0.025);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .language-option:hover {
+      background: rgba(120, 186, 255, 0.08);
+    }
+
+    .language-option.is-active {
+      border-color: #78baff;
+      background: rgba(120, 186, 255, 0.1);
+      color: #fff;
+    }
+
+    .language-check {
+      color: #78baff;
+      opacity: 0;
+    }
+
+    .language-option.is-active .language-check {
+      opacity: 1;
+    }
+
+    body.settings-open {
+      overflow: hidden;
+    }
+
+    .community-join {
+      margin-top: 22px;
+      border: none;
+      font: inherit;
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .feature-visual {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      min-height: 300px;
+      padding: 26px;
+      text-align: center;
+    }
+
+    .feature-illustration {
+      width: 100%;
+      max-width: 280px;
+      color: #78baff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feature-icon {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 205px;
+      overflow: visible;
+    }
+
+    .market-illustration .feature-icon {
+      width: 85%;
+    }
+
+    .feature-visual-caption {
+      max-width: 330px;
+      color: #a8b8cc;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* Карточки сообщества занимают всю высоту правой колонки */
+
+    .community-layout {
+      align-items: stretch;
+    }
+
+    .community-links {
+      align-self: stretch;
+    }
+
+    .community-link-card {
+      flex: 1;
+    }
+
+    @media (max-width: 700px) {
+      .settings-button {
+        width: 38px;
+        height: 38px;
+      }
+
+      .settings-drawer {
+        padding: 25px 21px;
+      }
+
+      .marketplace-card {
+        padding: 16px;
+      }
+
+      .marketplace-heading h3 {
+        font-size: 19px;
+      }
+
+      .community-link-card {
+        flex: initial;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <a class="brand" href="#home" aria-label="TagitalSpace — главная">
+      <img
+        src="logo.png"
+        alt="Логотип TagitalSpace"
+        class="brand-logo"
+        draggable="false"
+      >
+      <span>TagitalSpace</span>
+    </a>
+
+    <nav class="navigation" aria-label="Основная навигация">
+      <a href="collection.html" data-i18n="navCollection">Коллекции</a>      <a href="community.html" data-i18n="navCommunity">Сообщество</a>
+    </nav>
+
+    <div class="header-actions">
+      <button
+        class="header-button"
+        id="connect-wallet"
+        type="button"
+        data-i18n="connectWallet"
+        aria-haspopup="dialog"
+      >Подключить кошелёк</button>
+
+      <button
+        class="settings-button"
+        id="settings-open"
+        type="button"
+        aria-label="Открыть настройки"
+        aria-controls="settings-drawer"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <div
+    class="settings-overlay"
+    id="settings-overlay"
+    aria-hidden="true"
+  ></div>
+
+  <aside
+    class="settings-drawer"
+    id="settings-drawer"
+    aria-label="Настройки"
+    aria-hidden="true"
+    inert
+  >
+    <div class="settings-drawer-header">
+      <h2 class="settings-drawer-title" data-i18n="settingsTitle">
+        Настройки
+      </h2>
+
+      <button
+        class="settings-close"
+        id="settings-close"
+        type="button"
+        aria-label="Закрыть настройки"
+      >×</button>
+    </div>
+
+    <div class="settings-section">
+      <span class="settings-label" data-i18n="languageLabel">
+        Язык сайта
+      </span>
+
+      <div class="language-options">
+        <button
+          class="language-option is-active"
+          type="button"
+          data-language="ru"
+          aria-pressed="true"
+        >
+          <span>Русский</span>
+          <span class="language-check" aria-hidden="true">✓</span>
+        </button>
+
+        <button
+          class="language-option"
+          type="button"
+          data-language="en"
+          aria-pressed="false"
+        >
+          <span>English</span>
+          <span class="language-check" aria-hidden="true">✓</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <h1 data-i18n="heroTitle">
+          TagitalSpace — цифровое пространство коллекций номерных знаков со всего мира
+        </h1>
+      </div>
+
+      <div class="hero-visual">
+        <div class="plate-stage">
+          <div class="plate-shadow" aria-hidden="true"></div>
+
+          <div
+            class="license-plate plate--ru"
+            id="license-plate"
+            aria-label="Номерной знак"
+          >
+            <div class="plate-prefix" id="plate-prefix" hidden>KZ</div>
+            <div class="plate-main" id="plate-main">А777АА</div>
+            <div class="plate-divider" aria-hidden="true"></div>
+
+            <div class="plate-region-block">
+              <div class="plate-region" id="plate-region">77</div>
+              <div class="plate-region-country" id="plate-region-country">RUS</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plate-progress" aria-label="Смена номерного знака">
+          <div class="plate-progress-bar" id="plate-progress-bar"></div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="content-section collection-overview"
+      id="collection"
+      aria-labelledby="collection-overview-label"
+    >
+      <div class="section-heading">
+        <span class="section-kicker" id="collection-overview-label" data-i18n="collectionEyebrow">
+          КОЛЛЕКЦИИ
+        </span>
+        <p class="section-intro" data-i18n="collectionIntro">
+          Каждая страна представлена отдельной коллекцией со своим форматом номерных знаков
+        </p>
+      </div>
+    
+    </section>
+
+    <section
+      class="content-section feature-section"
+      id="auctions"
+      aria-labelledby="auctions-title"
+    >
+      <div class="feature-layout">
+        <div class="feature-copy">
+          <span class="section-kicker" data-i18n="auctionsEyebrow">АУКЦИОНЫ</span>
+          <h2 class="section-title" id="auctions-title" data-i18n="auctionsTitle">
+            Выберите номер и запустите аукцион
+          </h2>
+          <p class="section-intro" data-i18n="auctionsIntro">
+            Пользователь вводит желаемое сочетание символов. Система проверяет, свободен ли этот номер, и рассчитывает начальную ставку. Если номер доступен, его можно выставить на аукцион продолжительностью полтора часа.
+          </p>
+          <p class="feature-detail" data-i18n="auctionsDetail">
+            Начальная ставка будет зависеть от самого сочетания символов: чем привлекательнее номер, тем выше его стартовая стоимость.
+          </p>
+        </div>
+        <div class="feature-panel feature-visual auction-visual">
+          <div class="feature-illustration auction-illustration" aria-hidden="true">
+            <svg class="feature-icon" width="48" height="48" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Аукцион — диагональный молоток над прямоугольным номерным знаком A777AA">
+  <title>Аукцион — молоток над номером A777AA</title>
+  <defs>
+    <linearGradient id="lotHead" x1="23.4" y1="8.6" x2="33.1" y2="18.1" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3E88C6"/>
+      <stop offset="1" stop-color="#0B2C47"/>
+    </linearGradient>
+    <linearGradient id="lotHandle" x1="29.1" y1="15.2" x2="15" y2="22.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DCEBFF"/>
+      <stop offset="1" stop-color="#82B1E8"/>
+    </linearGradient>
+    <linearGradient id="lotPlate" x1="24.5" y1="27.8" x2="24.5" y2="40.2" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FCFF"/>
+      <stop offset="1" stop-color="#D6E8FC"/>
+    </linearGradient>
+    <linearGradient id="lotBase" x1="24.5" y1="40.2" x2="24.5" y2="42.7" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#143E62"/>
+      <stop offset="1" stop-color="#071D30"/>
+    </linearGradient>
+  </defs>
+  <path d="M16.4 40.2h16.2l3.5 2.1c.18.1.1.36-.11.36H13.01c-.21 0-.29-.26-.11-.36l3.5-2.1Z" fill="url(#lotBase)" stroke="#5E9ADA" stroke-width=".8"/>
+  <g>
+    <rect x="11" y="27.8" width="27" height="12.4" rx="1.1" fill="url(#lotPlate)" stroke="#A9CEFF" stroke-width="1.1"/>
+    <rect x="12.3" y="29" width="24.4" height=".9" rx=".45" fill="#FFFFFF" opacity=".9"/>
+    <text x="24.5" y="35.2" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="4.1" font-weight="800" textLength="16.6" lengthAdjust="spacingAndGlyphs" fill="#0A2943">A777AA</text>
+  </g>
+  <g transform="translate(-4.4 0)">
+    <path d="M29.1 15.2 15 22.5" stroke="#081F34" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M29.1 15.2 15 22.5" stroke="url(#lotHandle)" stroke-width="2.1" stroke-linecap="round"/>
+    <path d="M27.95 15.78 16.3 21.7" stroke="#F0F7FF" stroke-opacity=".5" stroke-width=".55" stroke-linecap="round"/>
+    <g transform="rotate(58 29.1 14)">
+      <rect x="22.1" y="11.2" width="14" height="5.6" rx="2.8" fill="url(#lotHead)" stroke="#8EC0F7" stroke-width="1.1"/>
+      <rect x="23.5" y="12.3" width="11.2" height="1" rx=".5" fill="#C9E2FF" opacity=".5"/>
+      <path d="M25.6 11.7v4.6M32.6 11.7v4.6" stroke="#061A2C" stroke-opacity=".42" stroke-width=".9" stroke-linecap="round"/>
+      <rect x="27.1" y="15.5" width="4" height="2.4" rx="1.2" fill="#4C8AC5" stroke="#A9D2FF" stroke-width=".7"/>
+    </g>
+  </g>
+</svg>
+          </div>
+          <p class="feature-visual-caption" data-i18n="auctionVisualCaption">
+            Победитель получает номерной знак после завершения торгов
+          </p>
+        </div>
+      </div>
+    
+    </section>
+
+    <section
+      class="content-section feature-section"
+      id="market"
+      aria-labelledby="market-title"
+    >
+      <div class="feature-layout feature-layout-reverse">
+        <div class="feature-copy">
+          <span class="section-kicker" data-i18n="marketEyebrow">РЫНОК</span>
+          <h2 class="section-title" id="market-title" data-i18n="marketTitle">
+            Вторичный рынок на Getgems
+          </h2>
+          <p class="section-intro" data-i18n="marketIntro">
+            Выпущенные NFT можно будет покупать и продавать на Getgems — внешнем маркетплейсе TON. Ссылки на Getgems можно найти в каждой коллекции.
+          </p>
+        </div>
+        <div class="feature-panel feature-visual market-visual">
+          <div class="feature-illustration market-illustration" aria-hidden="true">
+            <svg class="feature-icon" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Логотип Getgems">
+              <path fill="#FFFFFF" fill-rule="evenodd" clip-rule="evenodd" d="M43.9998 4.88867C43.9998 26.4891 26.4892 43.9998 4.88873 43.9998C4.88873 22.3993 22.3994 4.88867 43.9998 4.88867ZM43.9998 83.1109C22.3994 83.1109 4.88873 65.6002 4.88873 43.9998C26.4892 43.9998 43.9998 61.5104 43.9998 83.1109ZM83.111 43.9998C83.111 65.6002 65.6003 83.1109 43.9998 83.1109C43.9998 61.5104 61.5105 43.9998 83.111 43.9998ZM79.8517 8.14794C79.8517 26.1484 65.2595 40.7405 47.2591 40.7406C47.2591 22.7402 61.8513 8.14795 79.8517 8.14794Z"/>
+            </svg>
+          </div>
+          <p class="feature-visual-caption" data-i18n="marketVisualCaption">
+            Покупайте и продавайте номерные знаки
+          </p>
+        </div>
+      </div>
+    
+    </section>
+
+    <section
+      class="content-section community-section"
+      id="community"
+      aria-labelledby="community-title"
+    >
+      <div class="community-layout">
+        <div class="community-copy">
+          <span class="section-kicker" data-i18n="communityEyebrow">СООБЩЕСТВО</span>
+          <h2 class="section-title" id="community-title" data-i18n="communityTitle">
+            Следите за развитием TagitalSpace
+          </h2>
+          <p class="section-intro" data-i18n="communityIntro">
+            В Telegram-канале будут выходить новости о ходе проекта, важных обновлениях и новых коллекциях.
+          </p>
+          <button class="primary-button community-join" type="button" disabled data-i18n="communityJoin">
+            Telegram-канал
+          </button>
+        </div>
+      </div>
+    
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
