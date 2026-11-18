@@ -468,9 +468,6 @@ if (missingElements.length > 0) {
             connectedWalletAddress = address;
           }
           walletButton.title = connectedWalletAddress;
-          const shortWalletAddress = connectedWalletAddress.length > 13
-            ? connectedWalletAddress.slice(0, 6) + "..." + connectedWalletAddress.slice(-4)
-            : connectedWalletAddress;
         }
 
         const language = document.documentElement.lang || "ru";
