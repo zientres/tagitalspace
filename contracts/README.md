@@ -31,9 +31,9 @@ The DNS/NFT Tolk reference modules are now present in `contracts/vendor/ton-dns/
 
 ## Auction timing
 
-TagitalSpace uses a 90-minute initial auction duration (5,400 seconds). This is intentionally different from the current TON DNS duration.
+TagitalSpace follows the current TON DNS auction timing: the initial auction duration is one hour (3,600 seconds).
 
-When a valid bid arrives with less than one hour remaining, the auction end time is moved to `now + 3,600` seconds, leaving a full hour after that bid. A bid with exactly one hour or more remaining does not extend the auction. This matches the extension rule used by the current TON DNS item contract while retaining TagitalSpace's 90-minute initial period.
+When a valid bid arrives with less than one hour remaining, the auction end time is moved to `now + 3,600` seconds, leaving a full hour after that bid. A bid with exactly one hour or more remaining does not extend the auction.
 
 The reusable Tolk timing helper is `contracts/tolk/auction-timing.tolk`; boundary and extension cases are listed in `contracts/tests/auction-timing-vectors.json`. These JSON vectors are specifications for the test suite, not evidence that the Tolk helper has already been compiled or executed.
 
