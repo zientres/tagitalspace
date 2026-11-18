@@ -431,10 +431,27 @@ if (missingElements.length > 0) {
           return;
         } else {
           const address = wallet.account.address;
-          connectedWalletAddress = address.length > 13
-            ? address.slice(0, 6) + "..." + address.slice(-4)
-            : address;
-          walletButton.title = address;
+          const [workchainText, hashHex] = address.split(":");
+          if (/^-?\\d+$/.test(workchainText) && /^[0-9a-fA-F]{64}$/.test(hashHex || "")) {
+            const bytes = new Uint8Array(36);
+            bytes[0] = 0x51 | 0x80;
+            bytes[1] = Number(workchainText) & 0xff;
+            for (let i = 0; i < 32; i++) bytes[i + 2] = parseInt(hashHex.slice(i * 2, i * 2 + 2), 16);
+            let crc = 0;
+            for (let i = 0; i < 34; i++) {
+              crc ^= bytes[i] << 8;
+              for (let bit = 0; bit < 8; bit++) crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+              crc &= 0xffff;
+            }
+            bytes[34] = crc >> 8;
+            bytes[35] = crc & 0xff;
+            let binary = "";
+            bytes.forEach(byte => binary += String.fromCharCode(byte));
+            connectedWalletAddress = btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/, "");
+          } else {
+            connectedWalletAddress = address;
+          }
+          walletButton.title = connectedWalletAddress;
         }
 
         const language = document.documentElement.lang || "ru";
