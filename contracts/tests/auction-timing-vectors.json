@@ -2,7 +2,7 @@
   {
     "case": "initial_duration",
     "start_time": 1000000,
-    "expected_end_time": 1005400
+    "expected_end_time": 1003600
   },
   {
     "case": "bid_more_than_one_hour_remaining",
