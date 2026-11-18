@@ -28,3 +28,11 @@ The FunC helper accepts exactly six canonical ASCII characters. The Russian allo
 ## Source attribution and license
 
 The planned DNS/NFT foundation will be adapted from the official `ton-blockchain/dns-contract` project. Its original GPL-3.0 license and copyright notices must accompany any copied or modified source files. TagitalSpace-specific code must retain clear authorship and modification notices. Do not remove upstream license headers.
+
+## Auction timing
+
+TagitalSpace uses a 90-minute initial auction duration (5,400 seconds). This is intentionally different from the current TON DNS duration.
+
+When a valid bid arrives with less than one hour remaining, the auction end time is moved to `now + 3,600` seconds, leaving a full hour after that bid. A bid with exactly one hour or more remaining does not extend the auction. This matches the extension rule used by the current TON DNS item contract while retaining TagitalSpace's 90-minute initial period.
+
+The reusable FunC timing helper is `contracts/func/auction-timing.fc`; boundary and extension cases are listed in `contracts/tests/auction-timing-vectors.json`. These JSON vectors are specifications for the test suite, not evidence that the FunC helper has already been compiled or executed.
