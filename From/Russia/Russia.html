@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="../../">
+  <meta name="theme-color" content="#061426">
+  <title>TagitalSpace — Россия</title>
+  <link rel="stylesheet" href="style.css?v=wallet-disconnect-confirmation">
+  <style>
+    .settings-button {
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid rgba(120, 186, 255, 0.35);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .settings-button:hover {
+      background: rgba(120, 186, 255, 0.1);
+      border-color: #78baff;
+    }
+
+    .settings-button span {
+      width: 19px;
+      height: 2px;
+      border-radius: 2px;
+      background: #f3f6fb;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.48);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s, visibility 0.25s;
+    }
+
+    .settings-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .settings-drawer {
+      position: fixed;
+      z-index: 101;
+      top: 0;
+      right: 0;
+      width: min(360px, 88vw);
+      height: 100vh;
+      height: 100dvh;
+      padding: 30px 26px;
+      overflow-y: auto;
+      background: #091a2e;
+      border-left: 1px solid rgba(120, 186, 255, 0.18);
+      box-shadow: -15px 0 45px rgba(0, 0, 0, 0.25);
+      transform: translateX(102%);
+      transition: transform 0.28s ease;
+    }
+
+    .settings-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .settings-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 38px;
+    }
+
+    .settings-drawer-title {
+      color: #f3f6fb;
+      font-size: 23px;
+      font-weight: 650;
+    }
+
+    .settings-close {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(120, 186, 255, 0.25);
+      border-radius: 8px;
+      color: #f3f6fb;
+      background: transparent;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .settings-close:hover {
+      background: rgba(120, 186, 255, 0.1);
+    }
+
+    .settings-label {
+      display: block;
+      margin-bottom: 14px;
+      color: #a8b8cc;
+      font-size: 13px;
+    }
+
+    .language-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .language-option {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(120, 186, 255, 0.18);
+      border-radius: 9px;
+      color: #dce7f5;
+      background: rgba(255, 255, 255, 0.025);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .language-option:hover {
+      background: rgba(120, 186, 255, 0.08);
+    }
+
+    .language-option.is-active {
+      border-color: #78baff;
+      background: rgba(120, 186, 255, 0.1);
+      color: #fff;
+    }
+
+    .language-check {
+      color: #78baff;
+      opacity: 0;
+    }
+
+    .language-option.is-active .language-check {
+      opacity: 1;
+    }
+
+    body.settings-open {
+      overflow: hidden;
+    }
+
+    @media (max-width: 700px) {
+      .settings-button {
+        width: 38px;
+        height: 38px;
+      }
+
+      .settings-drawer {
+        padding: 25px 21px;
+      }
+
+      .marketplace-card {
+        padding: 16px;
+      }
+
+      .marketplace-heading h3 {
+        font-size: 19px;
+      }
+
+      .community-link-card {
+        flex: initial;
+      }
+    }
+
+    .registration-search-field .registration-cells { grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(58px, 1.45fr); }
+    .registration-search-field .registration-cell.registration-region-cell { margin-left: 10px; min-width: 58px; }
+    .registration-search-field .registration-cell.registration-region-cell::after { left: -8px; }
+    .registration-search-field .registration-cell.is-invalid { border-bottom-color: #e47777; }
+    @media (max-width: 480px) {
+      .registration-search-field .registration-cells { grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(46px, 1.35fr); gap: 3px; }
+      .registration-search-field .registration-cell.registration-region-cell { min-width: 46px; margin-left: 8px; }
+      .registration-search-field .registration-cell.registration-region-cell::after { left: -6px; }
+    }
+
+    .registration-search-row { position:relative; display:block; width:100%; }
+    .registration-search-row .registration-search-field { width:100%; }
+    .registration-region-help { position:absolute; left:calc(100% + 14px); top:50%; transform:translateY(-50%); z-index:3; width:max-content; max-width:220px; padding:10px 13px; border:1px solid rgba(120,186,255,.14); border-radius:12px; background:rgba(9,26,46,.96); font-size:12px; line-height:1.5; animation:registration-hint-in .18s ease both; }
+    .registration-region-help[hidden] { display:none; }
+    .registration-region-help a { color:#78baff; text-decoration:none; white-space:nowrap; }
+    .registration-region-help a:hover { color:#a8d4ff; text-decoration:underline; }
+    .registration-regions-modal { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:32px; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .18s ease,visibility .18s ease; }
+    .registration-regions-modal.is-open { opacity:1; visibility:visible; pointer-events:auto; }
+    .registration-regions-backdrop { position:absolute; inset:0; background:rgba(2,8,17,.86); backdrop-filter:blur(5px); }
+    .registration-regions-dialog { position:relative; z-index:1; width:min(1100px,94vw); max-height:90vh; transform:scale(.96) translateY(8px); transition:transform .2s ease; }
+    .registration-regions-modal.is-open .registration-regions-dialog { transform:scale(1) translateY(0); }
+    .registration-regions-dialog img { display:block; width:100%; max-height:90vh; object-fit:contain; border-radius:12px; box-shadow:0 18px 70px rgba(0,0,0,.5); }
+    .registration-regions-close { position:absolute; z-index:2; top:-16px; right:-16px; width:38px; height:38px; border:1px solid rgba(255,255,255,.28); border-radius:50%; color:#fff; background:#10243b; font-size:27px; line-height:1; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.35); }
+    @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } .registration-regions-close { top:-13px; right:-5px; } }
+
+    .registry-result { width:100%; max-width:560px; margin:24px auto 0; }
+    .registry-result[hidden] { display:none; }
+    .registry-result-card { display:flex; flex-direction:column; align-items:center; gap:15px; width:100%; padding:24px 22px; border:1px solid rgba(120,186,255,.18); border-radius:16px; background:#091a2e; box-shadow:0 16px 42px rgba(0,0,0,.18); }
+    .registry-status { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:6px 16px; border:1px solid transparent; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.02em; }
+    .registry-status--free { color:#70d9a5; border-color:rgba(80,210,145,.28); background:rgba(48,180,112,.12); }
+    .registry-status--auction { color:#c4a0ff; border-color:rgba(174,126,255,.32); background:rgba(139,88,220,.15); }
+    .registry-status--minted { color:#ff9292; border-color:rgba(255,112,112,.3); background:rgba(205,65,65,.13); }
+    .registry-status--unknown { color:#c2cede; border-color:rgba(168,184,204,.2); background:rgba(168,184,204,.08); }
+    .registry-result-plate { width:min(100%,440px); min-height:112px; padding:13px 18px; display:grid; grid-template-columns:minmax(0,1fr) 58px; align-items:center; gap:12px; border:1px solid #fff; border-radius:8px; color:#071426; background:linear-gradient(160deg,#fff,#e2e5e4); box-shadow:inset 0 0 0 3px rgba(35,49,61,.06),0 7px 20px rgba(0,0,0,.12); }
+    .registry-result-plate-main { min-width:0; text-align:center; font-size:clamp(30px,7vw,52px); line-height:1; font-weight:750; letter-spacing:.025em; white-space:nowrap; }
+    .registry-result-plate-region { min-height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:2px solid rgba(7,20,38,.55); font-size:25px; line-height:1.1; font-weight:650; }
+    .registry-result-plate-country { margin-top:4px; font-size:10px; letter-spacing:.08em; font-weight:700; }
+    .registry-timer { display:flex; flex-direction:column; align-items:center; gap:5px; }
+    .registry-timer-label { color:#91a6bd; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+    .registry-timer-value { color:#f3f6fb; font-size:30px; line-height:1.2; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.08em; }
+    .registry-result-detail { color:#b8c8da; font-size:13px; line-height:1.6; text-align:center; }
+    .registry-result-note { max-width:440px; color:#91a6bd; font-size:12px; line-height:1.6; text-align:center; }
+    .registry-result-message { color:#c7d7e8; font-size:13px; line-height:1.6; text-align:center; }
+    .registry-action-button { width:min(100%,390px); min-height:48px; margin:0 auto; border:0; cursor:pointer; }
+    .registry-action-button:disabled { cursor:wait; opacity:.65; transform:none; }
+    .registry-bid-input { width:min(100%,390px); min-height:46px; padding:0 15px; border:1px solid rgba(120,186,255,.25); border-radius:8px; outline:none; color:#f3f6fb; background:#061426; font:inherit; font-size:14px; text-align:center; }
+    .registry-bid-input:focus { border-color:#78baff; box-shadow:0 0 0 3px rgba(120,186,255,.08); }
+    @media(max-width:480px) { .registry-result-card { padding:20px 14px; gap:13px; } .registry-result-plate { min-height:90px; grid-template-columns:minmax(0,1fr) 50px; padding:10px 12px; } .registry-result-plate-region { min-height:55px; font-size:21px; } .registry-timer-value { font-size:26px; } }
+
+  
+    .collection-preview-ru {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .collection-flag-round {
+      display: block;
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+    }
+</style>
+</head><body>
+  <header class="header">
+    <a class="brand" href="index.html" aria-label="TagitalSpace — главная">
+      <img
+        src="logo.png"
+        alt="Логотип TagitalSpace"
+        class="brand-logo"
+        draggable="false"
+      >
+      <span>TagitalSpace</span>
+    </a>
+
+    <div class="header-actions">
+      <button
+        class="header-button"
+        id="connect-wallet"
+        type="button"
+        data-i18n="connectWallet"
+        aria-haspopup="dialog"
+      >Подключить кошелёк</button>
+
+      <button
+        class="settings-button"
+        id="settings-open"
+        type="button"
+        aria-label="Открыть настройки"
+        aria-controls="settings-drawer"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+    <div
+    class="settings-overlay"
+    id="settings-overlay"
+    aria-hidden="true"
+  ></div>
+
+    <aside
+    class="settings-drawer"
+    id="settings-drawer"
+    aria-label="Настройки"
+    aria-hidden="true"
+    inert
+  >
+    <div class="settings-drawer-header">
+      <h2 class="settings-drawer-title" data-i18n="settingsTitle">
+        Настройки
+      </h2>
+
+      <button
+        class="settings-close"
+        id="settings-close"
+        type="button"
+        aria-label="Закрыть настройки"
+      >×</button>
+    </div>
+
+    <div class="settings-section">
+      <span class="settings-label" data-i18n="languageLabel">
+        Язык сайта
+      </span>
+
+      <div class="language-options">
+        <button
+          class="language-option is-active"
+          type="button"
+          data-language="ru"
+          aria-pressed="true"
+        >
+          <span>Русский</span>
+          <span class="language-check" aria-hidden="true">✓</span>
+        </button>
+
+        <button
+          class="language-option"
+          type="button"
+          data-language="en"
+          aria-pressed="false"
+        >
+          <span>English</span>
+          <span class="language-check" aria-hidden="true">✓</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <main class="collections-page">
+    <section class="russia-collection" id="russia-collection">
+      <a class="collection-back" href="collection.html" aria-label="Вернуться к коллекциям" data-i18n-aria-label="backToCollections">←</a>
+      <nav class="collection-sections" aria-label="Разделы коллекции" data-i18n-aria-label="collectionSections">
+        <button class="collection-section-tab is-active" type="button" data-collection-tab="mint" aria-pressed="true" data-i18n="tabMint">Минт</button>
+        <button class="collection-section-tab" type="button" data-collection-tab="auctions" aria-pressed="false" data-i18n="tabAuctions">Аукционы</button>
+        <button class="collection-section-tab" type="button" data-collection-tab="market" aria-pressed="false" data-i18n="tabMarket">Рынок</button>
+      </nav>
+      <div class="collection-tab-panel" id="collection-panel-mint">
+      <div class="russia-collection-content">
+        <h1 data-i18n="registerRussiaPlate">Зарегистрировать номерной знак России</h1>
+        <p class="russia-collection-subtitle" data-i18n="registrationSubtitle">Вводите комбинацию вашего номера в поле снизу</p>
+
+        <form class="registration-search" id="registration-search" novalidate>
+          <div class="registration-search-row">
+          <div class="registration-search-field" id="registration-field">
+            <span class="registration-search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="10.8" cy="10.8" r="6.8"></circle>
+                <path d="m16 16 4.2 4.2"></path>
+              </svg>
+            </span>
+            <div class="registration-cells" aria-hidden="true">
+              <span class="registration-cell"></span>
+              <span class="registration-cell"></span>
+              <span class="registration-cell"></span>
+              <span class="registration-cell"></span>
+              <span class="registration-cell"></span>
+              <span class="registration-cell"></span>
+              <span class="registration-cell registration-region-cell"></span>
+            </div>
+            <input class="registration-input" id="registration-number" type="text" maxlength="9"
+              aria-label="Введите номер в формате А777АА 777" data-i18n-aria-label="plateInputLabel" autocomplete="off"
+              autocapitalize="characters" spellcheck="false">
+          </div>
+          <div class="registration-region-help" id="registration-region-help" hidden>
+            <a href="#" id="registration-regions-open" data-i18n="viewRegions">Посмотреть регионы России</a>
+          </div>
+          </div>
+          <p class="registration-hint" id="registration-hint" role="status" aria-live="polite" hidden>Используйте русские буквы: А В Е К М Н О Р С Т У Х</p>
+          <button class="primary-button registration-search-button" id="registration-search-button" type="submit" hidden data-i18n="search">Поиск</button>
+        </form>
+        <div id="registration-result" class="registry-result" role="status" aria-live="polite" hidden></div>
+        <div class="registration-regions-modal" id="registration-regions-modal" aria-hidden="true">
+          <div class="registration-regions-backdrop" data-regions-close></div>
+          <div class="registration-regions-dialog" role="dialog" aria-modal="true" aria-label="Коды регионов России" data-i18n-aria-label="regionCodesDialog">
+            <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
+            <img src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt">
+          </div>
+        </div>
+
+      </div>
+      </div>
+      <div class="collection-tab-panel" id="collection-panel-auctions" hidden></div>
+      <div class="collection-tab-panel" id="collection-panel-market" hidden></div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/@tonconnect/ui@3.0.0/dist/tonconnect-ui.min.js"></script>
+  <script src="registry-client.js?v=registry-live-testnet"></script>
+  <script src="script.js?v=wallet-disconnect-confirmation"></script>
+  <script>
+    (() => {
+      const form = document.getElementById("registration-search");
+      const input = document.getElementById("registration-number");
+      const cells = Array.from(document.querySelectorAll("#registration-field .registration-cell"));
+      const regionCell = cells[6];
+      const hint = document.getElementById("registration-hint");
+      const searchButton = document.getElementById("registration-search-button");
+      const result = document.getElementById("registration-result");
+      const allowedLetters = "АВЕКМНОРСТУХ";
+      const allowedRegions = new Set((
+        "01 101 02 102 702 03 103 04 104 05 105 06 106 07 107 08 108 09 109 " +
+        "10 110 11 111 12 112 13 113 14 114 15 115 16 116 716 17 117 18 118 19 119 " +
+        "95 195 21 121 22 122 23 93 123 193 24 84 88 124 25 125 725 26 126 27 127 28 128 29 129 30 130 " +
+        "31 131 32 132 33 133 34 134 35 135 36 136 37 137 38 138 39 91 139 40 140 41 141 42 142 43 143 44 144 " +
+        "45 145 46 146 47 147 48 148 49 149 50 90 150 190 250 550 750 790 51 151 52 152 252 53 153 54 154 754 " +
+        "55 155 56 156 57 157 58 158 59 159 60 61 161 761 62 162 63 163 763 64 164 65 165 66 96 166 196 " +
+        "67 167 68 168 69 169 70 170 71 171 72 172 73 173 74 174 774 75 180 76 176 " +
+        "77 97 99 177 197 199 277 299 777 797 799 977 78 98 178 198 798 778 79 179 " +
+        "80 180 81 181 82 182 83 183 84 184 85 185 86 186 87 187 89 189 92 192 94 194"
+      ).split(/\s+/));
+      let plate = "";
+      let invalidLetter = false;
+
+      function regionPrefixAllowed(prefix) {
+        if (!prefix) return true;
+        return [...allowedRegions].some(code =>
+          code.startsWith(prefix) || (prefix.length === 1 && code === "0" + prefix)
+        );
+      }
+
+      function parseInput(raw) {
+        const latinToRussian = { A: "А", B: "В", E: "Е", K: "К", M: "М", H: "Н", O: "О", P: "Р", C: "С", T: "Т", Y: "У", X: "Х" };
+        const chars = Array.from(raw.toUpperCase().replace(/Ё/g, "Е")).map(char => latinToRussian[char] || char);
+        let result = "";
+        let badLetter = false;
+        const pattern = ["letter", "digit", "digit", "digit", "letter", "letter"];
+        for (const char of chars) {
+          if (result.length < 6) {
+            const expected = pattern[result.length];
+            if (expected === "letter") {
+              if (allowedLetters.includes(char)) result += char;
+              else if (/\p{L}/u.test(char)) badLetter = true;
+            } else if (/\d/.test(char)) {
+              result += char;
+            }
+          } else if (/\d/.test(char) && result.length < 9) {
+            const candidate = result.slice(6) + char;
+            if (regionPrefixAllowed(candidate)) result += char;
+          }
+        }
+        return { value: result, badLetter };
+      }
+
+      const regionHelp = document.getElementById("registration-region-help");
+      const regionsModal = document.getElementById("registration-regions-modal");
+      const regionsOpen = document.getElementById("registration-regions-open");
+      function openRegions() {
+        regionsModal.classList.add("is-open");
+        regionsModal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        regionsModal.querySelector(".registration-regions-close").focus();
+      }
+      function closeRegions() {
+        regionsModal.classList.remove("is-open");
+        regionsModal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        regionsOpen.focus();
+      }
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); openRegions(); });
+      regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
+      });
+
+      function render() {
+        for (let i = 0; i < 6; i++) {
+          const char = plate[i] || "";
+          cells[i].textContent = char;
+          cells[i].classList.toggle("is-filled", Boolean(char));
+          cells[i].classList.toggle("is-active", i === plate.length && plate.length < 6);
+        }
+        const region = plate.slice(6);
+        regionHelp.hidden = plate.length < 6;
+        regionCell.textContent = region;
+        regionCell.classList.toggle("is-filled", Boolean(region));
+        regionCell.classList.toggle("is-active", plate.length >= 6 && region.length < 3);
+        regionCell.classList.remove("is-invalid");
+        regionCell.removeAttribute("title");
+        searchButton.hidden = plate.length < 7;
+        hint.hidden = !invalidLetter;
+        input.value = plate;
+      }
+
+      input.addEventListener("input", () => {
+        clearResultTimer();
+        result.hidden = true;
+        result.replaceChildren();
+        const parsed = parseInput(input.value);
+        plate = parsed.value;
+        invalidLetter = parsed.badLetter;
+        render();
+      });
+
+      input.addEventListener("keydown", event => {
+        if (event.key === "Backspace" && plate.length) {
+          event.preventDefault();
+          clearResultTimer();
+          result.hidden = true;
+          result.replaceChildren();
+          plate = plate.slice(0, -1);
+          invalidLetter = false;
+          render();
+        }
+      });
+
+      let resultTimer = null;
+      function clearResultTimer() {
+        if (resultTimer !== null) {
+          clearInterval(resultTimer);
+          resultTimer = null;
+        }
+      }
+
+      function localized(ru, en) {
+        return document.documentElement.lang === "en" ? en : ru;
+      }
+
+      function formatTon(value) {
+        const amount = BigInt(value || 0);
+        const whole = amount / 1000000000n;
+        const fraction = (amount % 1000000000n).toString().padStart(9, "0").replace(/0+$/, "");
+        return fraction ? whole.toString() + "." + fraction : whole.toString();
+      }
+
+      function addResultText(parent, className, text) {
+        const element = document.createElement("p");
+        element.className = className;
+        element.textContent = text;
+        parent.appendChild(element);
+        return element;
+      }
+
+      function renderLookup(searchedPlate, lookup, notice = "") {
+        clearResultTimer();
+        result.replaceChildren();
+        result.hidden = false;
+
+        const card = document.createElement("div");
+        card.className = "registry-result-card";
+
+        const status = document.createElement("div");
+        const statusLabels = {
+          free: localized("Свободен", "Available"),
+          auction: localized("Аукцион", "Auction"),
+          minted: localized("Занят", "Occupied"),
+          unknown: localized("Статус не определён", "Unknown status")
+        };
+        status.className = "registry-status registry-status--" + (lookup.status || "unknown");
+        status.textContent = statusLabels[lookup.status] || statusLabels.unknown;
+        card.appendChild(status);
+
+        const plateView = document.createElement("div");
+        plateView.className = "registry-result-plate";
+        const plateMain = document.createElement("div");
+        plateMain.className = "registry-result-plate-main";
+        plateMain.textContent = searchedPlate.slice(0, 6);
+        const region = document.createElement("div");
+        region.className = "registry-result-plate-region";
+        const regionCode = document.createElement("span");
+        regionCode.textContent = searchedPlate.slice(6);
+        const country = document.createElement("span");
+        country.className = "registry-result-plate-country";
+        country.textContent = "RUS";
+        region.append(regionCode, country);
+        plateView.append(plateMain, region);
+        card.appendChild(plateView);
+
+        function addTimer(label, value, endTime = null) {
+          const timer = document.createElement("div");
+          timer.className = "registry-timer";
+          const timerLabel = document.createElement("span");
+          timerLabel.className = "registry-timer-label";
+          timerLabel.textContent = label;
+          const timerValue = document.createElement("span");
+          timerValue.className = "registry-timer-value";
+          timerValue.textContent = value;
+          timer.append(timerLabel, timerValue);
+          card.appendChild(timer);
+
+          if (endTime !== null) {
+            const update = () => {
+              const remaining = Math.max(0, Number(endTime) - Math.floor(Date.now() / 1000));
+              const hours = Math.floor(remaining / 3600);
+              const minutes = Math.floor((remaining % 3600) / 60);
+              const seconds = remaining % 60;
+              timerValue.textContent = [hours, minutes, seconds]
+                .map(part => String(part).padStart(2, "0"))
+                .join(":");
+              if (remaining === 0) clearResultTimer();
+            };
+            update();
+            resultTimer = window.setInterval(update, 1000);
+          }
+          return timerValue;
+        }
+
+        if (lookup.status === "free") {
+          addTimer(localized("Длительность аукциона", "Auction duration"), "01:30:00");
+          addResultText(card, "registry-result-detail",
+            localized("Первая ставка — 1 TON. После запуска аукцион продлится 90 минут.", "The opening bid is 1 TON. The auction runs for 90 minutes after it starts."));
+          const note = addResultText(card, "registry-result-note",
+            localized("Keeper запросит 0.05 TON для создания аукциона, затем 1.1 TON для первой ставки 1 TON (включая 0.1 TON операционного запаса контракта). Сетевые комиссии оплачиваются отдельно.", "Keeper will request 0.05 TON to create the auction, then 1.1 TON for the 1 TON opening bid (including 0.1 TON of contract operating reserve). Network fees are separate."));
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "primary-button registry-action-button";
+          button.textContent = localized("Поставить ставку и начать аукцион", "Place the opening bid and start auction");
+          button.addEventListener("click", async () => {
+            button.disabled = true;
+            button.textContent = localized("Ожидание подтверждения в Keeper…", "Waiting for Keeper approval…");
+            note.textContent = localized(
+              "Сначала подтвердите создание аукциона. Затем отдельно подтвердите первую ставку 1 TON.",
+              "First approve auction creation. Then approve the separate 1 TON opening bid."
+            );
+            try {
+              await window.tagitalSpaceRegistry.startRussianAuctionWithFirstBid(searchedPlate);
+              const updated = await window.tagitalSpaceRegistry.lookupRussianPlate(searchedPlate);
+              renderLookup(searchedPlate, updated, localized("Аукцион и первая ставка подтверждены.", "Auction and opening bid confirmed."));
+            } catch (error) {
+              const updated = await window.tagitalSpaceRegistry.lookupRussianPlate(searchedPlate).catch(() => null);
+              if (updated && updated.status === "auction") {
+                renderLookup(searchedPlate, updated, error.message || localized("Аукцион создан. Проверьте первую ставку.", "Auction created. Check the opening bid."));
+              } else {
+                button.disabled = false;
+                button.textContent = localized("Поставить ставку и начать аукцион", "Place the opening bid and start auction");
+                note.textContent = error.message || localized("Не удалось запустить аукцион.", "Could not start the auction.");
+              }
+            }
+          });
+          card.appendChild(button);
+        } else if (lookup.status === "auction") {
+          const auction = lookup.auction;
+          if (!auction) {
+            addResultText(card, "registry-result-detail",
+              localized("Аукцион найден в блокчейне. Загружаю его параметры — попробуйте обновить поиск.", "Auction found on-chain. Its details are still loading — please search again."));
+          } else if (auction.status === 0) {
+            const remaining = Math.max(0, Number(auction.endTime) - Math.floor(Date.now() / 1000));
+            addTimer(localized("До окончания аукциона", "Time remaining"), "00:00:00", auction.endTime);
+            const nextBid = auction.highestBid > 0n
+              ? auction.highestBid + auction.minimumBidStep
+              : auction.startingBid;
+            addResultText(card, "registry-result-detail",
+              auction.highestBid > 0n
+                ? localized("Текущая ставка: " + formatTon(auction.highestBid) + " TON · следующая — от " + formatTon(nextBid) + " TON",
+                    "Current bid: " + formatTon(auction.highestBid) + " TON · next bid from " + formatTon(nextBid) + " TON")
+                : localized("Ставок пока нет. Первая ставка — от " + formatTon(nextBid) + " TON.",
+                    "No bids yet. The opening bid starts at " + formatTon(nextBid) + " TON."));
+            if (remaining > 0) {
+              addResultText(card, "registry-result-note",
+                localized("К сумме ставки дополнительно прикладывается 0.1 TON операционного запаса контракта; комиссия сети отдельно.", "An additional 0.1 TON contract operating reserve is attached to the bid; network fees are separate."));
+              const bidInput = document.createElement("input");
+              bidInput.className = "registry-bid-input";
+              bidInput.type = "text";
+              bidInput.inputMode = "decimal";
+              bidInput.autocomplete = "off";
+              bidInput.value = formatTon(nextBid);
+              bidInput.setAttribute("aria-label", localized("Сумма ставки в TON", "Bid amount in TON"));
+              const bidButton = document.createElement("button");
+              bidButton.type = "button";
+              bidButton.className = "primary-button registry-action-button";
+              bidButton.textContent = localized("Поставить ставку", "Place bid");
+              bidButton.addEventListener("click", async () => {
+                bidButton.disabled = true;
+                bidButton.textContent = localized("Ожидание Keeper…", "Waiting for Keeper…");
+                try {
+                  await window.tagitalSpaceRegistry.placeBid(auction.auctionId, bidInput.value);
+                  const updated = await window.tagitalSpaceRegistry.lookupRussianPlate(searchedPlate);
+                  renderLookup(searchedPlate, updated, localized("Транзакция ставки отправлена. Если сумма не обновилась сразу, повторите поиск через несколько секунд.", "Bid transaction sent. If the amount has not updated yet, search again in a few seconds."));
+                } catch (error) {
+                  bidButton.disabled = false;
+                  bidButton.textContent = localized("Поставить ставку", "Place bid");
+                  addResultText(card, "registry-result-message", error.message || localized("Не удалось отправить ставку.", "Could not submit the bid."));
+                }
+              });
+              card.append(bidInput, bidButton);
+            } else {
+              addResultText(card, "registry-result-detail",
+                localized("Время торгов истекло. Ожидается завершение аукциона.", "Bidding time has ended. Auction settlement is pending."));
+            }
+          } else {
+            addResultText(card, "registry-result-detail",
+              auction.status === 1
+                ? localized("Аукцион завершён, ожидается подтверждение выпуска NFT.", "Auction ended; NFT mint confirmation is pending.")
+                : localized("Аукцион без ставок проходит процедуру закрытия.", "The no-bid auction is being closed."));
+          }
+        } else if (lookup.status === "minted") {
+          addResultText(card, "registry-result-detail",
+            localized("Этот номер уже выпущен как NFT и занят.", "This plate has already been minted as an NFT and is occupied."));
+        } else {
+          addResultText(card, "registry-result-detail",
+            localized("Не удалось определить состояние номера.", "Could not determine the plate status."));
+        }
+
+        if (notice) addResultText(card, "registry-result-message", notice);
+        result.appendChild(card);
+      }
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (plate.length < 7) return;
+        let region = plate.slice(6);
+        if (region.length === 1) region = "0" + region;
+        if (!allowedRegions.has(region)) {
+          regionCell.classList.add("is-invalid");
+          regionCell.setAttribute("title", "Такого кода региона нет в списке");
+          return;
+        }
+        plate = plate.slice(0, 6) + region;
+        render();
+
+        result.hidden = false;
+        result.replaceChildren();
+        addResultText(result, "registry-result-message", localized("Проверяю номер в TON Testnet…", "Checking the plate on TON Testnet…"));
+        searchButton.disabled = true;
+        try {
+          if (!window.tagitalSpaceRegistry) {
+            throw new Error("Клиент реестра не загрузился. Обновите страницу.");
+          }
+          const lookup = await window.tagitalSpaceRegistry.lookupRussianPlate(plate);
+          renderLookup(plate, lookup);
+        } catch (error) {
+          clearResultTimer();
+          result.replaceChildren();
+          addResultText(result, "registry-result-message", error.message || localized("Не удалось проверить номер в TON Testnet.", "Could not check the plate on TON Testnet."));
+          result.hidden = false;
+        } finally {
+          searchButton.disabled = false;
+        }
+      });
+
+      document.getElementById("registration-field").addEventListener("click", () => input.focus());
+      render();
+    })();
+
+    (() => {
+      const tabs = Array.from(document.querySelectorAll("[data-collection-tab]"));
+      const panels = {
+        mint: document.getElementById("collection-panel-mint"),
+        auctions: document.getElementById("collection-panel-auctions"),
+        market: document.getElementById("collection-panel-market")
+      };
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const selected = tab.dataset.collectionTab;
+          tabs.forEach((item) => {
+            const active = item === tab;
+            item.classList.toggle("is-active", active);
+            item.setAttribute("aria-pressed", String(active));
+          });
+          Object.entries(panels).forEach(([name, panel]) => {
+            panel.hidden = name !== selected;
+          });
+        });
+      });
+    })();
+
+  </script>
+</body>
+</html>
