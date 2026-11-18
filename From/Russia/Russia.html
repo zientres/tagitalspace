@@ -207,7 +207,7 @@
     .registration-zoom-controls button:hover { border-color:#78baff; background:#173653; }
     .registration-zoom-level { min-width:48px; color:#dce7f5; font-size:12px; text-align:center; font-variant-numeric:tabular-nums; }
     @media(max-width:760px) { .registration-regions-dialog { width:96vw; height:84vh; } .registration-zoom-controls { left:9px; bottom:9px; } }
-    .registration-regions-close { position:absolute; z-index:5; top:-18px; right:-18px; width:44px; height:44px; padding:0; display:grid; place-items:center; border:1px solid rgba(255,255,255,.5); border-radius:50%; color:#fff; background:#10243b; font-family:Arial,sans-serif; font-size:32px; font-weight:400; line-height:1; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.55); } .registration-regions-close:hover { background:#1b3b5d; border-color:#fff; } .registration-regions-close:focus-visible { outline:3px solid #78baff; outline-offset:3px; }
+    .registration-regions-close { position:absolute; z-index:5; top:8px; left:8px; width:44px; height:44px; padding:0; display:grid; place-items:center; border:1px solid rgba(255,255,255,.5); border-radius:50%; color:#fff; background:#10243b; font-family:Arial,sans-serif; font-size:32px; font-weight:400; line-height:1; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.55); } .registration-regions-close:hover { background:#1b3b5d; border-color:#fff; } .registration-regions-close:focus-visible { outline:3px solid #78baff; outline-offset:3px; }
     @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } }
 
     .registry-result { width:100%; max-width:560px; margin:24px auto 0; }
@@ -465,8 +465,8 @@
           <div class="registration-regions-dialog" role="dialog" aria-modal="true" aria-label="Коды регионов России" data-i18n-aria-label="regionCodesDialog">
             <div class="registration-regions-viewport" id="registration-regions-viewport">
               <img id="registration-regions-image" src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt" draggable="false">
+              <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
             </div>
-            <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
             <div class="registration-zoom-controls" aria-label="Управление масштабом">
               <button type="button" id="regions-zoom-out" aria-label="Уменьшить">−</button>
               <span class="registration-zoom-level" id="regions-zoom-level">100%</span>
@@ -558,6 +558,16 @@
         const fitScale = Math.min(boxWidth / naturalWidth, boxHeight / naturalHeight);
         return { width: naturalWidth * fitScale, height: naturalHeight * fitScale };
       }
+      function positionRegionsClose() {
+        const fit = getRegionsFitSize();
+        const imageTop = (regionsViewport.clientHeight - fit.height) / 2;
+        const imageRight = (regionsViewport.clientWidth + fit.width) / 2;
+        const inset = 8;
+        const left = Math.max(8, Math.min(regionsViewport.clientWidth - regionsClose.offsetWidth - 8, imageRight - regionsClose.offsetWidth - inset));
+        const top = Math.max(8, Math.min(regionsViewport.clientHeight - regionsClose.offsetHeight - 8, imageTop + inset));
+        regionsClose.style.left = `${left}px`;
+        regionsClose.style.top = `${top}px`;
+      }
       function clampRegionsPosition() {
         const fit = getRegionsFitSize();
         const maxX = Math.max(0, (fit.width * regionsScale - regionsViewport.clientWidth) / 2);
@@ -627,9 +637,9 @@
       window.addEventListener("pointerup", stopRegionsDrag);
       window.addEventListener("pointercancel", stopRegionsDrag);
       regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
-      regionsImage.addEventListener("load", renderRegionsZoom);
-      window.addEventListener("resize", renderRegionsZoom);
-      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(renderRegionsZoom); });
+      regionsImage.addEventListener("load", () => { renderRegionsZoom(); positionRegionsClose(); });
+      window.addEventListener("resize", () => { renderRegionsZoom(); positionRegionsClose(); });
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(() => { renderRegionsZoom(); positionRegionsClose(); }); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
       document.addEventListener("keydown", event => {
         if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
