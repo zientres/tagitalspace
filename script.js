@@ -269,6 +269,12 @@ if (missingElements.length > 0) {
     const dictionary = translations[language];
     if (!dictionary) return;
 
+    try {
+      localStorage.setItem("tagitalspace-language", language);
+    } catch (error) {
+      console.warn("TagitalSpace: не удалось сохранить язык.", error);
+    }
+
     document.documentElement.lang = language;
     const titleKey = document.querySelector("title")?.dataset.i18n;
     document.title = titleKey && dictionary[titleKey] ? dictionary[titleKey] : dictionary.pageTitle;
@@ -351,7 +357,17 @@ if (missingElements.length > 0) {
     }
   });
 
-  setLanguage("ru");
+  let savedLanguage = "ru";
+  try {
+    const storedLanguage = localStorage.getItem("tagitalspace-language");
+    if (storedLanguage === "ru" || storedLanguage === "en") {
+      savedLanguage = storedLanguage;
+    }
+  } catch (error) {
+    console.warn("TagitalSpace: не удалось прочитать сохранённый язык.", error);
+  }
+
+  setLanguage(savedLanguage);
 
   /* TON Connect — только тестовая сеть TON Testnet */
   if (walletButton && window.TON_CONNECT_UI?.TonConnectUI) {
