@@ -207,7 +207,7 @@
     .registration-zoom-controls button:hover { border-color:#78baff; background:#173653; }
     .registration-zoom-level { min-width:48px; color:#dce7f5; font-size:12px; text-align:center; font-variant-numeric:tabular-nums; }
     @media(max-width:760px) { .registration-regions-dialog { width:96vw; height:84vh; } .registration-zoom-controls { left:9px; bottom:9px; } }
-    .registration-regions-close { position:absolute; z-index:5; top:8px; left:8px; width:44px; height:44px; padding:0; display:grid; place-items:center; border:1px solid rgba(255,255,255,.5); border-radius:50%; color:#fff; background:#10243b; font-family:Arial,sans-serif; font-size:32px; font-weight:400; line-height:1; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.55); } .registration-regions-close:hover { background:#1b3b5d; border-color:#fff; } .registration-regions-close:focus-visible { outline:3px solid #78baff; outline-offset:3px; }
+    .registration-regions-close { position:absolute; z-index:5; top:-52px; right:0; left:auto; width:44px; height:44px; padding:0; display:grid; place-items:center; border:1px solid rgba(255,255,255,.5); border-radius:50%; color:#fff; background:#10243b; font-family:Arial,sans-serif; font-size:32px; font-weight:400; line-height:1; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.55); } .registration-regions-close:hover { background:#1b3b5d; border-color:#fff; } .registration-regions-close:focus-visible { outline:3px solid #78baff; outline-offset:3px; }
     @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } }
 
     .registry-result { width:100%; max-width:560px; margin:24px auto 0; }
@@ -558,21 +558,6 @@
         const fitScale = Math.min(boxWidth / naturalWidth, boxHeight / naturalHeight);
         return { width: naturalWidth * fitScale, height: naturalHeight * fitScale };
       }
-      function positionRegionsClose() {
-        const fit = getRegionsFitSize();
-        const imageLeft = (regionsViewport.clientWidth - fit.width * regionsScale) / 2 + regionsX;
-        const imageTop = (regionsViewport.clientHeight - fit.height * regionsScale) / 2 + regionsY;
-        const imageRight = imageLeft + fit.width * regionsScale;
-        const buttonWidth = regionsClose.offsetWidth || 44;
-        const buttonHeight = regionsClose.offsetHeight || 44;
-        const gap = 8;
-        // Кнопка находится снаружи верхнего правого угла изображения.
-        // Если угол уходит за край окна просмотра, фиксируем кнопку у ближайшей видимой границы.
-        const left = Math.max(8, Math.min(regionsViewport.clientWidth - buttonWidth - 8, imageRight + gap));
-        const top = Math.max(8, Math.min(regionsViewport.clientHeight - buttonHeight - 8, imageTop - buttonHeight - gap));
-        regionsClose.style.left = `${left}px`;
-        regionsClose.style.top = `${top}px`;
-      }
       function clampRegionsPosition() {
         const fit = getRegionsFitSize();
         const maxX = Math.max(0, (fit.width * regionsScale - regionsViewport.clientWidth) / 2);
@@ -583,7 +568,6 @@
       function renderRegionsZoom() {
         clampRegionsPosition();
         regionsImage.style.transform = `translate(${regionsX}px, ${regionsY}px) scale(${regionsScale})`;
-        positionRegionsClose();
         zoomLevel.textContent = `${Math.round(regionsScale * 100)}%`;
         regionsViewport.classList.toggle("is-dragging", Boolean(regionsDrag));
       }
