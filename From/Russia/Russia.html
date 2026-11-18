@@ -196,8 +196,8 @@
     .registration-region-help a:hover { color:#a8d4ff; text-decoration:underline; }
     .registration-regions-modal { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:32px; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .18s ease,visibility .18s ease; }
     .registration-regions-modal.is-open { opacity:1; visibility:visible; pointer-events:auto; }
-    .registration-regions-backdrop { position:absolute; inset:0; background:rgba(2,8,17,.86); backdrop-filter:blur(5px); }
-    .registration-regions-dialog { position:relative; z-index:1; width:min(1100px,94vw); height:min(90vh,900px); display:flex; flex-direction:column; overflow:hidden; border-radius:12px; background:#07172b; box-shadow:0 18px 70px rgba(0,0,0,.5); transform:scale(.96) translateY(8px); transition:transform .2s ease; }
+    .registration-regions-backdrop { position:absolute; inset:0; background:transparent; backdrop-filter:none; }
+    .registration-regions-dialog { position:relative; z-index:1; width:min(1100px,94vw); height:min(90vh,900px); display:flex; flex-direction:column; overflow:visible; border-radius:0; background:transparent; box-shadow:none; transform:scale(.96) translateY(8px); transition:transform .2s ease; }
     .registration-regions-modal.is-open .registration-regions-dialog { transform:scale(1) translateY(0); }
     .registration-regions-viewport { position:relative; flex:1; min-height:0; overflow:hidden; cursor:grab; touch-action:none; }
     .registration-regions-viewport.is-dragging { cursor:grabbing; }
@@ -579,25 +579,35 @@
         setRegionsZoom(regionsScale + (event.deltaY < 0 ? 0.2 : -0.2));
       }, { passive: false });
       regionsViewport.addEventListener("pointerdown", event => {
-        if (regionsScale <= 1) return;
-        regionsDrag = { pointerId: event.pointerId, startX: event.clientX - regionsX, startY: event.clientY - regionsY };
-        regionsViewport.setPointerCapture(event.pointerId);
+        if (regionsScale <= 1 || (event.pointerType === "mouse" && event.button !== 0)) return;
+        event.preventDefault();
+        regionsDrag = {
+          pointerId: event.pointerId,
+          startX: event.clientX - regionsX,
+          startY: event.clientY - regionsY
+        };
+        try {
+          regionsViewport.setPointerCapture(event.pointerId);
+        } catch (_) {
+          // Перетаскивание продолжит обрабатываться через window.
+        }
         renderRegionsZoom();
       });
-      regionsViewport.addEventListener("pointermove", event => {
+      window.addEventListener("pointermove", event => {
         if (!regionsDrag || regionsDrag.pointerId !== event.pointerId) return;
+        event.preventDefault();
         regionsX = event.clientX - regionsDrag.startX;
         regionsY = event.clientY - regionsDrag.startY;
         renderRegionsZoom();
-      });
+      }, { passive: false });
       function stopRegionsDrag(event) {
         if (regionsDrag && (!event || regionsDrag.pointerId === event.pointerId)) {
           regionsDrag = null;
           renderRegionsZoom();
         }
       }
-      regionsViewport.addEventListener("pointerup", stopRegionsDrag);
-      regionsViewport.addEventListener("pointercancel", stopRegionsDrag);
+      window.addEventListener("pointerup", stopRegionsDrag);
+      window.addEventListener("pointercancel", stopRegionsDrag);
       regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
       regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; renderRegionsZoom(); openRegions(); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
