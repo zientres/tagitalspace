@@ -197,9 +197,16 @@
     .registration-regions-modal { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:32px; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .18s ease,visibility .18s ease; }
     .registration-regions-modal.is-open { opacity:1; visibility:visible; pointer-events:auto; }
     .registration-regions-backdrop { position:absolute; inset:0; background:rgba(2,8,17,.86); backdrop-filter:blur(5px); }
-    .registration-regions-dialog { position:relative; z-index:1; width:min(1100px,94vw); max-height:90vh; transform:scale(.96) translateY(8px); transition:transform .2s ease; }
+    .registration-regions-dialog { position:relative; z-index:1; width:min(1100px,94vw); height:min(90vh,900px); display:flex; flex-direction:column; overflow:hidden; border-radius:12px; background:#07172b; box-shadow:0 18px 70px rgba(0,0,0,.5); transform:scale(.96) translateY(8px); transition:transform .2s ease; }
     .registration-regions-modal.is-open .registration-regions-dialog { transform:scale(1) translateY(0); }
-    .registration-regions-dialog img { display:block; width:100%; max-height:90vh; object-fit:contain; border-radius:12px; box-shadow:0 18px 70px rgba(0,0,0,.5); }
+    .registration-regions-viewport { position:relative; flex:1; min-height:0; overflow:hidden; cursor:grab; touch-action:none; }
+    .registration-regions-viewport.is-dragging { cursor:grabbing; }
+    .registration-regions-dialog img { display:block; width:100%; height:100%; max-height:none; object-fit:contain; user-select:none; -webkit-user-drag:none; transform-origin:center center; will-change:transform; }
+    .registration-zoom-controls { position:absolute; z-index:3; left:14px; bottom:14px; display:flex; align-items:center; gap:6px; padding:6px; border:1px solid rgba(120,186,255,.2); border-radius:10px; background:rgba(6,20,38,.9); backdrop-filter:blur(8px); }
+    .registration-zoom-controls button { width:36px; height:36px; border:1px solid rgba(120,186,255,.2); border-radius:7px; color:#f3f6fb; background:#10243b; font-size:21px; cursor:pointer; }
+    .registration-zoom-controls button:hover { border-color:#78baff; background:#173653; }
+    .registration-zoom-level { min-width:48px; color:#dce7f5; font-size:12px; text-align:center; font-variant-numeric:tabular-nums; }
+    @media(max-width:760px) { .registration-regions-dialog { width:96vw; height:84vh; } .registration-zoom-controls { left:9px; bottom:9px; } }
     .registration-regions-close { position:absolute; z-index:2; top:-16px; right:-16px; width:38px; height:38px; border:1px solid rgba(255,255,255,.28); border-radius:50%; color:#fff; background:#10243b; font-size:27px; line-height:1; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.35); }
     @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } .registration-regions-close { top:-13px; right:-5px; } }
 
@@ -457,7 +464,15 @@
           <div class="registration-regions-backdrop" data-regions-close></div>
           <div class="registration-regions-dialog" role="dialog" aria-modal="true" aria-label="Коды регионов России" data-i18n-aria-label="regionCodesDialog">
             <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
-            <img src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt">
+            <div class="registration-regions-viewport" id="registration-regions-viewport">
+              <img id="registration-regions-image" src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt" draggable="false">
+            </div>
+            <div class="registration-zoom-controls" aria-label="Управление масштабом">
+              <button type="button" id="regions-zoom-out" aria-label="Уменьшить">−</button>
+              <span class="registration-zoom-level" id="regions-zoom-level">100%</span>
+              <button type="button" id="regions-zoom-in" aria-label="Увеличить">+</button>
+              <button type="button" id="regions-zoom-reset" aria-label="Сбросить масштаб">↺</button>
+            </div>
           </div>
         </div>
 
@@ -527,6 +542,23 @@
       const regionHelp = document.getElementById("registration-region-help");
       const regionsModal = document.getElementById("registration-regions-modal");
       const regionsOpen = document.getElementById("registration-regions-open");
+      const regionsViewport = document.getElementById("registration-regions-viewport");
+      const regionsImage = document.getElementById("registration-regions-image");
+      const zoomLevel = document.getElementById("regions-zoom-level");
+      let regionsScale = 1;
+      let regionsX = 0;
+      let regionsY = 0;
+      let regionsDrag = null;
+      function renderRegionsZoom() {
+        regionsImage.style.transform = `translate(${regionsX}px, ${regionsY}px) scale(${regionsScale})`;
+        zoomLevel.textContent = `${Math.round(regionsScale * 100)}%`;
+        regionsViewport.classList.toggle("is-dragging", Boolean(regionsDrag));
+      }
+      function setRegionsZoom(nextScale) {
+        regionsScale = Math.max(1, Math.min(5, nextScale));
+        if (regionsScale === 1) regionsX = regionsY = 0;
+        renderRegionsZoom();
+      }
       function openRegions() {
         regionsModal.classList.add("is-open");
         regionsModal.setAttribute("aria-hidden", "false");
@@ -539,7 +571,35 @@
         document.body.style.overflow = "";
         regionsOpen.focus();
       }
-      regionsOpen.addEventListener("click", event => { event.preventDefault(); openRegions(); });
+      document.getElementById("regions-zoom-in").addEventListener("click", () => setRegionsZoom(regionsScale + 0.25));
+      document.getElementById("regions-zoom-out").addEventListener("click", () => setRegionsZoom(regionsScale - 0.25));
+      document.getElementById("regions-zoom-reset").addEventListener("click", () => setRegionsZoom(1));
+      regionsViewport.addEventListener("wheel", event => {
+        event.preventDefault();
+        setRegionsZoom(regionsScale + (event.deltaY < 0 ? 0.2 : -0.2));
+      }, { passive: false });
+      regionsViewport.addEventListener("pointerdown", event => {
+        if (regionsScale <= 1) return;
+        regionsDrag = { pointerId: event.pointerId, startX: event.clientX - regionsX, startY: event.clientY - regionsY };
+        regionsViewport.setPointerCapture(event.pointerId);
+        renderRegionsZoom();
+      });
+      regionsViewport.addEventListener("pointermove", event => {
+        if (!regionsDrag || regionsDrag.pointerId !== event.pointerId) return;
+        regionsX = event.clientX - regionsDrag.startX;
+        regionsY = event.clientY - regionsDrag.startY;
+        renderRegionsZoom();
+      });
+      function stopRegionsDrag(event) {
+        if (regionsDrag && (!event || regionsDrag.pointerId === event.pointerId)) {
+          regionsDrag = null;
+          renderRegionsZoom();
+        }
+      }
+      regionsViewport.addEventListener("pointerup", stopRegionsDrag);
+      regionsViewport.addEventListener("pointercancel", stopRegionsDrag);
+      regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; renderRegionsZoom(); openRegions(); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
       document.addEventListener("keydown", event => {
         if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
