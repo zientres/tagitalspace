@@ -551,6 +551,11 @@
       let regionsY = 0;
       let regionsDrag = null;
       const regionsClose = regionsModal.querySelector(".registration-regions-close");
+      const regionsCloseRow = regionsClose.parentElement;
+      function positionRegionsCloseRow() {
+        const fit = getRegionsFitSize();
+        regionsCloseRow.style.width = `${fit.width}px`;
+      }
       function getRegionsFitSize() {
         const boxWidth = regionsViewport.clientWidth;
         const boxHeight = regionsViewport.clientHeight;
@@ -628,9 +633,9 @@
       window.addEventListener("pointerup", stopRegionsDrag);
       window.addEventListener("pointercancel", stopRegionsDrag);
       regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
-      regionsImage.addEventListener("load", renderRegionsZoom);
-      window.addEventListener("resize", renderRegionsZoom);
-      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(renderRegionsZoom); });
+      regionsImage.addEventListener("load", () => { positionRegionsCloseRow(); renderRegionsZoom(); });
+      window.addEventListener("resize", () => { positionRegionsCloseRow(); renderRegionsZoom(); });
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(() => { positionRegionsCloseRow(); renderRegionsZoom(); }); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
       document.addEventListener("keydown", event => {
         if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
