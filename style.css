@@ -970,8 +970,21 @@ button {
 
 /* Кнопка перехода к коллекциям — в стиле кнопки Telegram-канала */
 .collection-browse {
-  margin-top: 24px;
+  margin-top: 22px;
+  border: none;
+  font: inherit;
+  cursor: pointer;
   opacity: 0.65;
+  gap: 10px;
+}
+
+.collection-browse::after {
+  content: "↑";
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  transform: translateY(-1px);
 }
 
 .country-network {
