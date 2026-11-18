@@ -968,6 +968,12 @@ button {
   transform: translateY(-2px);
 }
 
+/* Кнопка перехода к коллекциям — в стиле кнопки Telegram-канала */
+.collection-browse {
+  margin-top: 24px;
+  opacity: 0.65;
+}
+
 .country-network {
   --network-size: min(580px, 100%);
 
