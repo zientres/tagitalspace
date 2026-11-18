@@ -463,16 +463,21 @@ if (missingElements.length > 0) {
             bytes[35] = crc & 0xff;
             let binary = "";
             bytes.forEach(byte => binary += String.fromCharCode(byte));
-            connectedWalletAddress = btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/, "");
+            connectedWalletAddress = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
           } else {
             connectedWalletAddress = address;
           }
           walletButton.title = connectedWalletAddress;
+          const shortWalletAddress = connectedWalletAddress.length > 13
+            ? connectedWalletAddress.slice(0, 6) + "..." + connectedWalletAddress.slice(-4)
+            : connectedWalletAddress;
         }
 
         const language = document.documentElement.lang || "ru";
         walletButton.textContent =
-          connectedWalletAddress || translations[language]?.connectWallet || translations.ru.connectWallet;
+          connectedWalletAddress
+            ? connectedWalletAddress.slice(0, 6) + "..." + connectedWalletAddress.slice(-4)
+            : translations[language]?.connectWallet || translations.ru.connectWallet;
       });
 
       window.tagitalSpaceTonConnect = tonConnectUI;
