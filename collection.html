@@ -226,7 +226,20 @@
     .registry-bid-input:focus { border-color:#78baff; box-shadow:0 0 0 3px rgba(120,186,255,.08); }
     @media(max-width:480px) { .registry-result-card { padding:20px 14px; gap:13px; } .registry-result-plate { min-height:90px; grid-template-columns:minmax(0,1fr) 50px; padding:10px 12px; } .registry-result-plate-region { min-height:55px; font-size:21px; } .registry-timer-value { font-size:26px; } }
 
-  </style>
+  
+    .collection-preview-ru {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .collection-flag-round {
+      display: block;
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+    }
+</style>
 </head>
 <body>
   <header class="header">
@@ -323,11 +336,7 @@
       <div class="collections-grid">
         <button class="country-collection-card" id="open-russia-collection" type="button" aria-label="Открыть коллекцию России" data-i18n-aria-label="openRussiaCollection">
           <span class="collection-preview collection-preview-ru" aria-hidden="true">
-            <span class="flag-diagonal">
-              <span class="flag-band flag-band-white"></span>
-              <span class="flag-band flag-band-blue"></span>
-              <span class="flag-band flag-band-red"></span>
-            </span>
+            <img class="collection-flag-round" src="ru.png" alt="">
           </span>
           <span class="collection-card-info"><span class="collection-card-name" data-i18n="countryRussia">Россия</span></span>
         </button>
