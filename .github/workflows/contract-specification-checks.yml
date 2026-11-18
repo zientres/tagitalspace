@@ -1,0 +1,33 @@
+name: Contract specification checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "script.js"
+      - "From/Russia/Russia.html"
+      - ".github/workflows/contract-specification-checks.yml"
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "script.js"
+      - "From/Russia/Russia.html"
+      - ".github/workflows/contract-specification-checks.yml"
+
+jobs:
+  specification-vectors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check script.js
+          node --check contracts/tests/verify-vectors.mjs
+      - name: Verify pricing and auction timing vectors
+        run: node contracts/tests/verify-vectors.mjs
