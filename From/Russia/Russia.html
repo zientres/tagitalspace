@@ -207,8 +207,8 @@
     .registration-zoom-controls button:hover { border-color:#78baff; background:#173653; }
     .registration-zoom-level { min-width:48px; color:#dce7f5; font-size:12px; text-align:center; font-variant-numeric:tabular-nums; }
     @media(max-width:760px) { .registration-regions-dialog { width:96vw; height:84vh; } .registration-zoom-controls { left:9px; bottom:9px; } }
-    .registration-regions-close { position:absolute; z-index:2; top:-16px; right:-16px; width:38px; height:38px; border:1px solid rgba(255,255,255,.28); border-radius:50%; color:#fff; background:#10243b; font-size:27px; line-height:1; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.35); }
-    @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } .registration-regions-close { top:-13px; right:-5px; } }
+    .registration-regions-close { position:absolute; z-index:4; top:0; left:0; width:38px; height:38px; border:1px solid rgba(255,255,255,.28); border-radius:50%; color:#fff; background:#10243b; font-size:27px; line-height:1; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.35); }
+    @media(max-width:760px) { .registration-region-help { left:auto; right:0; top:calc(100% + 8px); transform:none; max-width:min(220px,70vw); } .registration-regions-modal { padding:22px 12px; } .registration-regions-dialog { width:96vw; } }
 
     .registry-result { width:100%; max-width:560px; margin:24px auto 0; }
     .registry-result[hidden] { display:none; }
@@ -463,8 +463,8 @@
         <div class="registration-regions-modal" id="registration-regions-modal" aria-hidden="true">
           <div class="registration-regions-backdrop" data-regions-close></div>
           <div class="registration-regions-dialog" role="dialog" aria-modal="true" aria-label="Коды регионов России" data-i18n-aria-label="regionCodesDialog">
-            <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
             <div class="registration-regions-viewport" id="registration-regions-viewport">
+              <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
               <img id="registration-regions-image" src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt" draggable="false">
             </div>
             <div class="registration-zoom-controls" aria-label="Управление масштабом">
@@ -549,10 +549,35 @@
       let regionsX = 0;
       let regionsY = 0;
       let regionsDrag = null;
+      const regionsClose = regionsModal.querySelector(".registration-regions-close");
+      function getRegionsFitSize() {
+        const boxWidth = regionsViewport.clientWidth;
+        const boxHeight = regionsViewport.clientHeight;
+        const naturalWidth = regionsImage.naturalWidth || boxWidth;
+        const naturalHeight = regionsImage.naturalHeight || boxHeight;
+        const fitScale = Math.min(boxWidth / naturalWidth, boxHeight / naturalHeight);
+        return { width: naturalWidth * fitScale, height: naturalHeight * fitScale };
+      }
+      function clampRegionsPosition() {
+        const fit = getRegionsFitSize();
+        const maxX = Math.max(0, (fit.width * regionsScale - regionsViewport.clientWidth) / 2);
+        const maxY = Math.max(0, (fit.height * regionsScale - regionsViewport.clientHeight) / 2);
+        regionsX = Math.max(-maxX, Math.min(maxX, regionsX));
+        regionsY = Math.max(-maxY, Math.min(maxY, regionsY));
+      }
+      function positionRegionsClose() {
+        const fit = getRegionsFitSize();
+        const top = (regionsViewport.clientHeight - fit.height) / 2 - 19;
+        const left = (regionsViewport.clientWidth + fit.width) / 2 - 19;
+        regionsClose.style.top = `${top}px`;
+        regionsClose.style.left = `${left}px`;
+      }
       function renderRegionsZoom() {
+        clampRegionsPosition();
         regionsImage.style.transform = `translate(${regionsX}px, ${regionsY}px) scale(${regionsScale})`;
         zoomLevel.textContent = `${Math.round(regionsScale * 100)}%`;
         regionsViewport.classList.toggle("is-dragging", Boolean(regionsDrag));
+        positionRegionsClose();
       }
       function setRegionsZoom(nextScale) {
         regionsScale = Math.max(1, Math.min(5, nextScale));
@@ -598,6 +623,7 @@
         event.preventDefault();
         regionsX = event.clientX - regionsDrag.startX;
         regionsY = event.clientY - regionsDrag.startY;
+        clampRegionsPosition();
         renderRegionsZoom();
       }, { passive: false });
       function stopRegionsDrag(event) {
@@ -609,7 +635,9 @@
       window.addEventListener("pointerup", stopRegionsDrag);
       window.addEventListener("pointercancel", stopRegionsDrag);
       regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
-      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; renderRegionsZoom(); openRegions(); });
+      regionsImage.addEventListener("load", renderRegionsZoom);
+      window.addEventListener("resize", renderRegionsZoom);
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(renderRegionsZoom); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
       document.addEventListener("keydown", event => {
         if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
