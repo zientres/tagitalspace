@@ -4,7 +4,7 @@ This directory contains the on-chain implementation for TagitalSpace. All deploy
 
 ## Plate starting-price rules
 
-The initial auction bid is calculated by `contracts/func/plate-pricing.fc`. The six-character body is used; the region code is not part of this calculation.
+The initial auction bid is calculated by `contracts/tolk/plate-pricing.tolk`. The six-character body is used; the region code is not part of this calculation.
 
 | Feature | Amount |
 |---|---:|
@@ -35,4 +35,8 @@ TagitalSpace uses a 90-minute initial auction duration (5,400 seconds). This is 
 
 When a valid bid arrives with less than one hour remaining, the auction end time is moved to `now + 3,600` seconds, leaving a full hour after that bid. A bid with exactly one hour or more remaining does not extend the auction. This matches the extension rule used by the current TON DNS item contract while retaining TagitalSpace's 90-minute initial period.
 
-The reusable FunC timing helper is `contracts/func/auction-timing.fc`; boundary and extension cases are listed in `contracts/tests/auction-timing-vectors.json`. These JSON vectors are specifications for the test suite, not evidence that the FunC helper has already been compiled or executed.
+The reusable Tolk timing helper is `contracts/tolk/auction-timing.tolk`; boundary and extension cases are listed in `contracts/tests/auction-timing-vectors.json`. These JSON vectors are specifications for the test suite, not evidence that the Tolk helper has already been compiled or executed.
+
+## Tolk migration status
+
+New TagitalSpace-specific helpers are being ported to Tolk under `contracts/tolk/`. The upstream TON DNS FunC sources are retained temporarily as the migration reference and must not be deployed. The migration is not complete until the collection and item contracts, utility modules, opcodes, parameters, build script, and test coverage have all been ported and checked. The upstream GPL-3.0 license and required notices must remain available.
