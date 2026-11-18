@@ -122,6 +122,9 @@ if (missingElements.length > 0) {
       navMarket: "Рынок",
       navCommunity: "Сообщество",
       connectWallet: "Подключить кошелёк",
+      disconnectWalletTitle: "Вы точно хотите отвязать кошелёк?",
+      disconnectWalletConfirm: "Да",
+      disconnectWalletCancel: "Нет",
       settingsTitle: "Настройки",
       languageLabel: "Язык сайта",
       heroTitle: "TagitalSpace — цифровое пространство коллекций номерных знаков со всего мира",
@@ -175,6 +178,9 @@ if (missingElements.length > 0) {
       navMarket: "Market",
       navCommunity: "Community",
       connectWallet: "Connect wallet",
+      disconnectWalletTitle: "Are you sure you want to disconnect your wallet?",
+      disconnectWalletConfirm: "Yes",
+      disconnectWalletCancel: "No",
       settingsTitle: "Settings",
       languageLabel: "Website language",
       heroTitle: "TagitalSpace — a digital space for license plate collections from around the world",
@@ -360,7 +366,60 @@ if (missingElements.length > 0) {
         uiPreferences: { theme: "DARK" }
       };
 
-      walletButton.addEventListener("click", () => tonConnectUI.openModal());
+      const disconnectDialog = document.createElement("div");
+      disconnectDialog.className = "wallet-disconnect-modal";
+      disconnectDialog.hidden = true;
+      disconnectDialog.innerHTML = '<div class="wallet-disconnect-backdrop"></div><section class="wallet-disconnect-dialog" role="dialog" aria-modal="true" aria-labelledby="wallet-disconnect-title"><p class="wallet-disconnect-title" id="wallet-disconnect-title"></p><div class="wallet-disconnect-actions"><button class="wallet-disconnect-confirm" type="button"></button><button class="wallet-disconnect-cancel" type="button"></button></div></section>';
+      document.body.appendChild(disconnectDialog);
+
+      const disconnectTitle = disconnectDialog.querySelector(".wallet-disconnect-title");
+      const disconnectConfirm = disconnectDialog.querySelector(".wallet-disconnect-confirm");
+      const disconnectCancel = disconnectDialog.querySelector(".wallet-disconnect-cancel");
+      let previousWalletFocus = null;
+
+      function closeDisconnectDialog() {
+        disconnectDialog.hidden = true;
+        if (previousWalletFocus) previousWalletFocus.focus({ preventScroll: true });
+      }
+
+      function updateDisconnectDialogLanguage() {
+        const dictionary = translations[document.documentElement.lang] || translations.ru;
+        disconnectTitle.textContent = dictionary.disconnectWalletTitle;
+        disconnectConfirm.textContent = dictionary.disconnectWalletConfirm;
+        disconnectCancel.textContent = dictionary.disconnectWalletCancel;
+      }
+
+      function openDisconnectDialog() {
+        previousWalletFocus = document.activeElement;
+        updateDisconnectDialogLanguage();
+        disconnectDialog.hidden = false;
+        disconnectCancel.focus({ preventScroll: true });
+      }
+
+      walletButton.addEventListener("click", () => {
+        if (connectedWalletAddress) {
+          openDisconnectDialog();
+        } else {
+          tonConnectUI.openModal();
+        }
+      });
+
+      disconnectCancel.addEventListener("click", closeDisconnectDialog);
+      disconnectDialog.querySelector(".wallet-disconnect-backdrop").addEventListener("click", closeDisconnectDialog);
+      disconnectConfirm.addEventListener("click", async () => {
+        disconnectConfirm.disabled = true;
+        try {
+          await tonConnectUI.disconnect();
+          closeDisconnectDialog();
+        } catch (error) {
+          console.error("TagitalSpace: не удалось отключить кошелёк.", error);
+        } finally {
+          disconnectConfirm.disabled = false;
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !disconnectDialog.hidden) closeDisconnectDialog();
+      });
 
       tonConnectUI.onStatusChange((wallet) => {
         if (!wallet) {
