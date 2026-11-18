@@ -465,8 +465,8 @@
           <div class="registration-regions-dialog" role="dialog" aria-modal="true" aria-label="Коды регионов России" data-i18n-aria-label="regionCodesDialog">
             <div class="registration-regions-viewport" id="registration-regions-viewport">
               <img id="registration-regions-image" src="From/Russia/regRussia.jpg" alt="Таблица разрешённых автомобильных кодов регионов России" data-i18n-alt="regionCodesImageAlt" draggable="false">
-              <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
             </div>
+            <button class="registration-regions-close" type="button" aria-label="Закрыть" data-i18n-aria-label="close" data-regions-close>×</button>
             <div class="registration-zoom-controls" aria-label="Управление масштабом">
               <button type="button" id="regions-zoom-out" aria-label="Уменьшить">−</button>
               <span class="registration-zoom-level" id="regions-zoom-level">100%</span>
@@ -560,11 +560,16 @@
       }
       function positionRegionsClose() {
         const fit = getRegionsFitSize();
-        const imageTop = (regionsViewport.clientHeight - fit.height) / 2;
-        const imageRight = (regionsViewport.clientWidth + fit.width) / 2;
-        const inset = 8;
-        const left = Math.max(8, Math.min(regionsViewport.clientWidth - regionsClose.offsetWidth - 8, imageRight - regionsClose.offsetWidth - inset));
-        const top = Math.max(8, Math.min(regionsViewport.clientHeight - regionsClose.offsetHeight - 8, imageTop + inset));
+        const imageLeft = (regionsViewport.clientWidth - fit.width * regionsScale) / 2 + regionsX;
+        const imageTop = (regionsViewport.clientHeight - fit.height * regionsScale) / 2 + regionsY;
+        const imageRight = imageLeft + fit.width * regionsScale;
+        const buttonWidth = regionsClose.offsetWidth || 44;
+        const buttonHeight = regionsClose.offsetHeight || 44;
+        const gap = 8;
+        // Кнопка находится снаружи верхнего правого угла изображения.
+        // Если угол уходит за край окна просмотра, фиксируем кнопку у ближайшей видимой границы.
+        const left = Math.max(8, Math.min(regionsViewport.clientWidth - buttonWidth - 8, imageRight + gap));
+        const top = Math.max(8, Math.min(regionsViewport.clientHeight - buttonHeight - 8, imageTop - buttonHeight - gap));
         regionsClose.style.left = `${left}px`;
         regionsClose.style.top = `${top}px`;
       }
@@ -578,6 +583,7 @@
       function renderRegionsZoom() {
         clampRegionsPosition();
         regionsImage.style.transform = `translate(${regionsX}px, ${regionsY}px) scale(${regionsScale})`;
+        positionRegionsClose();
         zoomLevel.textContent = `${Math.round(regionsScale * 100)}%`;
         regionsViewport.classList.toggle("is-dragging", Boolean(regionsDrag));
       }
@@ -637,9 +643,9 @@
       window.addEventListener("pointerup", stopRegionsDrag);
       window.addEventListener("pointercancel", stopRegionsDrag);
       regionsViewport.addEventListener("lostpointercapture", stopRegionsDrag);
-      regionsImage.addEventListener("load", () => { renderRegionsZoom(); positionRegionsClose(); });
-      window.addEventListener("resize", () => { renderRegionsZoom(); positionRegionsClose(); });
-      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(() => { renderRegionsZoom(); positionRegionsClose(); }); });
+      regionsImage.addEventListener("load", renderRegionsZoom);
+      window.addEventListener("resize", renderRegionsZoom);
+      regionsOpen.addEventListener("click", event => { event.preventDefault(); regionsScale = 1; regionsX = regionsY = 0; openRegions(); requestAnimationFrame(renderRegionsZoom); });
       regionsModal.querySelectorAll("[data-regions-close]").forEach(el => el.addEventListener("click", closeRegions));
       document.addEventListener("keydown", event => {
         if (event.key === "Escape" && regionsModal.classList.contains("is-open")) closeRegions();
