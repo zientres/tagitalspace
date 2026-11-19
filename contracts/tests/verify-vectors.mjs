@@ -140,7 +140,7 @@ const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
-assert.equal(protocolOpcodes.length, 3, "Registry start, treasury-deposit and treasury-claim messages are expected");
+assert.equal(protocolOpcodes.length, 4, "Registry and Registry-to-item protocol messages are expected");
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
 assert.match(registryContract, /StartPlateAuction =>/);
@@ -152,7 +152,7 @@ assert.match(registryState, /nftItemCode: cell/);
 assert.doesNotMatch(registryState + registryProtocol + registryContract, /auctionManagerAddress|ManagedAuction|Auction Manager/i);
 assert.match(itemContract, /contract TagitalSpacePlateItem/);
 assert.match(itemContract, /PlateItemInitData/);
-assert.match(registryProtocol, /struct \\(0x54531006\\) PlateItemInitData/);
+assert.match(registryProtocol, /struct \(0x54531006\) PlateItemInitData/);
 assert.match(itemContract, /tagitalSpaceProcessPlateBid/);
 assert.match(itemContract, /tagitalSpaceSettlePlateAuction/);
 assert.match(itemState, /auction: Cell<PlateAuctionState>\?/);
