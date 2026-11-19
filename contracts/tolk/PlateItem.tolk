@@ -12,7 +12,7 @@ contract TagitalSpacePlateItem {
     storageAtDeployment: PlateItemStorageNotInitialized
 }
 
-type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | ClaimPlatePayout
+type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | ClaimPlatePayout | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
     val loading = startLoadingPlateItemStorage();
@@ -38,7 +38,7 @@ fun onInternalMessage(in: InMessage) {
             auction: initialAuction.toCell(),
             pendingOwnerPayout: 0,
             pendingTreasuryPayout: 0,
-            pendingSecurityPayout: 0,
+            pendingSecurityPayout: 0,\n            lastRenewalTime: blockchain.now(),
         };
         storage.save();
         return;
@@ -87,6 +87,13 @@ fun onInternalMessage(in: InMessage) {
                 in.senderAddress,
                 msg.queryId,
                 msg.beneficiaryKind,
+                mutate storage,
+            );
+        }
+        TransferPlateOwnership => {
+            tagitalSpaceTransferPlateOwnership(
+                in.senderAddress,
+                msg.newOwnerAddress,
                 mutate storage,
             );
         }
