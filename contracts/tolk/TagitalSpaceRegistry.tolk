@@ -4,6 +4,7 @@ import "registry-storage"
 import "registry-request"
 import "plate-identity"
 import "plate-pricing"
+import "plate-item-state"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
