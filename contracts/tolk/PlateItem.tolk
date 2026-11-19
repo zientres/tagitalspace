@@ -15,6 +15,7 @@ contract TagitalSpacePlateItem {
 type AllowedPlateItemMessage =
     | PlateItemBid
     | SettlePlateAuction
+    | RetryPlateItemPayout
     | RenewPlateOwnership
     | TransferPlateOwnership
 
@@ -44,6 +45,7 @@ fun onInternalMessage(in: InMessage) {
             ownerAddress: null,
             auction: initialAuction.toCell(),
             lastRenewalTime: blockchain.now(),
+            claimablePayout: 0,
         };
         storage.save();
         return;
@@ -103,7 +105,19 @@ fun onInternalMessage(in: InMessage) {
         SettlePlateAuction => {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 778;
-            tagitalSpaceSettlePlateAuction(mutate storage, unpacked.1, msg.queryId);
+            tagitalSpaceSettlePlateAuction(
+                in.valueCoins,
+                mutate storage,
+                unpacked.1,
+                msg.queryId,
+            );
+        }
+        RetryPlateItemPayout => {
+            tagitalSpaceRetryPlatePayout(
+                in.valueCoins,
+                mutate storage,
+                msg.queryId,
+            );
         }
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
@@ -116,6 +130,21 @@ fun onInternalMessage(in: InMessage) {
             );
         }
     }
+}
+
+fun onBouncedMessage(in: InMessageBounced) {
+    val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
+    val payout = lazy PlateItemRevenuePayout.fromSlice(rich.originalBody.beginParse());
+
+    var storage = startLoadingPlateItemStorage().parseInitialized();
+    val immutable = storage.immutable.load();
+
+    // Only a bounced payout from the immutable revenue destination is recoverable here.
+    assert (in.senderAddress == immutable.auctionRevenueAddress) throw 789;
+    assert (payout.amount > 0) throw 789;
+
+    storage.claimablePayout += payout.amount;
+    storage.save();
 }
 
 get fun get_nft_data(): PlateItemNftData {
@@ -153,6 +182,13 @@ get fun get_auction_info(): PlateAuctionState? {
         return null;
     }
     return storage.auction!.load();
+}
+
+get fun get_claimable_payout(): coins {
+    val loading = startLoadingPlateItemStorage();
+    assert (loading.isInitialized()) throw 794;
+    val storage = loading.parseInitialized();
+    return storage.claimablePayout;
 }
 
 get fun get_expiration_time(): uint64 {
