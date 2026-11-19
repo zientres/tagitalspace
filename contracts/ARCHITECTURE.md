@@ -89,3 +89,15 @@ This is a storage schema only. It does not yet implement registry message handle
 
 
 The Russia-specific allowlist is implemented separately in `contracts/tolk/russia-regions.tolk` and mirrors the 212 codes currently used by `From/Russia/Russia.html`; region 20 is excluded. The Russia registry must enforce this allowlist. The generic numeric 1–999 check is not sufficient for a Russia plate.
+
+
+## Auction Manager storage layout (first draft)
+
+`contracts/tolk/auction-manager-state.tolk` defines:
+- Per-auction identity, plate, region, status, highest bidder/bid, deadline, and payout recipients.
+- Explicit ACTIVE, SETTLED, and CANCELLED states.
+- Separate maps for bidder refunds, owner payouts, and development/security payouts.
+- Aggregate liabilities for active bid escrow, refunds, owner payouts, and security payouts.
+- A separately accounted 30% treasury balance.
+
+Settlement must be idempotent and move amounts between these accounting buckets exactly once. A previous highest bid becomes a refund liability when outbid; it must not be treated as free contract balance. Payout credits should be claimable and remain liabilities until successfully paid. Any claim implementation must restore a liability on bounced transfers. The storage file itself does not yet implement these transitions.
