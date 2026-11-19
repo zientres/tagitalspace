@@ -1,0 +1,7 @@
+# Acton-managed libraries and generated build artifacts
+.acton/
+build/
+gen/
+
+# Local credentials
+.env
