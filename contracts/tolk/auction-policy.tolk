@@ -29,7 +29,7 @@ fun tagitalSpaceInitialAuctionEndTime(now: int): int {
 
 // A bid extends the deadline only when strictly less than one hour remains.
 // Exactly 3600 seconds remaining does not extend the auction.
-fun tagitalSpaceAuctionEndTimeAfterBid(now: int, auctionEndTime: int): int {
+fun tagitalSpacePolicyAuctionEndTimeAfterBid(now: int, auctionEndTime: int): int {
     assert (auctionEndTime >= now) throw 721;
 
     if (auctionEndTime - now < TAGITALSPACE_AUCTION_EXTENSION_WINDOW) {
