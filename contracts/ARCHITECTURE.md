@@ -31,14 +31,11 @@ TagitalSpace follows the architecture of TON DNS:
 - No bid history is stored.
 - Anyone may trigger settlement after the deadline; the item contract persists the winner as owner and clears the auction once.
 
-## Distribution
+## Auction revenue destination
 
-The winning bid is divided:
-- 50% to the collection owner;
-- 30% to the Registry treasury;
-- 20% to the configured development/security fund.
+**100% of each settled winning bid goes to one fixed address:** `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
 
-The item contract is responsible for splitting its own auction proceeds. Registry records only treasury deposits; it does not manage bidder escrow or auction state. Settlement records three claimable payout balances in the item. The configured beneficiary claims their share; the Registry owner triggers the Registry's 30% claim. These claim transfers currently use non-bounceable messages, so bounced-transfer recovery is not implemented and action-phase behavior still requires TVM tests.
+The Registry stores this address in its initial data and passes it into every deterministic plate item at initialization. Each item records the complete winning bid as one pending revenue liability. The Registry exposes a permissionless claim-request message for an individual plate identity; the item accepts that request only from its Registry collection and sends the entire liability to the stored revenue address. The caller cannot choose or alter the destination. Settlement itself records the liability; it does not automatically send funds. A claim request is still required for each settled item. The payout currently uses a non-bounceable message, so bounce recovery and action-phase behavior remain unverified.
 
 ## NFT lifecycle
 
