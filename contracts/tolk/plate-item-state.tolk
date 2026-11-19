@@ -14,12 +14,10 @@ struct PlateItemStorageInitialized {
     collectionAddress: address
     plateBody: cell
     regionCode: uint16
-    collectionOwner: address
     auctionRevenueAddress: address
     ownerAddress: address?
     lastRenewalTime: uint64
     auction: Cell<PlateAuctionState>?
-    pendingAuctionRevenue: coins
 }
 fun PlateItemStorageInitialized.save(self) {
     contract.setData(self.toCell());
