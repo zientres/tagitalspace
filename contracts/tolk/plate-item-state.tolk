@@ -4,6 +4,7 @@ struct PlateItemStorageNotInitialized {
     identityKey: uint256
     collectionAddress: address
 }
+
 struct PlateAuctionState {
     highestBidder: address
     highestBid: coins
@@ -26,19 +27,25 @@ struct PlateItemStorageInitialized {
     lastRenewalTime: uint64
     auction: Cell<PlateAuctionState>?
 }
+
 fun PlateItemStorageInitialized.save(self) {
     contract.setData(self.toCell());
 }
+
 fun PlateItemStorageInitialized.unpackAuction(self): (bool, PlateAuctionState) {
     if (self.auction == null) {
-        return (true, {
-            highestBidder: contract.getAddress(),
-            highestBid: 0,
-            auctionEndTime: 0,
-        });
+        return (
+            true,
+            {
+                highestBidder: contract.getAddress(),
+                highestBid: 0,
+                auctionEndTime: 0,
+            },
+        );
     }
     return (false, self.auction.load());
 }
+
 struct PlateItemNftData {
     initialized: bool
     identityKey: uint256
@@ -47,21 +54,27 @@ struct PlateItemNftData {
     plateBody: cell?
     regionCode: uint16
 }
+
 struct PlateItemLoadingStorage {
     data: slice
 }
+
 fun startLoadingPlateItemStorage(): PlateItemLoadingStorage {
     return { data: contract.getData().beginParse() };
 }
+
 fun PlateItemLoadingStorage.isInitialized(self): bool {
     return self.data.remainingRefsCount() > 0;
 }
+
 fun PlateItemLoadingStorage.parseNotInitialized(self): PlateItemStorageNotInitialized {
     return PlateItemStorageNotInitialized.fromSlice(self.data);
 }
+
 fun PlateItemLoadingStorage.parseInitialized(self): PlateItemStorageInitialized {
     return PlateItemStorageInitialized.fromSlice(self.data);
 }
+
 fun calcDeployedPlateItem(
     identityKey: uint256,
     itemCode: cell,
@@ -70,11 +83,5 @@ fun calcDeployedPlateItem(
         identityKey,
         collectionAddress: contract.getAddress(),
     };
-    return {
-        workchain: BASECHAIN,
-        stateInit: {
-            code: itemCode,
-            data: itemStorage.toCell(),
-        },
-    };
+    return { workchain: BASECHAIN, stateInit: { code: itemCode, data: itemStorage.toCell() } };
 }
