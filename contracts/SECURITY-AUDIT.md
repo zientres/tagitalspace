@@ -23,7 +23,7 @@ The new project-specific Tolk files, including the new claim flow, have not yet 
 
 ### Critical — escrow and bounce safety are incomplete
 
-Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement payouts are now recorded as three claimable balances, but claim transfers are also non-bounceable and there is no bounce-recovery path. Action-phase rollback, fee coverage, repeated claims and recipient behavior are unverified. This remains a critical blocker before real funds are used.
+Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement payouts are now recorded as three claimable balances, but claim transfers are also non-bounceable and there is no bounce-recovery path. Action-phase rollback, fee coverage, repeated claims and recipient behavior are unverified. This remains a critical blocker before real funds are used.
 
 ### High — Registry deployment configuration is incomplete
 
