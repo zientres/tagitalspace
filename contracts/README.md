@@ -52,7 +52,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Implementation status
 
-The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The current source has not yet passed Tolk compilation, full TVM tests, payout-bounce tests or a Testnet end-to-end run. Bounce-safe refund/payout recovery, treasury withdrawal, frontend integration and deployment configuration remain incomplete.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The current source has not yet passed Tolk compilation, full TVM tests, payout-bounce tests or a Testnet end-to-end run. Bounce-safe refund recovery, payout action-phase verification, frontend integration and deployment configuration remain incomplete.
 
 ## Source attribution
 
