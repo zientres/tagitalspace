@@ -113,6 +113,25 @@ assert.ok(!(2_999_999_999 >= 3_000_000_000));
 assert.ok(105 >= Math.floor(100 * 105 / 100));
 assert.ok(!(104 >= Math.floor(100 * 105 / 100)));
 
+
+// One-year ownership lifecycle: renewals are owner-only and only before expiry;
+// expiry itself does not start an auction, the next Registry first bid does.
+const ownershipPeriod = 365 * 24 * 60 * 60;
+function expirationTime(lastRenewalTime) {
+  return lastRenewalTime + ownershipPeriod;
+}
+function canRenew(now, lastRenewalTime) {
+  return now < expirationTime(lastRenewalTime);
+}
+function canRelease(now, lastRenewalTime) {
+  return now >= expirationTime(lastRenewalTime);
+}
+assert.equal(expirationTime(1_000), 1_000 + ownershipPeriod);
+assert.ok(canRenew(expirationTime(1_000) - 1, 1_000));
+assert.ok(!canRenew(expirationTime(1_000), 1_000));
+assert.ok(!canRelease(expirationTime(1_000) - 1, 1_000));
+assert.ok(canRelease(expirationTime(1_000), 1_000));
+
 // TON DNS-style architecture checks: Registry deploys deterministic items;
 // each item contract owns its auction and no shared Auction Manager exists.
 const itemState = readFileSync(resolve(here, "../tolk/plate-item-state.tolk"), "utf8");
@@ -152,6 +171,13 @@ assert.match(itemAuction, /BounceMode.NoBounce/);
 assert.match(itemContract, /get_pending_payouts/);
 assert.match(itemContract, /TransferPlateOwnership =>/);
 assert.match(itemAuction, /tagitalSpaceTransferPlateOwnership/);
+assert.match(itemAuction, /TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 \* 24 \* 60 \* 60/);
+assert.match(itemAuction, /tagitalSpaceRenewPlateOwnership/);
+assert.match(itemAuction, /storage\.lastRenewalTime = blockchain\.now\(\)/);
+assert.match(itemContract, /RenewPlateOwnership =>/);
+assert.match(itemContract, /get_expiration_time/);
+assert.match(itemContract, /isExpired && !hasUnpaidLiabilities/);
+assert.match(itemContract, /storage\.pendingTreasuryPayout > 0/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
