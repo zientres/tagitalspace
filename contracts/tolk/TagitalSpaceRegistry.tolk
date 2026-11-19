@@ -4,7 +4,8 @@ import "registry-storage"
 import "registry-request"
 import "plate-item-state"
 import "plate-identity"
-import "russia-regions"\nimport "plate-item-messages"
+import "russia-regions"
+import "plate-item-messages"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
