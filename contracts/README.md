@@ -45,7 +45,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - The current owner may renew before expiration by sending `RenewPlateOwnership`; renewal restarts the one-year period from that transaction.
 - Ownership transfer is owner-authorized and restarts the one-year period for the recipient.
 - Expiration does not create an auction automatically. The next valid first-bid request reuses the same deterministic item contract and starts a new one-hour auction.
-- Release is blocked while any of the previous auction's owner, treasury or security payout liabilities remain unpaid.
+- Unpaid owner, treasury and security payouts remain recorded in the item across reauctions. New settlements add to existing liabilities instead of overwriting them.
 - No renewal price has been configured yet; the renewal message currently requires only network fees.
 
 ## Implementation status
