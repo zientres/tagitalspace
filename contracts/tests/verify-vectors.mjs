@@ -51,6 +51,22 @@ function plateIdentity(plate, regionCode) {
   return `${plate}:${regionCode}`;
 }
 
+const supportedRussiaRegions = new Set(`
+01 101 02 102 702 03 103 04 104 05 105 06 106 07 107 08 108 09 109
+10 110 11 111 12 112 13 113 14 114 15 115 16 116 716 17 117 18 118 19 119
+95 195 21 121 22 122 23 93 123 193 24 84 88 124 25 125 725 26 126 27 127 28 128 29 129 30 130
+31 131 32 132 33 133 34 134 35 135 36 136 37 137 38 138 39 91 139 40 140 41 141 42 142 43 143 44 144
+45 145 46 146 47 147 48 148 49 149 50 90 150 190 250 550 750 790 51 151 52 152 252 53 153 54 154 754
+55 155 56 156 57 157 58 158 59 159 60 61 161 761 62 162 63 163 763 64 164 65 165 66 96 166 196
+67 167 68 168 69 169 70 170 71 171 72 172 73 173 74 174 774 75 180 76 176
+77 97 99 177 197 199 277 299 777 797 799 977 78 98 178 198 798 778 79 179
+80 180 81 181 82 182 83 183 84 184 85 185 86 186 87 187 89 189 92 192 94 194
+`.trim().split(/\\s+/).map(Number));
+
+function validRussiaRegion(regionCode) {
+  return validRegionCode(regionCode) && supportedRussiaRegions.has(regionCode);
+}
+
 // Canonical format and allowed alphabet.
 for (const plate of ["A777AA", "M343YM", "X000YX"]) {
   assert.ok(validPlateBody(plate), `Expected valid plate: ${plate}`);
@@ -62,6 +78,11 @@ for (const plate of ["А777АА", "A77AAA", "A777AЯ", "Z123AA", "A1234A", "A12A
 // Region participates in identity; price remains based on plate body alone.
 assert.notEqual(plateIdentity("A777AA", 77), plateIdentity("A777AA", 78));
 assert.equal(plateIdentity("A777AA", 77), plateIdentity("A777AA", 77));
+assert.ok(validRussiaRegion(77));
+assert.ok(validRussiaRegion(777));
+assert.ok(!validRussiaRegion(20), "Region 20 is intentionally excluded");
+assert.ok(!validRussiaRegion(100), "Unsupported region must be rejected");
+assert.equal(supportedRussiaRegions.size, 212);
 for (const region of [0, -1, 1000, 1.5, "77"]) {
   assert.ok(!validRegionCode(region), `Expected invalid region: ${region}`);
 }
