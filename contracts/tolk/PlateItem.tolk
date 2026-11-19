@@ -12,7 +12,7 @@ contract TagitalSpacePlateItem {
     storageAtDeployment: PlateItemStorageNotInitialized
 }
 
-type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | ClaimPlatePayout | RenewPlateOwnership | TransferPlateOwnership
+type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | RenewPlateOwnership | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
     val loading = startLoadingPlateItemStorage();
@@ -33,11 +33,9 @@ fun onInternalMessage(in: InMessage) {
             collectionAddress: uninitialized.collectionAddress,
             plateBody: init.plateBody,
             regionCode: init.regionCode,
-            collectionOwner: init.collectionOwner,
             auctionRevenueAddress: init.auctionRevenueAddress,
             ownerAddress: null,
             auction: initialAuction.toCell(),
-            pendingAuctionRevenue: 0,
             lastRenewalTime: blockchain.now(),
         };
         storage.save();
@@ -102,15 +100,6 @@ fun onInternalMessage(in: InMessage) {
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
         }
-        ClaimPlatePayout => {
-            assert (storage.auction == null) throw 787;
-            tagitalSpaceClaimPlatePayout(
-                in.senderAddress,
-                msg.queryId,
-                msg.beneficiaryKind,
-                mutate storage,
-            );
-        }
         TransferPlateOwnership => {
             tagitalSpaceTransferPlateOwnership(
                 in.senderAddress,
@@ -171,9 +160,3 @@ get fun get_last_renewal_time(): uint64 {
     return storage.lastRenewalTime;
 }
 
-get fun get_pending_auction_revenue(): coins {
-    val loading = startLoadingPlateItemStorage();
-    assert (loading.isInitialized()) throw 788;
-    val storage = loading.parseInitialized();
-    return storage.pendingAuctionRevenue;
-}
