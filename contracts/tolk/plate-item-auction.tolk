@@ -4,6 +4,7 @@ import "plate-item-state"
 const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600
 const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60
 const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05")
+const TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER = grams("0.05")
 
 fun tagitalSpaceProcessPlateBid(
     senderAddress: address,
@@ -34,16 +35,17 @@ fun tagitalSpaceProcessPlateBid(
 }
 
 fun tagitalSpaceSettlePlateAuction(
+    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     auction: PlateAuctionState,
     queryId: uint64,
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
-    // The entire winning bid is sent to the collection's fixed revenue address
-    // in the same transaction that settles the auction.
+    // Include the settlement message value and retain storage plus a fee buffer.
     assert (
-        contract.getOriginalBalance() >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE
+        contract.getOriginalBalance() + valueCoins >=
+            auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 786;
     val immutable = storage.immutable.load();
     storage.ownerAddress = auction.highestBidder;
@@ -51,10 +53,34 @@ fun tagitalSpaceSettlePlateAuction(
     storage.auction = null;
     storage.save();
     val payout = createMessage({
-        bounce: BounceMode.NoBounce,
+        bounce: BounceMode.RichBounce,
         dest: immutable.auctionRevenueAddress,
         value: auction.highestBid,
-        body: PlateItemExcesses { queryId },
+        body: PlateItemRevenuePayout { queryId, amount: auction.highestBid },
+    });
+    payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+}
+
+fun tagitalSpaceRetryPlatePayout(
+    valueCoins: coins,
+    mutate storage: PlateItemStorageInitialized,
+    queryId: uint64,
+) {
+    val amount = storage.claimablePayout;
+    assert (amount > 0) throw 787;
+    // The caller may top up bounce/forward fees; the full winning bid is never reduced.
+    assert (
+        contract.getOriginalBalance() + valueCoins >=
+            amount + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+    ) throw 788;
+    val immutable = storage.immutable.load();
+    storage.claimablePayout = 0;
+    storage.save();
+    val payout = createMessage({
+        bounce: BounceMode.RichBounce,
+        dest: immutable.auctionRevenueAddress,
+        value: amount,
+        body: PlateItemRevenuePayout { queryId, amount },
     });
     payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
 }
