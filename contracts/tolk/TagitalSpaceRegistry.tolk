@@ -62,6 +62,7 @@ fun onInternalMessage(in: InMessage) {
 
         RequestRegistryTreasuryPayout => {
             val storage = TagitalSpaceRegistryStorage.load();
+            assert (in.senderAddress == storage.ownerAddress) throw 789;
             val itemAddress = calcDeployedPlateItem(
                 msg.identityKey,
                 storage.nftItemCode,
