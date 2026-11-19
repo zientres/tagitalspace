@@ -24,6 +24,8 @@ TagitalSpace follows the architecture of TON DNS:
 - Any wallet may start an auction by submitting the first bid through Registry.
 - Starting price: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both blocks add; base applies only when no special pattern applies; triple does not stack with mirror pricing in its own block.
 - Each item's first bid initializes its local auction state.
+- The bid amount is encoded explicitly in the message and is separate from attached TON used for fees and reserve. The first bid is fixed to the calculated starting price; later attached excess is not counted as part of the bid.
+- Registry requires starting price + 0.15 TON before forwarding the deployment message. The item separately checks that at least its 0.05 TON storage reserve arrives after forwarding fees.
 - Later bids must be at least floor(current bid × 105 / 100).
 - Initial duration is 3,600 seconds. A bid with strictly less than 3,600 seconds remaining extends the deadline to now + 3,600; exactly 3,600 seconds does not extend.
 - No bid history is stored.
