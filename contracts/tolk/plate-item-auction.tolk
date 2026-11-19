@@ -50,6 +50,7 @@ fun tagitalSpaceSettlePlateAuction(
     // Settlement creates three explicit liabilities. Funds remain in this
     // item contract until each configured beneficiary claims their share.
     storage.ownerAddress = auction.highestBidder;
+    storage.lastRenewalTime = blockchain.now();
     storage.auction = null;
     storage.pendingOwnerPayout = auction.highestBid * 50 / 100;
     storage.pendingTreasuryPayout = auction.highestBid * 30 / 100;
