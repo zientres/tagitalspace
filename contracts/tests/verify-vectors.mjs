@@ -152,6 +152,7 @@ assert.match(registryState, /nftItemCode: cell/);
 assert.doesNotMatch(registryState + registryProtocol + registryContract, /auctionManagerAddress|ManagedAuction|Auction Manager/i);
 assert.match(itemContract, /contract TagitalSpacePlateItem/);
 assert.match(itemContract, /PlateItemInitData/);
+assert.match(registryProtocol, /struct \\(0x54531006\\) PlateItemInitData/);
 assert.match(itemContract, /tagitalSpaceProcessPlateBid/);
 assert.match(itemContract, /tagitalSpaceSettlePlateAuction/);
 assert.match(itemState, /auction: Cell<PlateAuctionState>\?/);
@@ -181,4 +182,4 @@ assert.match(itemContract, /storage\.pendingTreasuryPayout > 0/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
-console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
+console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, annual lifecycle boundaries, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
