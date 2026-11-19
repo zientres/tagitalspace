@@ -36,7 +36,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - Every later bid is at least floor(current bid × 105 / 100).
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
-- Winning proceeds are split 50% collection owner, 30% Registry treasury, 20% development/security fund.
+- Winning proceeds are split 50% collection owner, 30% Registry treasury, 20% development/security fund.\n- Settlement records three claimable liabilities in the plate item; it does not immediately push funds. Only the configured beneficiary can claim their share. This avoids losing the accounting record before a payout is queued.
 
 ## Implementation status
 
