@@ -142,13 +142,16 @@ assert.match(itemAuction, /highestBid \* 50 \/ 100/);
 assert.match(itemAuction, /highestBid \* 30 \/ 100/);
 assert.match(itemAuction, /developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);
-assert.match(itemMessages, /ClaimPlatePayout/);\nassert.match(itemMessages, /TransferPlateOwnership/);
+assert.match(itemMessages, /ClaimPlatePayout/);
+assert.match(itemMessages, /TransferPlateOwnership/);
 assert.match(itemState, /pendingOwnerPayout: coins/);
 assert.match(itemState, /pendingTreasuryPayout: coins/);
 assert.match(itemState, /pendingSecurityPayout: coins/);
 assert.match(itemAuction, /Settlement creates three explicit liabilities/);
 assert.match(itemAuction, /BounceMode.NoBounce/);
-assert.match(itemContract, /get_pending_payouts/);\nassert.match(itemContract, /TransferPlateOwnership =>/);\nassert.match(itemAuction, /tagitalSpaceTransferPlateOwnership/);
+assert.match(itemContract, /get_pending_payouts/);
+assert.match(itemContract, /TransferPlateOwnership =>/);
+assert.match(itemAuction, /tagitalSpaceTransferPlateOwnership/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
