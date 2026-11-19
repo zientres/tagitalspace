@@ -141,7 +141,14 @@ assert.match(itemAuction, /auctionEndTime - blockchain\.now\(\) < TAGITALSPACE_I
 assert.match(itemAuction, /highestBid \* 50 \/ 100/);
 assert.match(itemAuction, /highestBid \* 30 \/ 100/);
 assert.match(itemAuction, /developmentSecurityFund/);
-assert.match(itemMessages, /SettlePlateAuction/);\nassert.match(itemMessages, /ClaimPlatePayout/);\nassert.match(itemState, /pendingOwnerPayout: coins/);\nassert.match(itemState, /pendingTreasuryPayout: coins/);\nassert.match(itemState, /pendingSecurityPayout: coins/);\nassert.match(itemAuction, /Settlement creates three explicit liabilities/);\nassert.match(itemAuction, /BounceMode.NoBounce/);\nassert.match(itemContract, /get_pending_payouts/);
+assert.match(itemMessages, /SettlePlateAuction/);
+assert.match(itemMessages, /ClaimPlatePayout/);
+assert.match(itemState, /pendingOwnerPayout: coins/);
+assert.match(itemState, /pendingTreasuryPayout: coins/);
+assert.match(itemState, /pendingSecurityPayout: coins/);
+assert.match(itemAuction, /Settlement creates three explicit liabilities/);
+assert.match(itemAuction, /BounceMode.NoBounce/);
+assert.match(itemContract, /get_pending_payouts/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
