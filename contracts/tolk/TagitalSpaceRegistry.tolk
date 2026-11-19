@@ -9,30 +9,24 @@ import "plate-item-messages"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
-    version: "0.2.0"
+    version: "0.3.0"
     description: "TagitalSpace Russia plate collection; each plate has its own auction contract"
     incomingMessages: AllowedRegistryMessage
     storage: TagitalSpaceRegistryStorage
 }
 
-type AllowedRegistryMessage = StartPlateAuction | RegistryTreasuryDeposit | RequestRegistryTreasuryPayout
+type AllowedRegistryMessage = StartPlateAuction | RequestAuctionRevenuePayout
 
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and send the first bid directly to that item.
-// Auction state and all later bids are handled by the item contract itself.
 fun onInternalMessage(in: InMessage) {
     var msg = lazy AllowedRegistryMessage.fromSlice(in.body);
-
     match (msg) {
         StartPlateAuction => {
             val storage = TagitalSpaceRegistryStorage.load();
             val prepared = tagitalSpacePrepareRussiaFirstBid(
-                msg.plateBody,
-                msg.regionCode,
-                msg.queryId,
-                in.valueCoins,
+                msg.plateBody, msg.regionCode, msg.queryId, in.valueCoins,
             );
-
             val deployItem = createMessage({
                 bounce: BounceMode.RichBounce,
                 dest: calcDeployedPlateItem(prepared.identityKey, storage.nftItemCode),
@@ -43,38 +37,23 @@ fun onInternalMessage(in: InMessage) {
                     plateBody: msg.plateBody,
                     regionCode: msg.regionCode,
                     collectionOwner: storage.ownerAddress,
-                    developmentSecurityFund: storage.developmentSecurityFund,
+                    auctionRevenueAddress: storage.auctionRevenueAddress,
                 },
             });
             deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
-
-        RegistryTreasuryDeposit => {
-            var storage = TagitalSpaceRegistryStorage.load();
-            val expectedItemAddress = calcDeployedPlateItem(
-                msg.identityKey,
-                storage.nftItemCode,
-            ).calculateAddress();
-
-            assert (in.senderAddress == expectedItemAddress) throw 763;
-            storage.treasuryBalance += in.valueCoins;
-            storage.save();
-        }
-
-        RequestRegistryTreasuryPayout => {
+        // Anyone may trigger a claim. The item always pays its fixed configured
+        // address; the caller cannot redirect or withdraw auction proceeds.
+        RequestAuctionRevenuePayout => {
             val storage = TagitalSpaceRegistryStorage.load();
-            assert (in.senderAddress == storage.ownerAddress) throw 789;
-            val itemAddress = calcDeployedPlateItem(
-                msg.identityKey,
-                storage.nftItemCode,
-            );
+            val itemAddress = calcDeployedPlateItem(msg.identityKey, storage.nftItemCode);
             val claim = createMessage({
                 bounce: BounceMode.NoBounce,
                 dest: itemAddress,
                 value: 0,
                 body: ClaimPlatePayout {
                     queryId: msg.queryId,
-                    beneficiaryKind: 1,
+                    beneficiaryKind: 2,
                 },
             });
             claim.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
@@ -91,6 +70,6 @@ get fun get_plate_item_address(plateBody: cell, regionCode: uint16): address {
     return calcDeployedPlateItem(identityKey, storage.nftItemCode).calculateAddress();
 }
 
-get fun get_registry_treasury_balance(): coins {
-    return TagitalSpaceRegistryStorage.load().treasuryBalance;
+get fun get_auction_revenue_address(): address {
+    return TagitalSpaceRegistryStorage.load().auctionRevenueAddress;
 }
