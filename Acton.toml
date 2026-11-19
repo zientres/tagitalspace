@@ -1,0 +1,17 @@
+# TagitalSpace TON smart-contract project
+[package]
+name = "tagitalspace"
+description = "TON NFT license-plate collection with per-item auctions"
+version = "0.1.0"
+repository = "https://github.com/zientres/tagitalspace"
+
+[toolchain]
+acton = "1.2.0"
+
+[contracts.TagitalSpaceRegistry]
+display-name = "TagitalSpace Registry"
+src = "contracts/tolk/TagitalSpaceRegistry.tolk"
+
+[contracts.TagitalSpacePlateItem]
+display-name = "TagitalSpace Plate Item"
+src = "contracts/tolk/PlateItem.tolk"
