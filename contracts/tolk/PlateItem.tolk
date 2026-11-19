@@ -28,12 +28,15 @@ fun onInternalMessage(in: InMessage) {
             highestBid: init.firstBidAmount,
             auctionEndTime: blockchain.now() + TAGITALSPACE_ITEM_AUCTION_DURATION,
         };
-        val storage = PlateItemStorageInitialized {
+        val immutable = PlateItemImmutableData {
             identityKey: uninitialized.identityKey,
             collectionAddress: uninitialized.collectionAddress,
             plateBody: init.plateBody,
             regionCode: init.regionCode,
             auctionRevenueAddress: init.auctionRevenueAddress,
+        };
+        val storage = PlateItemStorageInitialized {
+            immutable: immutable.toCell(),
             ownerAddress: null,
             auction: initialAuction.toCell(),
             lastRenewalTime: blockchain.now(),
@@ -43,10 +46,11 @@ fun onInternalMessage(in: InMessage) {
     }
 
     var storage = loading.parseInitialized();
+    val immutable = storage.immutable.load();
 
     // Registry may restart an expired identity, but cannot overwrite a live
     // auction. Each completed auction pays its winning bid immediately.
-    if (in.senderAddress == storage.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
+    if (in.senderAddress == immutable.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
         val isExpired = storage.ownerAddress != null
@@ -56,8 +60,6 @@ fun onInternalMessage(in: InMessage) {
         if (isExpired) {
             storage.ownerAddress = null;
             // Keep the immutable revenue destination configured by the Registry.
-            storage.plateBody = init.plateBody;
-            storage.regionCode = init.regionCode;
             storage.lastRenewalTime = blockchain.now();
             assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
             storage.auction = PlateAuctionState {
@@ -70,7 +72,7 @@ fun onInternalMessage(in: InMessage) {
         }
 
         // Duplicate requests and active items are rejected by returning the
-        // incoming bid to its sender.
+        // incoming bid to their sender.
         val refund = createMessage({
             bounce: false,
             dest: init.firstBidder,
@@ -121,13 +123,14 @@ get fun get_nft_data(): PlateItemNftData {
         };
     }
     val storage = loading.parseInitialized();
+    val immutable = storage.immutable.load();
     return {
         initialized: true,
-        identityKey: storage.identityKey,
-        collectionAddress: storage.collectionAddress,
+        identityKey: immutable.identityKey,
+        collectionAddress: immutable.collectionAddress,
         ownerAddress: storage.ownerAddress,
-        plateBody: storage.plateBody,
-        regionCode: storage.regionCode,
+        plateBody: immutable.plateBody,
+        regionCode: immutable.regionCode,
     };
 }
 
@@ -156,4 +159,3 @@ get fun get_last_renewal_time(): uint64 {
     val storage = loading.parseInitialized();
     return storage.lastRenewalTime;
 }
-
