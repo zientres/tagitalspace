@@ -149,7 +149,7 @@ const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
-assert.equal(protocolOpcodes.length, 3, "Registry and Registry-to-item protocol messages are expected");
+assert.equal(protocolOpcodes.length, 2, "Registry and Registry-to-item protocol messages are expected");
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
 assert.match(registryContract, /StartPlateAuction =>/);
@@ -175,19 +175,18 @@ assert.match(itemContract, /tagitalSpaceSettlePlateAuction/);
 assert.match(itemState, /auction: Cell<PlateAuctionState>\?/);
 assert.match(itemAuction, /highestBid \* 105 \/ 100/);
 assert.match(itemAuction, /auctionEndTime - blockchain\.now\(\) < TAGITALSPACE_ITEM_AUCTION_DURATION/);
-assert.match(itemAuction, /pendingAuctionRevenue \+= auction\.highestBid/);
 assert.match(itemAuction, /dest: storage\.auctionRevenueAddress/);
+assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemState, /auctionRevenueAddress: address/);
 assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
-assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout|pendingTreasuryPayout|pendingSecurityPayout|developmentSecurityFund/);
+assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout|pendingTreasuryPayout|pendingSecurityPayout|pendingAuctionRevenue|developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);
 assert.match(itemMessages, /ClaimPlatePayout/);
 assert.match(itemMessages, /TransferPlateOwnership/);
-assert.match(itemState, /pendingAuctionRevenue: coins/);
-assert.match(itemAuction, /complete winning bid becomes one liability/);
+assert.match(itemAuction, /entire winning bid is sent to the collection's fixed revenue address/);
 assert.match(itemAuction, /BounceMode.NoBounce/);
-assert.match(itemContract, /get_pending_auction_revenue/);
+
 assert.match(itemContract, /TransferPlateOwnership =>/);
 assert.match(itemAuction, /tagitalSpaceTransferPlateOwnership/);
 assert.match(itemAuction, /TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 \* 24 \* 60 \* 60/);
@@ -197,10 +196,7 @@ assert.match(itemContract, /RenewPlateOwnership =>/);
 assert.match(itemContract, /get_expiration_time/);
 assert.match(itemContract, /if \(isExpired\)/);
 assert.doesNotMatch(itemContract, /hasUnpaidLiabilities/);
-assert.match(itemAuction, /storage\.pendingAuctionRevenue \+= auction\.highestBid/);
-assert.match(registryContract, /RequestAuctionRevenuePayout/);
-assert.match(registryContract, /ClaimPlatePayout/);
-assert.match(registryContract, /beneficiaryKind: 2/);
-assert.match(itemAuction, /dest: storage\.auctionRevenueAddress/);
+assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
+assert.doesNotMatch(registryContract, /RequestAuctionRevenuePayout|ClaimPlatePayout/);
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, annual lifecycle boundaries, identity, bid-policy and TON DNS-style per-item auction source checks.`);
