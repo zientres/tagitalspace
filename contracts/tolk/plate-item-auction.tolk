@@ -36,36 +36,23 @@ fun tagitalSpaceProcessPlateBid(
 fun tagitalSpaceSettlePlateAuction(
     mutate storage: PlateItemStorageInitialized,
     auction: PlateAuctionState,
-    _queryId: uint64,
+    queryId: uint64,
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
-    // The complete winning bid becomes one liability for the fixed collection
-    // revenue recipient. No owner/treasury/security split is performed.
+    // The entire winning bid is sent to the collection's fixed revenue address
+    // in the same transaction that settles the auction.
+    assert (
+        contract.getOriginalBalance() >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE
+    ) throw 786;
     storage.ownerAddress = auction.highestBidder;
     storage.lastRenewalTime = blockchain.now();
     storage.auction = null;
-    storage.pendingAuctionRevenue += auction.highestBid;
-    storage.save();
-}
-
-fun tagitalSpaceClaimPlatePayout(
-    senderAddress: address,
-    queryId: uint64,
-    beneficiaryKind: uint8,
-    mutate storage: PlateItemStorageInitialized,
-) {
-    assert (beneficiaryKind == 2) throw 785;
-    assert (senderAddress == storage.collectionAddress) throw 783;
-    val amount = storage.pendingAuctionRevenue;
-    assert (amount > 0) throw 784;
-    assert (contract.getOriginalBalance() >= amount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 786;
-    storage.pendingAuctionRevenue = 0;
     storage.save();
     val payout = createMessage({
         bounce: BounceMode.NoBounce,
         dest: storage.auctionRevenueAddress,
-        value: amount,
+        value: auction.highestBid,
         body: PlateItemExcesses { queryId },
     });
     payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
