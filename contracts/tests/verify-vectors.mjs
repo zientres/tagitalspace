@@ -111,7 +111,7 @@ assert.ok(!(104 >= Math.floor(100 * 105 / 100)));
 
 // Registry/Auction Manager protocol: every declared opcode must be unique,
 // and the required lifecycle messages must remain present.
-const protocolOpcodes = [...registryProtocol.matchAll(/struct \\(0x([0-9A-Fa-f]{8})\\) ([A-Za-z0-9_]+)/g)];
+const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 10, "Unexpected Registry protocol message count");
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
