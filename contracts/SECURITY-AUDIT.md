@@ -13,7 +13,7 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 - Each plate item stores its own auction, bidder and deadline.
 - Later bids, outbid refunds and settlement are handled by that item contract.
 - No shared Auction Manager is part of the intended architecture.
-- Settlement records 100% of the winning bid as one revenue liability in the plate item. A permissionless Registry request triggers payment to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`. The transfer is currently non-bounceable and has not been tested in TVM.
+- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer is non-bounceable and has not been tested in TVM.
 
 ## Blocking findings
 
@@ -23,7 +23,7 @@ The new project-specific Tolk files, including the new claim flow, have not yet 
 
 ### Critical — escrow and bounce safety are incomplete
 
-Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement proceeds are recorded as one 100% claimable revenue balance, but the transfer is non-bounceable and there is no bounce-recovery path. Action-phase rollback, fee coverage, repeated claims and recipient behavior are unverified. This remains a critical blocker before real funds are used.
+Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement sends the complete winning bid in a non-bounceable message; there is no bounce-recovery path. Action-phase rollback, fee coverage, repeated claims and recipient behavior are unverified. This remains a critical blocker before real funds are used.
 
 ### High — Registry deployment configuration is incomplete
 
