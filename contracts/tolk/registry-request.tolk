@@ -1,5 +1,7 @@
 import "plate-identity"
 import "plate-pricing"
+import "auction-policy"
+import "registry-state"
 import "russia-regions"
 import "registry-transitions"
 
