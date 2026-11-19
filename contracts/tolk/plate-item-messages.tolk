@@ -15,3 +15,8 @@ struct (0x54531002) PlateItemOutbid {
 struct (0x54531003) PlateItemExcesses {
     queryId: uint64
 }
+
+struct (0x54531004) ClaimPlatePayout {
+    queryId: uint64
+    beneficiaryKind: uint8
+}
