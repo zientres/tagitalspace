@@ -29,7 +29,7 @@ Outbid refunds still use direct non-bounceable messages and do not have a separa
 
 Registry storage now requires the owner address, development/security address and NFT item code. The deployment initializer and deterministic item code hash/address checks must be wired and tested.
 
-### High — item lifecycle is incomplete
+### High — item lifecycle and renewal economics need further verification
 
 NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. The item now supports owner-only annual renewal and expiration-triggered release on the next first-bid request; release is blocked while settlement payout liabilities remain. Renewal currently has no configured protocol fee. Safe recovery from failed payout actions remains unimplemented.
 
