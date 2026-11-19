@@ -32,7 +32,8 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Auction rules
 
-- First bid starts the item's one-hour auction.
+- First bid starts the item's one-hour auction. The bid amount is encoded separately from attached TON: the opening transaction must attach the starting price plus 0.15 TON for item reserve and deployment/forwarding costs; the item records only the calculated starting price as the bid.
+- Later bid messages include an explicit `bidAmount`; any additional attached TON remains as contract reserve and is not counted as part of the bid.
 - Every later bid is at least floor(current bid × 105 / 100).
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
