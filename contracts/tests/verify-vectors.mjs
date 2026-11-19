@@ -61,7 +61,7 @@ const supportedRussiaRegions = new Set(`
 67 167 68 168 69 169 70 170 71 171 72 172 73 173 74 174 774 75 180 76 176
 77 97 99 177 197 199 277 299 777 797 799 977 78 98 178 198 798 778 79 179
 80 180 81 181 82 182 83 183 84 184 85 185 86 186 87 187 89 189 92 192 94 194
-`.trim().split(/\\s+/).map(Number));
+`.trim().split(/\s+/).map(Number));
 
 function validRussiaRegion(regionCode) {
   return validRegionCode(regionCode) && supportedRussiaRegions.has(regionCode);
