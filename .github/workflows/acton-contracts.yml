@@ -30,7 +30,7 @@ jobs:
       - name: Set up Acton
         uses: ton-blockchain/setup-acton@0f9f436843d740466cae2d7411ff59072dde942e
         with:
-          version: "1.2.0"
+          version: "1.2.1"
 
       - name: Build contracts
         run: acton build
