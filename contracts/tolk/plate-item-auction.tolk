@@ -45,13 +45,14 @@ fun tagitalSpaceSettlePlateAuction(
     assert (
         contract.getOriginalBalance() >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE
     ) throw 786;
+    val immutable = storage.immutable.load();
     storage.ownerAddress = auction.highestBidder;
     storage.lastRenewalTime = blockchain.now();
     storage.auction = null;
     storage.save();
     val payout = createMessage({
         bounce: BounceMode.NoBounce,
-        dest: storage.auctionRevenueAddress,
+        dest: immutable.auctionRevenueAddress,
         value: auction.highestBid,
         body: PlateItemExcesses { queryId },
     });
