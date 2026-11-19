@@ -73,3 +73,16 @@ The first reusable TagitalSpace-specific Tolk helpers now exist:
 - `auction-policy.tolk`: first-bid validation, floor-rounded 5% next-bid threshold, one-hour initial duration, extension boundary, and settlement-time predicate.
 
 These helpers are not yet wired into a deployable Registry or Auction Manager. The generic region bounds are not a substitute for the Russian region allowlist. The independent JavaScript checks are not Tolk/TVM execution evidence.
+
+
+## Registry storage layout (first draft)
+
+`contracts/tolk/registry-state.tolk` now defines the initial persisted data model:
+- Registry entry key: hash of the canonical plate-body + region identity.
+- Entry retains the original six-byte plate body and numeric region code for identity verification.
+- Explicit states: AUCTION, MINT_PENDING, OWNED, RENEWAL_PENDING. An absent key represents AVAILABLE.
+- Auction fields: auction ID/address, highest bidder, highest bid, and deadline.
+- Mint/ownership fields: NFT item address, owner, expiry, and pending query ID.
+- Registry configuration: owner, development/security fund, and accounted treasury balance.
+
+This is a storage schema only. It does not yet implement registry message handlers, map-key derivation, auction callbacks, mint acknowledgement, renewal, or bounce recovery. The Auction Manager must separately account for bidder escrow and refund liabilities; those funds must not be counted as the registry treasury.
