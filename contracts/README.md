@@ -38,8 +38,8 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
 - **100% of every settled winning bid** is allocated to the single auction revenue address configured in the Registry at deployment: `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
-- Each plate item records the full winning bid as one claimable liability. Anyone may trigger the Registry claim request, but the item can only pay the immutable configured revenue address; callers cannot redirect proceeds.
-- The current flow is claim-based, not an automatic push during settlement. A claim request is required for each plate item after settlement. Payout messages are non-bounceable and still require bounce/TVM verification.
+- When an auction is settled, its item contract sends **the entire winning bid** to the immutable revenue address in the same transaction. No claim request or manual withdrawal is required.
+- The payout is non-bounceable and has no bounce-recovery path yet; action-phase behavior must be verified in TVM before deployment.
 
 ## NFT ownership lifecycle
 
@@ -47,7 +47,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - The current owner may renew before expiration by sending `RenewPlateOwnership`; renewal restarts the one-year period from that transaction.
 - Ownership transfer is owner-authorized and restarts the one-year period for the recipient.
 - Expiration does not create an auction automatically. The next valid first-bid request reuses the same deterministic item contract and starts a new one-hour auction.
-- Unclaimed auction revenue remains recorded in the item across reauctions. New settlements add the full winning bid to the existing liability instead of overwriting it.
+- Each settled auction sends its full winning bid immediately; there are no stored owner, treasury or security payout liabilities.
 - No renewal price has been configured yet; the renewal message currently requires only network fees.
 
 ## Implementation status
