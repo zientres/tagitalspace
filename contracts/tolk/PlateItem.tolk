@@ -42,7 +42,20 @@ fun onInternalMessage(in: InMessage) {
     }
 
     var storage = loading.parseInitialized();
-    assert (in.senderAddress != storage.collectionAddress || in.body.isEmpty()) throw 776;
+
+    // A repeated first-bid request resolves to the same deterministic item.
+    // Return its attached value instead of replacing the existing auction.
+    if (in.senderAddress == storage.collectionAddress) {
+        val init = lazy PlateItemInitData.fromSlice(in.body);
+        val refund = createMessage({
+            bounce: false,
+            dest: init.firstBidder,
+            value: 0,
+            body: PlateItemExcesses { queryId: blockchain.logicalTime() as uint64 },
+        });
+        refund.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+        return;
+    }
 
     if (in.body.isEmpty() || in.body.preloadUint(32) == 0) {
         val unpacked = storage.unpackAuction();
