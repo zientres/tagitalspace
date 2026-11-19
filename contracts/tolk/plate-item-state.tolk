@@ -65,3 +65,20 @@ fun PlateItemLoadingStorage.parseNotInitialized(self): PlateItemStorageNotInitia
 fun PlateItemLoadingStorage.parseInitialized(self): PlateItemStorageInitialized {
     return PlateItemStorageInitialized.fromSlice(self.data);
 }
+
+fun calcDeployedPlateItem(
+    identityKey: uint256,
+    itemCode: cell,
+): AutoDeployAddress {
+    val itemStorage = PlateItemStorageNotInitialized {
+        identityKey,
+        collectionAddress: contract.getAddress(),
+    };
+    return {
+        workchain: BASECHAIN,
+        stateInit: {
+            code: itemCode,
+            data: itemStorage.toCell(),
+        },
+    };
+}
