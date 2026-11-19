@@ -55,11 +55,10 @@ fun onInternalMessage(in: InMessage) {
         val isExpired = storage.ownerAddress != null
             && storage.auction == null
             && blockchain.now() >= expirationTime;
-        val hasUnpaidLiabilities = storage.pendingOwnerPayout > 0
-            || storage.pendingTreasuryPayout > 0
-            || storage.pendingSecurityPayout > 0;
-
-        if (isExpired && !hasUnpaidLiabilities) {
+        // Previous proceeds remain recorded in the same item storage. New
+        // settlement amounts accumulate, so an expired plate can be auctioned
+        // again without forfeiting unpaid claims.
+        if (isExpired) {
             storage.ownerAddress = null;
             storage.collectionOwner = init.collectionOwner;
             storage.developmentSecurityFund = init.developmentSecurityFund;
@@ -75,8 +74,8 @@ fun onInternalMessage(in: InMessage) {
             return;
         }
 
-        // Duplicate requests, active items, and expired items with unpaid
-        // proceeds are rejected by returning the incoming bid to its sender.
+        // Duplicate requests and active items are rejected by returning the
+        // incoming bid to its sender.
         val refund = createMessage({
             bounce: false,
             dest: init.firstBidder,
