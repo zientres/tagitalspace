@@ -7,7 +7,7 @@ struct (0x54530001) StartPlateAuction {
     regionCode: uint16
 }
 
-struct PlateItemInitData {
+struct (0x54531006) PlateItemInitData {
     firstBidder: address
     plateBody: cell
     regionCode: uint16
