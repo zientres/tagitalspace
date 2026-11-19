@@ -13,7 +13,7 @@ Network: TON Testnet only (network id -3).
 ## Auction policy
 - Any wallet may create an auction by submitting the first bid for an unreserved/unowned pair.
 - Starting bid is calculated from the six-character body: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both mirror blocks add; base is used only if neither special pattern applies; triples are not combined with mirror pricing in the same block.
-- Subsequent bid minimum is ceil(current_bid * 105 / 100), avoiding integer-rounding underpayment. This rounding convention must be implemented consistently and tested.
+- Subsequent bid minimum is floor(current_bid * 105 / 100), matching TON DNS integer arithmetic. The exact threshold formula must be implemented consistently and tested.
 - Auction starts with 3600 seconds.
 - When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension.
 - No bid history is stored.
