@@ -52,10 +52,10 @@ fun tagitalSpaceSettlePlateAuction(
     storage.ownerAddress = auction.highestBidder;
     storage.lastRenewalTime = blockchain.now();
     storage.auction = null;
-    storage.pendingOwnerPayout = auction.highestBid * 50 / 100;
-    storage.pendingTreasuryPayout = auction.highestBid * 30 / 100;
-    storage.pendingSecurityPayout =
-        auction.highestBid - storage.pendingOwnerPayout - storage.pendingTreasuryPayout;
+    storage.pendingOwnerPayout += auction.highestBid * 50 / 100;
+    storage.pendingTreasuryPayout += auction.highestBid * 30 / 100;
+    storage.pendingSecurityPayout +=
+        auction.highestBid - auction.highestBid * 50 / 100 - auction.highestBid * 30 / 100;
     storage.save();
 }
 
