@@ -6,7 +6,7 @@ version = "0.1.0"
 repository = "https://github.com/zientres/tagitalspace"
 
 [toolchain]
-acton = "1.2.0"
+acton = "1.2.1"
 
 [contracts.TagitalSpaceRegistry]
 display-name = "TagitalSpace Registry"
