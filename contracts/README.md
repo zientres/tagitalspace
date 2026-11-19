@@ -65,3 +65,8 @@ The Russia-specific region allowlist is mirrored in `contracts/tolk/russia-regio
 ### Registry persistence helpers
 
 `contracts/tolk/registry-storage.tolk` now provides typed load/save helpers for Registry contract data and dictionary operations for reservation entries. Entries are stored under uint256 identity keys as serialized cells. New reservations use add-only insertion (`addIfNotExists`) so a second first-bid request cannot overwrite an existing entry; state changes use replace-only updates, and deletion is explicit. These helpers are storage primitives, not a deployable Registry: message authentication, query generation, value validation, send ordering, and bounce recovery still belong in the contract handler.
+
+
+### First-bid request preparation
+
+`contracts/tolk/registry-request.tolk` now combines the Russia plate-body validator, the 212-code region allowlist, canonical starting-price calculation, attached-value check, identity-key derivation, and creation of an `AUCTION_PENDING` entry. It is deliberately a pure preparation helper: the Registry handler must still check that the identity key is absent, insert the pending entry and save storage before sending the attached bid to Auction Manager.
