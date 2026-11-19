@@ -38,7 +38,8 @@ fun onInternalMessage(in: InMessage) {
             auction: initialAuction.toCell(),
             pendingOwnerPayout: 0,
             pendingTreasuryPayout: 0,
-            pendingSecurityPayout: 0,\n            lastRenewalTime: blockchain.now(),
+            pendingSecurityPayout: 0,
+            lastRenewalTime: blockchain.now(),
         };
         storage.save();
         return;
