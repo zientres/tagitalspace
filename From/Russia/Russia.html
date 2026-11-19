@@ -787,7 +787,7 @@
           addResultText(card, "registry-result-detail",
             localized("Стартовая ставка рассчитывается по комбинации номера. После запуска аукцион продлится 1 час.", "The starting bid is calculated from the plate combination. The auction runs for 1 hour after it starts."));
           const note = addResultText(card, "registry-result-note",
-            localized("Размер первой ставки зависит от комбинации номера. Сетевые комиссии и операционный запас контракта оплачиваются отдельно.", "The opening bid depends on the plate combination. Network fees and the contract operating reserve are separate."));
+            localized("Размер первой ставки зависит от комбинации номера. Для запуска аукциона к ней добавляется 0,15 TON на развёртывание и резерв контракта; комиссия сети учитывается отдельно.", "The opening bid depends on the plate combination. An additional 0.15 TON covers item deployment and its reserve; network fees are separate."));
           const button = document.createElement("button");
           button.type = "button";
           button.className = "primary-button registry-action-button";
@@ -796,8 +796,8 @@
             button.disabled = true;
             button.textContent = localized("Ожидание подтверждения в Keeper…", "Waiting for Keeper approval…");
             note.textContent = localized(
-              "Сначала подтвердите создание аукциона. Затем отдельно подтвердите первую ставку 1 TON.",
-              "First approve auction creation. Then approve the separate 1 TON opening bid."
+              "Подтвердите одну транзакцию: она развернёт отдельный контракт номера и внесёт первую ставку по стартовой цене.",
+              "Approve one transaction to deploy the individual plate contract and place the opening bid at its starting price."
             );
             try {
               await window.tagitalSpaceRegistry.startRussianAuctionWithFirstBid(searchedPlate);
