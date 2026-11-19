@@ -15,3 +15,6 @@ src = "contracts/tolk/TagitalSpaceRegistry.tolk"
 [contracts.TagitalSpacePlateItem]
 display-name = "TagitalSpace Plate Item"
 src = "contracts/tolk/PlateItem.tolk"
+
+[fmt]
+ignore = ["contracts/vendor/**"]
