@@ -19,3 +19,8 @@ struct (0x54530002) RegistryTreasuryDeposit {
     queryId: uint64
     identityKey: uint256
 }
+
+struct (0x54530003) RequestRegistryTreasuryPayout {
+    queryId: uint64
+    identityKey: uint256
+}
