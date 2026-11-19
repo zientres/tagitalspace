@@ -40,3 +40,15 @@ The reusable Tolk timing helper is `contracts/tolk/auction-timing.tolk`; boundar
 ## Tolk migration status
 
 New TagitalSpace-specific helpers are being ported to Tolk under `contracts/tolk/`. The upstream TON DNS FunC sources are retained temporarily as the migration reference and must not be deployed. The Tolk reference collection and item contracts, utility modules, opcodes/message layouts, error codes, and storage layouts have been added. Tolk stdlib functionality is supplied by the language/runtime rather than by a copied FunC stdlib file. The migration is not complete until these files are compiled, tested against the original behavior, integrated into the Acton build, and the remaining project-specific contracts and tests are migrated. The upstream GPL-3.0 license and required notices must remain available.
+
+
+## Registry and auction policy helpers
+
+The current implementation step adds two TagitalSpace-specific Tolk modules:
+
+- `contracts/tolk/plate-identity.tolk`: validates the canonical six-byte ASCII plate body and numeric region code, and builds a deterministic identity cell from both values. The identity is the pair `(plate body, region code)`; the region is not included in price calculation.
+- `contracts/tolk/auction-policy.tolk`: validates the first bid against the starting price, calculates the next minimum bid as `floor(current bid × 105 / 100)`, starts auctions at 3,600 seconds, and applies the strict less-than-one-hour extension rule.
+
+The current region helper accepts numeric codes from 1 through 999. A country-specific region allowlist must be enforced by the registry before deployment; numeric-format validation alone does not prove that a code is an officially supported Russian region.
+
+The JavaScript verifier includes independent mirror checks for plate identity, region separation, minimum-bid rounding, and deadline boundaries. These checks do not replace Tolk compilation or TVM contract tests.
