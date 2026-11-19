@@ -19,6 +19,7 @@ struct PlateItemStorageInitialized {
     collectionOwner: address
     developmentSecurityFund: address
     ownerAddress: address?
+    lastRenewalTime: uint64
     auction: Cell<PlateAuctionState>?
     pendingOwnerPayout: coins
     pendingTreasuryPayout: coins
