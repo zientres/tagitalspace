@@ -7,6 +7,7 @@ fun tagitalSpaceCreatePendingAuctionEntry(
     plateBody: cell,
     regionCode: uint16,
     queryId: uint64,
+    initiator: address,
 ): TagitalSpaceRegistryEntry {
     assert (queryId != 0) throw 712;
 
@@ -23,6 +24,7 @@ fun tagitalSpaceCreatePendingAuctionEntry(
         ownerAddress: null,
         expiresAt: 0,
         pendingQueryId: queryId,
+        pendingInitiator: initiator,
     };
 }
 
@@ -57,6 +59,7 @@ fun tagitalSpaceActivatePendingAuction(
         ownerAddress: null,
         expiresAt: 0,
         pendingQueryId: 0,
+        pendingInitiator: null,
     };
 }
 
