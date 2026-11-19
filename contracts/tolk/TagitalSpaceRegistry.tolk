@@ -58,3 +58,16 @@ fun onInternalMessage(in: InMessage) {
         }
     }
 }
+
+get fun get_plate_item_address(plateBody: cell, regionCode: uint16): address {
+    val storage = TagitalSpaceRegistryStorage.load();
+    val plate = plateBody.beginParse();
+    assert (tagitalSpaceValidatePlateBody(plate)) throw 730;
+    assert (tagitalSpaceValidateRussiaRegionCode(regionCode as int)) throw 731;
+    val identityKey = tagitalSpaceBuildPlateIdentity(plate, regionCode as int).hash();
+    return calcDeployedPlateItem(identityKey, storage.nftItemCode).calculateAddress();
+}
+
+get fun get_registry_treasury_balance(): coins {
+    return TagitalSpaceRegistryStorage.load().treasuryBalance;
+}
