@@ -9,6 +9,7 @@ const timings = JSON.parse(readFileSync(resolve(here, "auction-timing-vectors.js
 const registryProtocol = readFileSync(resolve(here, "../tolk/registry-messages.tolk"), "utf8");
 const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"), "utf8");
 const registryTransitions = readFileSync(resolve(here, "../tolk/registry-transitions.tolk"), "utf8");
+const registryStorage = readFileSync(resolve(here, "../tolk/registry-storage.tolk"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -140,5 +141,10 @@ assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION_PENDING
 assert.match(registryTransitions, /entry\.pendingQueryId == queryId/);
 assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION,/);
 assert.match(registryTransitions, /tagitalSpaceCanReleaseRejectedAuction/);
+assert.match(registryStorage, /TagitalSpaceRegistryStorage\.load\(\)/);
+assert.match(registryStorage, /contract\.setData\(self\.toCell\(\)\)/);
+assert.match(registryStorage, /entries\.addIfNotExists\(identityKey, entry\.toCell\(\)\)/);
+assert.match(registryStorage, /entries\.replaceIfExists\(identityKey, entry\.toCell\(\)\)/);
+assert.match(registryStorage, /entries\.delete\(identityKey\)/);
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy, Registry protocol and reservation source checks.`);
