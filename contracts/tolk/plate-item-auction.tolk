@@ -9,11 +9,13 @@ const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05");
 fun tagitalSpaceProcessPlateBid(
     senderAddress: address,
     valueCoins: coins,
+    bidAmount: coins,
     mutate storage: PlateItemStorageInitialized,
     mutate auction: PlateAuctionState,
 ) {
     assert (blockchain.now() <= auction.auctionEndTime) throw 770;
-    assert (valueCoins >= auction.highestBid * 105 / 100) throw 771;
+    assert (bidAmount >= auction.highestBid * 105 / 100) throw 771;
+    assert (valueCoins >= bidAmount) throw 772;
 
     // Return the previous escrowed bid. The item keeps its storage reserve;
     // if the old bid cannot be returned in full, the transaction is rejected.
@@ -29,7 +31,7 @@ fun tagitalSpaceProcessPlateBid(
     refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
 
     auction.highestBidder = senderAddress;
-    auction.highestBid = valueCoins;
+    auction.highestBid = bidAmount;
 
     if (auction.auctionEndTime - blockchain.now() < TAGITALSPACE_ITEM_AUCTION_DURATION) {
         auction.auctionEndTime = blockchain.now() + TAGITALSPACE_ITEM_AUCTION_DURATION;
