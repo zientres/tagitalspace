@@ -125,8 +125,8 @@ assert.equal(protocolOpcodes.length, 2, "Only start-auction and treasury-deposit
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
 assert.match(registryContract, /StartPlateAuction =>/);
-assert.match(registryContract, /PlateItemStorageNotInitialized/);
-assert.match(registryContract, /stateInit:/);
+assert.match(registryContract, /calcDeployedPlateItem/);
+assert.match(itemState, /stateInit:/);
 assert.match(registryContract, /storage\.nftItemCode/);
 assert.match(registryContract, /SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE/);
 assert.match(registryState, /nftItemCode: cell/);
