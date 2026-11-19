@@ -152,7 +152,7 @@ assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryStorage, /auctionRevenueAddress/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
 assert.match(deploymentConfig, new RegExp(revenueRecipient));
-assert.doesNotMatch(itemState + itemMessages + itemAuction, /pending.*Payout|claim.*payout|unclaimed.*revenue/i);
+assert.doesNotMatch(itemState + itemMessages + itemAuction + itemContract, /pending.*Payout|claim.*payout|unclaimed.*revenue|unsettled payout liabilities/i);
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 2, "Registry and Registry-to-item protocol messages are expected");
