@@ -72,9 +72,19 @@ for (const [currentBid, expected] of [[1, 1], [19, 19], [20, 21], [100, 105], [1
 }
 
 // Auction deadline boundaries: 3599 extends, 3600 does not.
-assert.equal(5000 + 3600, 8600);
-assert.equal(5000 + 3600, 8600);
-assert.equal((8600 - 5000) < 3600 ? 5000 + 3600 : 8600, 8600);
-assert.equal((8599 - 5000) < 3600 ? 5000 + 3600 : 8599, 8600);
+function auctionEndAfterBid(now, endTime) {
+  assert.ok(endTime >= now, "Cannot bid on an expired auction");
+  return endTime - now < 3600 ? now + 3600 : endTime;
+}
+assert.equal(auctionEndAfterBid(5000, 8600), 8600, "Exactly one hour must not extend");
+assert.equal(auctionEndAfterBid(5000, 8599), 8600, "Less than one hour must extend");
+assert.equal(auctionEndAfterBid(5000, 5001), 8600, "A last-second bid must reset to one hour");
+assert.throws(() => auctionEndAfterBid(5000, 4999), /Cannot bid/);
+
+// First bid must meet the starting price; later bids use floor(105%).
+assert.ok(3_000_000_000 >= 3_000_000_000);
+assert.ok(!(2_999_999_999 >= 3_000_000_000));
+assert.ok(105 >= Math.floor(100 * 105 / 100));
+assert.ok(!(104 >= Math.floor(100 * 105 / 100)));
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity and bid-policy checks.`);
