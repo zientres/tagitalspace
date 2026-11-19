@@ -2,6 +2,7 @@ import "registry-messages"
 
 struct (0x00000000) PlateItemBid {
     queryId: uint64
+    bidAmount: coins
 }
 
 struct (0x54531001) SettlePlateAuction {
