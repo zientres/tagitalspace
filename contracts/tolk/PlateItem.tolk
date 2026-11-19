@@ -36,6 +36,9 @@ fun onInternalMessage(in: InMessage) {
             developmentSecurityFund: init.developmentSecurityFund,
             ownerAddress: null,
             auction: initialAuction.toCell(),
+            pendingOwnerPayout: 0,
+            pendingTreasuryPayout: 0,
+            pendingSecurityPayout: 0,
         };
         storage.save();
         return;
