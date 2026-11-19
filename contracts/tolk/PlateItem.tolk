@@ -49,7 +49,7 @@ fun onInternalMessage(in: InMessage) {
 
     // Registry can restart an expired identity, but never overwrite a live
     // auction or erase unsettled payout liabilities.
-    if (in.senderAddress == storage.collectionAddress && (in.body.isEmpty() || in.body.preloadUint(32) != 0x54531004)) {
+    if (in.senderAddress == storage.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
         val isExpired = storage.ownerAddress != null
