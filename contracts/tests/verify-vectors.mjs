@@ -10,6 +10,7 @@ const registryProtocol = readFileSync(resolve(here, "../tolk/registry-messages.t
 const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"), "utf8");
 const registryTransitions = readFileSync(resolve(here, "../tolk/registry-transitions.tolk"), "utf8");
 const registryStorage = readFileSync(resolve(here, "../tolk/registry-storage.tolk"), "utf8");
+const registryRequest = readFileSync(resolve(here, "../tolk/registry-request.tolk"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -146,5 +147,11 @@ assert.match(registryStorage, /contract\.setData\(self\.toCell\(\)\)/);
 assert.match(registryStorage, /entries\.addIfNotExists\(identityKey, entry\.toCell\(\)\)/);
 assert.match(registryStorage, /entries\.replaceIfExists\(identityKey, entry\.toCell\(\)\)/);
 assert.match(registryStorage, /entries\.delete\(identityKey\)/);
+assert.match(registryRequest, /tagitalSpacePrepareRussiaFirstBid/);
+assert.match(registryRequest, /tagitalSpaceValidateRussiaRegionCode/);
+assert.match(registryRequest, /tagitalSpacePlateStartPrice/);
+assert.match(registryRequest, /tagitalSpaceValidateFirstBid/);
+assert.match(registryRequest, /identityCell\.hash\(\)/);
+assert.match(registryRequest, /tagitalSpaceCreatePendingAuctionEntry/);
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy, Registry protocol and reservation source checks.`);
