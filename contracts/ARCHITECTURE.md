@@ -86,3 +86,6 @@ These helpers are not yet wired into a deployable Registry or Auction Manager. T
 - Registry configuration: owner, development/security fund, and accounted treasury balance.
 
 This is a storage schema only. It does not yet implement registry message handlers, map-key derivation, auction callbacks, mint acknowledgement, renewal, or bounce recovery. The Auction Manager must separately account for bidder escrow and refund liabilities; those funds must not be counted as the registry treasury.
+
+
+The Russia-specific allowlist is implemented separately in `contracts/tolk/russia-regions.tolk` and mirrors the 212 codes currently used by `From/Russia/Russia.html`; region 20 is excluded. The Russia registry must enforce this allowlist. The generic numeric 1–999 check is not sufficient for a Russia plate.
