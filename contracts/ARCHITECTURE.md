@@ -5,7 +5,7 @@ Network: TON Testnet only (network id -3).
 
 ## Identity and uniqueness
 - Canonical plate body is exactly six ASCII characters: letter, three digits, two letters (Russian allowed alphabet mapped to A B E K M H O P C T Y X).
-- Region is a separate validated field.
+- Region is a separate validated numeric field (1–999 in the generic identity helper); the Russian registry must additionally enforce its explicit supported-region allowlist.
 - Registry identity is the pair (canonical plate body, region code). A plate body may exist in another region.
 - Canonicalization and region validation happen before any state transition.
 - No mint/auction operation may bypass the registry's uniqueness reservation.
@@ -13,9 +13,9 @@ Network: TON Testnet only (network id -3).
 ## Auction policy
 - Any wallet may create an auction by submitting the first bid for an unreserved/unowned pair.
 - Starting bid is calculated from the six-character body: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both mirror blocks add; base is used only if neither special pattern applies; triples are not combined with mirror pricing in the same block.
-- Subsequent bid minimum is floor(current_bid * 105 / 100), matching TON DNS integer arithmetic. The exact threshold formula must be implemented consistently and tested.
-- Auction starts with 3600 seconds.
-- When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension.
+- Subsequent bid minimum is floor(current_bid * 105 / 100), matching TON DNS integer arithmetic. The reusable helper is in `contracts/tolk/auction-policy.tolk`; the threshold must be tested at rounding boundaries.
+- Auction starts with 3600 seconds (`tagitalSpaceInitialAuctionEndTime`).
+- When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension (`tagitalSpaceAuctionEndTimeAfterBid`).
 - No bid history is stored.
 - No settlement may occur before deadline. Settlement requires an explicit message/getter-supported state transition; transaction ordering and idempotence must be protected.
 
@@ -64,3 +64,12 @@ Agreed split of auction proceeds: 50% owner, 30% retained in contract treasury, 
 7. Verify deployment addresses, code hashes, configuration, and wallet/network before deployment.
 
 This specification is a design checklist only; it is not proof of implementation, compilation, or security.
+
+
+## Current helper implementation status
+
+The first reusable TagitalSpace-specific Tolk helpers now exist:
+- `plate-identity.tolk`: canonical plate format, allowed ASCII alphabet, generic numeric region bounds, and identity-cell construction.
+- `auction-policy.tolk`: first-bid validation, floor-rounded 5% next-bid threshold, one-hour initial duration, extension boundary, and settlement-time predicate.
+
+These helpers are not yet wired into a deployable Registry or Auction Manager. The generic region bounds are not a substitute for the Russian region allowlist. The independent JavaScript checks are not Tolk/TVM execution evidence.
