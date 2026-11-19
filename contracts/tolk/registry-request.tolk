@@ -3,6 +3,7 @@ import "plate-pricing"
 import "russia-regions"
 
 // Validates the first bid request and returns its deterministic item identity.
+// The extra 0.15 TON covers the item storage reserve and forwarding/deployment costs.
 struct TagitalSpacePreparedAuctionRequest {
     identityKey: uint256
     startingPrice: coins
@@ -21,7 +22,7 @@ fun tagitalSpacePrepareRussiaFirstBid(
     assert (queryId != 0) throw 732;
 
     val startingPrice = tagitalSpacePlateStartPrice(plate);
-    assert (attachedValue >= startingPrice) throw 733;
+    assert (attachedValue >= startingPrice + 150_000_000) throw 733;
 
     val identityCell = tagitalSpaceBuildPlateIdentity(plate, regionCode as int);
     return {
