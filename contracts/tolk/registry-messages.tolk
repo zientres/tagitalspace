@@ -1,4 +1,4 @@
-// TagitalSpace Registry -> per-plate item protocol.
+// Registry -> per-plate item protocol.
 // Each plate item owns its auction state; Registry only deploys deterministic items.
 
 struct (0x54530001) StartPlateAuction {
@@ -17,10 +17,5 @@ struct PlateItemInitData {
 
 struct (0x54530002) RegistryTreasuryDeposit {
     queryId: uint64
-}
-
-struct (0x54530003) WithdrawRegistryTreasury {
-    queryId: uint64
-    amount: coins
-    destination: address
+    identityKey: uint256
 }
