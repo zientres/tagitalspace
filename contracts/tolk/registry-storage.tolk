@@ -15,10 +15,12 @@ fun TagitalSpaceRegistryStorage.save(self) {
 fun tagitalSpaceRegistryCreateInitialStorage(
     ownerAddress: address,
     developmentSecurityFund: address,
+    auctionManagerAddress: address,
 ): TagitalSpaceRegistryStorage {
     return TagitalSpaceRegistryStorage {
         ownerAddress,
         developmentSecurityFund,
+        auctionManagerAddress,
         treasuryBalance: 0,
         entries: [],
     };
