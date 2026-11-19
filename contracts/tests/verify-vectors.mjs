@@ -121,7 +121,7 @@ const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
-assert.equal(protocolOpcodes.length, 2, "Only start-auction and treasury-deposit messages are expected");
+assert.equal(protocolOpcodes.length, 3, "Registry start, treasury-deposit and treasury-claim messages are expected");
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
 assert.match(registryContract, /StartPlateAuction =>/);
@@ -142,5 +142,7 @@ assert.match(itemAuction, /highestBid \* 50 \/ 100/);
 assert.match(itemAuction, /highestBid \* 30 \/ 100/);
 assert.match(itemAuction, /developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);\nassert.match(itemMessages, /ClaimPlatePayout/);\nassert.match(itemState, /pendingOwnerPayout: coins/);\nassert.match(itemState, /pendingTreasuryPayout: coins/);\nassert.match(itemState, /pendingSecurityPayout: coins/);\nassert.match(itemAuction, /Settlement creates three explicit liabilities/);\nassert.match(itemAuction, /BounceMode.NoBounce/);\nassert.match(itemContract, /get_pending_payouts/);
+assert.match(registryContract, /RequestRegistryTreasuryPayout/);
+assert.match(registryContract, /ClaimPlatePayout/);
 
 console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
