@@ -61,8 +61,8 @@ fun onInternalMessage(in: InMessage) {
         // again without forfeiting unpaid claims.
         if (isExpired) {
             storage.ownerAddress = null;
-            storage.collectionOwner = init.collectionOwner;
-            storage.developmentSecurityFund = init.developmentSecurityFund;
+            // Keep the original payout beneficiaries: older unpaid liabilities
+            // are still owed to those exact addresses after this reauction.
             storage.plateBody = init.plateBody;
             storage.regionCode = init.regionCode;
             storage.lastRenewalTime = blockchain.now();
