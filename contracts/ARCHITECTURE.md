@@ -36,7 +36,7 @@ The winning bid is divided:
 - 30% to the Registry treasury;
 - 20% to the configured development/security fund.
 
-The item contract is responsible for splitting its own auction proceeds. Registry records only treasury deposits; it does not manage bidder escrow or auction state. Bounce-safe payout claims and treasury withdrawal still require implementation and tests before deployment.
+The item contract is responsible for splitting its own auction proceeds. Registry records only treasury deposits; it does not manage bidder escrow or auction state. Settlement records three claimable payout balances in the item. The configured beneficiary claims their share; the Registry owner triggers the Registry's 30% claim. These claim transfers currently use non-bounceable messages, so bounced-transfer recovery is not implemented and action-phase behavior still requires TVM tests.
 
 ## NFT lifecycle
 
