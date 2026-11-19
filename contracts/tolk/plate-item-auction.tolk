@@ -13,12 +13,10 @@ fun tagitalSpaceProcessPlateBid(
     assert (blockchain.now() <= auction.auctionEndTime) throw 770;
     assert (valueCoins >= auction.highestBid * 105 / 100) throw 771;
 
-    // The previous bid is returned from the item balance while retaining
-    // a small storage reserve. The transaction is atomic with the new leader.
+    // Return the previous escrowed bid. The item keeps its storage reserve;
+    // if the old bid cannot be returned in full, the transaction is rejected.
     val balanceBeforeMessage = contract.getOriginalBalance() - valueCoins;
-    val refundable = balanceBeforeMessage - TAGITALSPACE_ITEM_MIN_STORAGE;
-    val refundAmount = auction.highestBid < refundable ? auction.highestBid : refundable;
-    assert (refundAmount >= auction.highestBid) throw 772;
+    assert (balanceBeforeMessage >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE) throw 772;
 
     val refund = createMessage({
         bounce: false,
