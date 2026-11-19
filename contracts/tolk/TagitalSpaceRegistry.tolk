@@ -10,9 +10,11 @@ contract TagitalSpaceRegistry {
     author: "TagitalSpace"
     version: "0.4.0"
     description: "TagitalSpace Russia plate collection; each plate has its own auction contract"
-    incomingMessages: StartPlateAuction
+    incomingMessages: AllowedRegistryMessage
     storage: TagitalSpaceRegistryStorage
 }
+
+type AllowedRegistryMessage = StartPlateAuction
 
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and deploy that item with its opening bid.
