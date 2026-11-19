@@ -144,7 +144,7 @@ const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8
 // Every item settlement pays the exact winning bid immediately to the
 // immutable revenue recipient; no cumulative payout balance or claim exists.
 const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
-assert.match(itemAuction, /dest: storage\.auctionRevenueAddress/);
+assert.match(itemAuction, /dest: immutable.auctionRevenueAddress/);
 assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
 assert.match(itemAuction, /BounceMode\.NoBounce/);
@@ -185,7 +185,7 @@ assert.match(itemContract, /storage\.immutable\.load\(\)/);
 assert.match(itemAuction, /storage\.immutable\.load\(\)/);
 assert.match(itemAuction, /highestBid \* 105 \/ 100/);
 assert.match(itemAuction, /auctionEndTime - blockchain\.now\(\) < TAGITALSPACE_ITEM_AUCTION_DURATION/);
-assert.match(itemAuction, /dest: storage\.auctionRevenueAddress/);
+assert.match(itemAuction, /dest: immutable.auctionRevenueAddress/);
 assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemState, /auctionRevenueAddress: address/);
 assert.match(registryState, /auctionRevenueAddress: address/);
