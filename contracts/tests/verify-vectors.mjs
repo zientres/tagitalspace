@@ -134,13 +134,18 @@ assert.ok(!canRelease(expirationTime(1_000) - 1, 1_000));
 assert.ok(canRelease(expirationTime(1_000), 1_000));
 
 
-// Unclaimed proceeds survive reauction: each settlement adds, never replaces.
-function addAuctionRevenue(previous, winningBid) {
-  return previous + winningBid;
-}
-const firstSettlement = addAuctionRevenue(0n, 101n);
-const secondSettlement = addAuctionRevenue(firstSettlement, 200n);
-assert.equal(secondSettlement, 301n, "Every settled auction contributes 100% of its winning bid");
+// Every item settlement pays the exact winning bid immediately to the
+// immutable revenue recipient; no cumulative payout balance or claim exists.
+const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
+assert.match(itemAuction, /dest: storage\\.auctionRevenueAddress/);
+assert.match(itemAuction, /value: auction\\.highestBid/);
+assert.match(itemAuction, /payout\\.send\\(SEND_MODE_PAY_FEES_SEPARATELY\\)/);
+assert.match(itemAuction, /BounceMode\\.NoBounce/);
+assert.match(registryState, /auctionRevenueAddress: address/);
+assert.match(registryStorage, /auctionRevenueAddress/);
+assert.match(registryContract, /auctionRevenueAddress: storage\\.auctionRevenueAddress/);
+assert.match(deploymentConfig, new RegExp(revenueRecipient));
+assert.doesNotMatch(itemState + itemMessages + itemAuction, /pending.*Payout|claim.*payout|unclaimed.*revenue/i);
 
 // TON DNS-style architecture checks: Registry deploys deterministic items;
 // each item contract owns its auction and no shared Auction Manager exists.
