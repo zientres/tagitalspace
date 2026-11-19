@@ -5,22 +5,19 @@ import "registry-request"
 import "plate-item-state"
 import "plate-identity"
 import "russia-regions"
-import "plate-item-messages"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
-    version: "0.3.0"
+    version: "0.4.0"
     description: "TagitalSpace Russia plate collection; each plate has its own auction contract"
-    incomingMessages: AllowedRegistryMessage
+    incomingMessages: StartPlateAuction
     storage: TagitalSpaceRegistryStorage
 }
 
-type AllowedRegistryMessage = StartPlateAuction | RequestAuctionRevenuePayout
-
 // TON DNS collection pattern: validate the requested identity, derive the
-// deterministic item StateInit, and send the first bid directly to that item.
+// deterministic item StateInit, and deploy that item with its opening bid.
 fun onInternalMessage(in: InMessage) {
-    var msg = lazy AllowedRegistryMessage.fromSlice(in.body);
+    val msg = lazy StartPlateAuction.fromSlice(in.body);
     match (msg) {
         StartPlateAuction => {
             val storage = TagitalSpaceRegistryStorage.load();
@@ -36,27 +33,10 @@ fun onInternalMessage(in: InMessage) {
                     firstBidAmount: prepared.startingPrice,
                     plateBody: msg.plateBody,
                     regionCode: msg.regionCode,
-                    collectionOwner: storage.ownerAddress,
                     auctionRevenueAddress: storage.auctionRevenueAddress,
                 },
             });
             deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
-        }
-        // Anyone may trigger a claim. The item always pays its fixed configured
-        // address; the caller cannot redirect or withdraw auction proceeds.
-        RequestAuctionRevenuePayout => {
-            val storage = TagitalSpaceRegistryStorage.load();
-            val itemAddress = calcDeployedPlateItem(msg.identityKey, storage.nftItemCode);
-            val claim = createMessage({
-                bounce: BounceMode.NoBounce,
-                dest: itemAddress,
-                value: 0,
-                body: ClaimPlatePayout {
-                    queryId: msg.queryId,
-                    beneficiaryKind: 2,
-                },
-            });
-            claim.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
     }
 }
