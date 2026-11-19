@@ -22,9 +22,10 @@ fun onInternalMessage(in: InMessage) {
         assert (in.senderAddress == uninitialized.collectionAddress) throw 775;
 
         val init = lazy PlateItemInitData.fromSlice(in.body);
+        assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
         val initialAuction = PlateAuctionState {
             highestBidder: init.firstBidder,
-            highestBid: in.valueCoins,
+            highestBid: init.firstBidAmount,
             auctionEndTime: blockchain.now() + TAGITALSPACE_ITEM_AUCTION_DURATION,
         };
         val storage = PlateItemStorageInitialized {
@@ -65,9 +66,10 @@ fun onInternalMessage(in: InMessage) {
             storage.plateBody = init.plateBody;
             storage.regionCode = init.regionCode;
             storage.lastRenewalTime = blockchain.now();
+            assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
             storage.auction = PlateAuctionState {
                 highestBidder: init.firstBidder,
-                highestBid: in.valueCoins,
+                highestBid: init.firstBidAmount,
                 auctionEndTime: blockchain.now() + TAGITALSPACE_ITEM_AUCTION_DURATION,
             }.toCell();
             storage.save();
@@ -86,21 +88,13 @@ fun onInternalMessage(in: InMessage) {
         return;
     }
 
-    if (in.body.isEmpty() || in.body.preloadUint(32) == 0) {
-        val unpacked = storage.unpackAuction();
-        assert (!unpacked.0) throw 777;
-        var auction = unpacked.1;
-        tagitalSpaceProcessPlateBid(in.senderAddress, in.valueCoins, mutate storage, mutate auction);
-        return;
-    }
-
     val msg = lazy AllowedPlateItemMessage.fromSlice(in.body);
     match (msg) {
         PlateItemBid => {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 777;
             var auction = unpacked.1;
-            tagitalSpaceProcessPlateBid(in.senderAddress, in.valueCoins, mutate storage, mutate auction);
+            tagitalSpaceProcessPlateBid(in.senderAddress, in.valueCoins, msg.bidAmount, mutate storage, mutate auction);
         }
         SettlePlateAuction => {
             val unpacked = storage.unpackAuction();
