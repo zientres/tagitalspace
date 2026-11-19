@@ -115,3 +115,16 @@ Settlement must be idempotent and move amounts between these accounting buckets 
 The protocol carries a query ID and full plate identity through asynchronous transitions. A handler must match the query ID and identity against the stored pending entry, and authenticate the sender contract before applying any callback. A timeout alone is never proof that a remote operation failed; the Registry must not release a reservation solely because a response was delayed.
 
 This file defines message layouts only. It does not implement handlers, serialization tests, sender checks, bounce recovery, or deployment-ready contracts. The opcodes and field layouts must be treated as a versioned interface and covered by TVM serialization tests before integration.
+
+
+### Asynchronous reservation invariant
+
+The Registry state schema now includes `AUCTION_PENDING` as a distinct reservation state. The required sequence is:
+1. Validate the canonical plate and Russia region; derive the identity key.
+2. Confirm the key is absent, then persist `AUCTION_PENDING` with a fresh query ID before sending any message.
+3. Send `CreateManagedAuction` to the configured Auction Manager.
+4. Accept `ManagedAuctionCreated` only from that manager and only when query ID and identity key match; then transition to `AUCTION`.
+5. Accept a rejection only under the same authentication and correlation checks; only then may the matching pending reservation be cleared.
+6. Treat a bounce or timeout as an unresolved operation until a defined recovery procedure proves the manager did not create the auction.
+
+This ordering prevents two first-bid requests from racing for the same plate-and-region pair. The current schema and message definitions describe the invariant; the transaction handlers and bounce recovery remain unimplemented.
