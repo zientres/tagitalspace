@@ -20,6 +20,9 @@ struct PlateItemStorageInitialized {
     developmentSecurityFund: address
     ownerAddress: address?
     auction: Cell<PlateAuctionState>?
+    pendingOwnerPayout: coins
+    pendingTreasuryPayout: coins
+    pendingSecurityPayout: coins
 }
 
 fun PlateItemStorageInitialized.save(self) {
