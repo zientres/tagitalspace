@@ -20,3 +20,8 @@ struct (0x54531004) ClaimPlatePayout {
     queryId: uint64
     beneficiaryKind: uint8
 }
+
+struct (0x5fcc3d15) TransferPlateOwnership {
+    queryId: uint64
+    newOwnerAddress: address
+}
