@@ -34,12 +34,10 @@ fun onInternalMessage(in: InMessage) {
             plateBody: init.plateBody,
             regionCode: init.regionCode,
             collectionOwner: init.collectionOwner,
-            developmentSecurityFund: init.developmentSecurityFund,
+            auctionRevenueAddress: init.auctionRevenueAddress,
             ownerAddress: null,
             auction: initialAuction.toCell(),
-            pendingOwnerPayout: 0,
-            pendingTreasuryPayout: 0,
-            pendingSecurityPayout: 0,
+            pendingAuctionRevenue: 0,
             lastRenewalTime: blockchain.now(),
         };
         storage.save();
@@ -61,8 +59,8 @@ fun onInternalMessage(in: InMessage) {
         // again without forfeiting unpaid claims.
         if (isExpired) {
             storage.ownerAddress = null;
-            // Keep the original payout beneficiaries: older unpaid liabilities
-            // are still owed to those exact addresses after this reauction.
+            // Keep the original revenue destination so older unpaid proceeds
+            // remain payable to the same configured address after reauction.
             storage.plateBody = init.plateBody;
             storage.regionCode = init.regionCode;
             storage.lastRenewalTime = blockchain.now();
@@ -173,13 +171,9 @@ get fun get_last_renewal_time(): uint64 {
     return storage.lastRenewalTime;
 }
 
-get fun get_pending_payouts(): (coins, coins, coins) {
+get fun get_pending_auction_revenue(): coins {
     val loading = startLoadingPlateItemStorage();
     assert (loading.isInitialized()) throw 788;
     val storage = loading.parseInitialized();
-    return (
-        storage.pendingOwnerPayout,
-        storage.pendingTreasuryPayout,
-        storage.pendingSecurityPayout,
-    );
+    return storage.pendingAuctionRevenue;
 }
