@@ -44,21 +44,18 @@ fun onInternalMessage(in: InMessage) {
 
     var storage = loading.parseInitialized();
 
-    // Registry can restart an expired identity, but never overwrite a live
-    // auction or erase unsettled payout liabilities.
+    // Registry may restart an expired identity, but cannot overwrite a live
+    // auction. Each completed auction pays its winning bid immediately.
     if (in.senderAddress == storage.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
         val isExpired = storage.ownerAddress != null
             && storage.auction == null
             && blockchain.now() >= expirationTime;
-        // Previous proceeds remain recorded in the same item storage. New
-        // settlement amounts accumulate, so an expired plate can be auctioned
-        // again without forfeiting unpaid claims.
+        // Reuse the deterministic item address for the next auction after expiry.
         if (isExpired) {
             storage.ownerAddress = null;
-            // Keep the original revenue destination so older unpaid proceeds
-            // remain payable to the same configured address after reauction.
+            // Keep the immutable revenue destination configured by the Registry.
             storage.plateBody = init.plateBody;
             storage.regionCode = init.regionCode;
             storage.lastRenewalTime = blockchain.now();
