@@ -141,6 +141,6 @@ assert.match(itemAuction, /auctionEndTime - blockchain\.now\(\) < TAGITALSPACE_I
 assert.match(itemAuction, /highestBid \* 50 \/ 100/);
 assert.match(itemAuction, /highestBid \* 30 \/ 100/);
 assert.match(itemAuction, /developmentSecurityFund/);
-assert.match(itemMessages, /SettlePlateAuction/);
+assert.match(itemMessages, /SettlePlateAuction/);\nassert.match(itemMessages, /ClaimPlatePayout/);\nassert.match(itemState, /pendingOwnerPayout: coins/);\nassert.match(itemState, /pendingTreasuryPayout: coins/);\nassert.match(itemState, /pendingSecurityPayout: coins/);\nassert.match(itemAuction, /Settlement creates three explicit liabilities/);\nassert.match(itemAuction, /BounceMode.NoBounce/);\nassert.match(itemContract, /get_pending_payouts/);
 
 console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
