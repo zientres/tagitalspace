@@ -138,3 +138,14 @@ This ordering prevents two first-bid requests from racing for the same plate-and
 - checking whether a rejection matches the exact pending query before a handler releases the map entry.
 
 The helper intentionally does not authenticate callback senders, write contract storage, transfer TON, or handle bounced messages. Those responsibilities belong in the deployable Registry message handlers. The source-level CI checks are structural guards only; they do not execute Tolk or validate TVM behavior.
+
+
+### Registry persistence primitives
+
+`contracts/tolk/registry-storage.tolk` implements the first persistence layer:
+- load the complete Registry storage struct from contract data and save it atomically;
+- initialize an empty entries dictionary with configured owner and development/security fund;
+- read an entry cell by its uint256 identity key;
+- insert only when the key is absent, replace only when it exists, and delete explicitly.
+
+The entry dictionary stores serialized `TagitalSpaceRegistryEntry` cells. The add-only operation is required for first-bid reservation races: a pending request must not overwrite an existing reservation. These primitives do not yet authenticate messages or perform the asynchronous auction creation flow.
