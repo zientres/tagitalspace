@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const prices = JSON.parse(readFileSync(resolve(here, "plate-pricing-vectors.json"), "utf8"));
 const timings = JSON.parse(readFileSync(resolve(here, "auction-timing-vectors.json"), "utf8"));
+const registryProtocol = readFileSync(resolve(here, "../tolk/registry-messages.tolk"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -108,4 +109,26 @@ assert.ok(!(2_999_999_999 >= 3_000_000_000));
 assert.ok(105 >= Math.floor(100 * 105 / 100));
 assert.ok(!(104 >= Math.floor(100 * 105 / 100)));
 
-console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity and bid-policy checks.`);
+// Registry/Auction Manager protocol: every declared opcode must be unique,
+// and the required lifecycle messages must remain present.
+const protocolOpcodes = [...registryProtocol.matchAll(/struct \\(0x([0-9A-Fa-f]{8})\\) ([A-Za-z0-9_]+)/g)];
+assert.equal(protocolOpcodes.length, 10, "Unexpected Registry protocol message count");
+const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
+assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
+const protocolNames = new Set(protocolOpcodes.map(([, , name]) => name));
+for (const required of [
+  "StartPlateAuction",
+  "CreateManagedAuction",
+  "ManagedAuctionCreated",
+  "ManagedAuctionRejected",
+  "ManagedAuctionSettled",
+  "InitializePlateNft",
+  "PlateNftInitialized",
+  "PlateNftInitializationFailed",
+  "CancelManagedAuction",
+  "TagitalSpaceProtocolExcesses",
+]) {
+  assert.ok(protocolNames.has(required), `Missing Registry protocol message: ${required}`);
+}
+
+console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy and Registry protocol checks.`);
