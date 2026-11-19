@@ -9,12 +9,19 @@ struct PlateAuctionState {
     highestBid: coins
     auctionEndTime: uint64
 }
-struct PlateItemStorageInitialized {
+
+// Immutable identity and payout configuration live in a separate cell.
+// This keeps the mutable item root comfortably below TON's 1023-bit limit.
+struct PlateItemImmutableData {
     identityKey: uint256
     collectionAddress: address
     plateBody: cell
     regionCode: uint16
     auctionRevenueAddress: address
+}
+
+struct PlateItemStorageInitialized {
+    immutable: Cell<PlateItemImmutableData>
     ownerAddress: address?
     lastRenewalTime: uint64
     auction: Cell<PlateAuctionState>?
