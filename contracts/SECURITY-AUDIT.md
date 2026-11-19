@@ -1,50 +1,53 @@
 # Pre-deployment security review
 
-Date: 2026-11-18  
-Repository reviewed: `zientres/tagitalspace`, branch `main`.
+Date: 2026-11-19  
+Repository reviewed: zientres/tagitalspace, branch main.
 
 ## Scope and conclusion
 
-This review covers the files currently committed to this repository. It is **not** a contract security audit and does not certify deployability. The repository currently contains TON DNS reference contracts, two TagitalSpace helper modules, JSON specification vectors, and the website. It does not contain the TagitalSpace registry, auction manager, treasury, NFT collection deployment implementation, or the browser registry client.
+This is a source-level pre-deployment review, not an independent smart-contract audit. The repository now contains a TagitalSpace Registry collection entrypoint and a per-plate auction item implementation modeled on TON DNS DnsCollection / DnsItem. The current implementation is an early integration slice and is **not safe to deploy**.
 
-**Conclusion: do not deploy a TagitalSpace collection from this repository yet.** The missing project-specific on-chain implementation prevents meaningful end-to-end or adversarial contract testing.
+## Current architecture
 
-## Findings
+- Registry validates canonical plate identity and Russia region, computes the deterministic item identity, and deploys the item with the first bid.
+- Each plate item stores its own auction, bidder and deadline.
+- Later bids, outbid refunds and settlement are handled by that item contract.
+- No shared Auction Manager is part of the intended architecture.
+- Settlement currently attempts the 50/30/20 split: collection owner, Registry treasury and development/security wallet.
 
-### Critical — no deployable TagitalSpace contract system
+## Blocking findings
 
-The current tree has no TagitalSpace registry/auction-manager contracts, no treasury distribution contract, and no deployable collection/item implementation. The TON DNS reference contracts are not substitutes: they use domain hashes and TON DNS ownership/release semantics, not plate-plus-region identity and TagitalSpace economics.
+### Critical — build and TVM behavior are unverified
 
-Required before deployment:
-- enforce uniqueness on the pair `(canonical_plate, region_code)`;
-- calculate the agreed starting price from the six-character plate body;
-- allow any wallet to create an auction by making the first bid;
-- enforce the TON DNS minimum bid rule (at least 5% above the previous bid);
-- use a one-hour initial auction and restore a full hour when a bid arrives with less than one hour remaining;
-- settle winner/minting and handle failed/bounced deployment safely;
-- distribute proceeds 50% to the owner, 30% to treasury retained by the contract, and 20% to the configured development/security wallet;
-- implement the agreed yearly owner renewal/expiry behavior;
-- prevent double settlement, duplicate minting, replay, and unauthorized treasury withdrawals.
+The new project-specific Tolk files have not yet been compiled or executed in TVM tests. Message layouts, StateInit address derivation, storage serialization and all action-phase behavior must be verified before deployment.
 
-### Critical — frontend registry client is missing
+### Critical — escrow and bounce safety are incomplete
 
-`From/Russia/Russia.html` references `registry-client.js`, but that file is not present in the committed repository tree. The page therefore has no committed implementation for the lookup/start-auction/place-bid methods it calls. Wallet connection alone is not contract integration.
+Outbid refunds and settlement payouts currently use direct outbound messages. The implementation does not yet maintain claimable refund/payout liabilities or restore them on bounced transfers. This can cause accounting loss and must be fixed before real funds are used.
 
-### High — no reproducible Tolk build/test project is committed
+### High — Registry deployment configuration is incomplete
 
-There is no committed Acton project configuration, deployment configuration, contract test suite, or CI workflow in the current tree. The JSON vectors are specifications; they do not compile or execute the Tolk modules.
+Registry storage now requires the owner address, development/security address and NFT item code. The deployment initializer and deterministic item code hash/address checks must be wired and tested.
 
-### High — TON DNS reference code must remain reference-only
+### High — item lifecycle is incomplete
 
-The vendor Tolk files are now synchronized with the official `ton-blockchain/acton-contracts` DNS Tolk sources, with the auction start duration adapted to one hour. They preserve DNS-specific storage, messages, domain hashing, DNS governance, and release behavior. They must not be deployed as TagitalSpace contracts without a separate, reviewed adaptation.
+NFT ownership is recorded after settlement, but transfer, annual renewal, expiration/release and safe recovery from failed payout actions remain unimplemented.
 
-### Resolved in this review — stale auction copy and timing vectors
+### High — treasury withdrawal is intentionally absent
 
-- Website copy no longer claims a 90-minute auction or a fixed 1 TON opening bid.
-- The Russia page displays a one-hour initial duration.
-- The timing helper and vectors use a one-hour duration and cover the exact-end-time boundary.
-- Plate-pricing and auction-timing vectors pass the independent JavaScript verifier added alongside this report.
+The old unverified withdrawal stub was removed. A withdrawal flow must not be restored until it has bounce-safe accounting and authorization tests.
 
-## Verification limits
+### High — frontend integration is not verified
 
-The independent vector verifier checks the agreed arithmetic/specification only. It does not compile Tolk, execute TVM transactions, test bounce handling, validate message serialization, or prove contract safety. Those checks remain mandatory in Codespaces before any collection deployment.
+The browser registry client and frontend message construction must be checked against the new per-item contract addresses, opcodes and getters.
+
+## Required verification gates
+
+1. Tolk formatter, compiler and Acton build.
+2. TVM tests for Registry deployment, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution.
+3. Bounce tests proving no bid, refund, owner payout, treasury deposit or security payout can be lost.
+4. Accounting invariants for active escrow, refund liabilities and payout liabilities.
+5. Testnet end-to-end auction using controlled wallets.
+6. Independent security review of the final compiled contracts and deployment configuration.
+
+JavaScript source checks and documentation are not proof of compilation, TVM correctness or security. Do not deploy or send real funds until every gate passes.
