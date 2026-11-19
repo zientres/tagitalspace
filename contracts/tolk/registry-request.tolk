@@ -1,24 +1,17 @@
 import "plate-identity"
 import "plate-pricing"
-import "auction-policy"
-import "registry-state"
 import "russia-regions"
-import "registry-transitions"
 
-// Pure validation/preparation only. The handler must persist the pending
-// reservation before sending the first-bid request to Auction Manager.
+// Validates the first bid request and returns its deterministic item identity.
 struct TagitalSpacePreparedAuctionRequest {
     identityKey: uint256
     startingPrice: coins
-    initiator: address
-    pendingEntry: TagitalSpaceRegistryEntry
 }
 
 fun tagitalSpacePrepareRussiaFirstBid(
     plateBody: cell,
     regionCode: uint16,
     queryId: uint64,
-    initiator: address,
     attachedValue: coins,
 ): TagitalSpacePreparedAuctionRequest {
     val plate = plateBody.beginParse();
@@ -28,20 +21,11 @@ fun tagitalSpacePrepareRussiaFirstBid(
     assert (queryId != 0) throw 732;
 
     val startingPrice = tagitalSpacePlateStartPrice(plate);
-    assert (tagitalSpaceValidateFirstBid(attachedValue, startingPrice)) throw 733;
+    assert (attachedValue >= startingPrice) throw 733;
 
     val identityCell = tagitalSpaceBuildPlateIdentity(plate, regionCode as int);
-    val identityKey = identityCell.hash();
-
-    return TagitalSpacePreparedAuctionRequest {
-        identityKey,
+    return {
+        identityKey: identityCell.hash(),
         startingPrice,
-        initiator,
-        pendingEntry: tagitalSpaceCreatePendingAuctionEntry(
-            plateBody,
-            regionCode,
-            queryId,
-            initiator,
-        ),
     };
 }
