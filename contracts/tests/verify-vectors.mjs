@@ -134,25 +134,25 @@ assert.ok(!canRelease(expirationTime(1_000) - 1, 1_000));
 assert.ok(canRelease(expirationTime(1_000), 1_000));
 
 
-// Every item settlement pays the exact winning bid immediately to the
-// immutable revenue recipient; no cumulative payout balance or claim exists.
-const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
-assert.match(itemAuction, /dest: storage\\.auctionRevenueAddress/);
-assert.match(itemAuction, /value: auction\\.highestBid/);
-assert.match(itemAuction, /payout\\.send\\(SEND_MODE_PAY_FEES_SEPARATELY\\)/);
-assert.match(itemAuction, /BounceMode\\.NoBounce/);
-assert.match(registryState, /auctionRevenueAddress: address/);
-assert.match(registryStorage, /auctionRevenueAddress/);
-assert.match(registryContract, /auctionRevenueAddress: storage\\.auctionRevenueAddress/);
-assert.match(deploymentConfig, new RegExp(revenueRecipient));
-assert.doesNotMatch(itemState + itemMessages + itemAuction, /pending.*Payout|claim.*payout|unclaimed.*revenue/i);
-
 // TON DNS-style architecture checks: Registry deploys deterministic items;
 // each item contract owns its auction and no shared Auction Manager exists.
 const itemState = readFileSync(resolve(here, "../tolk/plate-item-state.tolk"), "utf8");
 const itemMessages = readFileSync(resolve(here, "../tolk/plate-item-messages.tolk"), "utf8");
 const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"), "utf8");
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
+
+// Every item settlement pays the exact winning bid immediately to the
+// immutable revenue recipient; no cumulative payout balance or claim exists.
+const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
+assert.match(itemAuction, /dest: storage\.auctionRevenueAddress/);
+assert.match(itemAuction, /value: auction\.highestBid/);
+assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
+assert.match(itemAuction, /BounceMode\.NoBounce/);
+assert.match(registryState, /auctionRevenueAddress: address/);
+assert.match(registryStorage, /auctionRevenueAddress/);
+assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
+assert.match(deploymentConfig, new RegExp(revenueRecipient));
+assert.doesNotMatch(itemState + itemMessages + itemAuction, /pending.*Payout|claim.*payout|unclaimed.*revenue/i);
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 2, "Registry and Registry-to-item protocol messages are expected");
