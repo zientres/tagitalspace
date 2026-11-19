@@ -36,11 +36,21 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - Every later bid is at least floor(current bid × 105 / 100).
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
-- Winning proceeds are split 50% collection owner, 30% Registry treasury, 20% development/security fund.\n- Settlement records three claimable liabilities in the plate item; it does not immediately push funds. Only the configured beneficiary can claim their share. This avoids losing the accounting record before a payout is queued.
+- Winning proceeds are split 50% collection owner, 30% Registry treasury, 20% development/security fund.
+- Settlement records three claimable liabilities in the plate item; it does not immediately push funds. Only the configured beneficiary can claim their share. This avoids losing the accounting record before a payout is queued.
+
+## NFT ownership lifecycle
+
+- The one-year ownership period begins when an auction is settled and the winner becomes owner.
+- The current owner may renew before expiration by sending `RenewPlateOwnership`; renewal restarts the one-year period from that transaction.
+- Ownership transfer is owner-authorized and restarts the one-year period for the recipient.
+- Expiration does not create an auction automatically. The next valid first-bid request reuses the same deterministic item contract and starts a new one-hour auction.
+- Release is blocked while any of the previous auction's owner, treasury or security payout liabilities remain unpaid.
+- No renewal price has been configured yet; the renewal message currently requires only network fees.
 
 ## Implementation status
 
-The Registry-to-item deployment path and the first per-item auction implementation are in progress. The current source has not yet passed Tolk compilation, TVM tests, payout-bounce tests or a Testnet end-to-end run. In particular, bounce-safe refund/payout liabilities, treasury withdrawal, NFT transfer and annual renewal must be completed before deployment.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The current source has not yet passed Tolk compilation, full TVM tests, payout-bounce tests or a Testnet end-to-end run. Bounce-safe refund/payout recovery, treasury withdrawal, frontend integration and deployment configuration remain incomplete.
 
 ## Source attribution
 
