@@ -11,6 +11,7 @@ const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"),
 const registryStorage = readFileSync(resolve(here, "../tolk/registry-storage.tolk"), "utf8");
 const registryRequest = readFileSync(resolve(here, "../tolk/registry-request.tolk"), "utf8");
 const registryContract = readFileSync(resolve(here, "../tolk/TagitalSpaceRegistry.tolk"), "utf8");
+const deploymentConfig = readFileSync(resolve(here, "../DEPLOYMENT.md"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -180,6 +181,8 @@ assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemState, /auctionRevenueAddress: address/);
 assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
+assert.match(registryContract, /get_auction_revenue_address/);
+assert.match(deploymentConfig, /0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi/);
 assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout|pendingTreasuryPayout|pendingSecurityPayout|pendingAuctionRevenue|developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);
 assert.match(itemMessages, /TransferPlateOwnership/);
