@@ -114,58 +114,34 @@ assert.ok(!(2_999_999_999 >= 3_000_000_000));
 assert.ok(105 >= Math.floor(100 * 105 / 100));
 assert.ok(!(104 >= Math.floor(100 * 105 / 100)));
 
-// Registry/Auction Manager protocol: every declared opcode must be unique,
-// and the required lifecycle messages must remain present.
+// TON DNS-style architecture checks: Registry deploys deterministic items;
+// each item contract owns its auction and no shared Auction Manager exists.
+const itemState = readFileSync(resolve(here, "../tolk/plate-item-state.tolk"), "utf8");
+const itemMessages = readFileSync(resolve(here, "../tolk/plate-item-messages.tolk"), "utf8");
+const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"), "utf8");
+const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
+
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
-assert.equal(protocolOpcodes.length, 10, "Unexpected Registry protocol message count");
+assert.equal(protocolOpcodes.length, 2, "Only start-auction and treasury-deposit messages are expected");
 const opcodeValues = protocolOpcodes.map(([, opcode]) => opcode.toLowerCase());
 assert.equal(new Set(opcodeValues).size, opcodeValues.length, "Registry protocol opcodes must be unique");
-const protocolNames = new Set(protocolOpcodes.map(([, , name]) => name));
-for (const required of [
-  "StartPlateAuction",
-  "CreateManagedAuction",
-  "ManagedAuctionCreated",
-  "ManagedAuctionRejected",
-  "ManagedAuctionSettled",
-  "InitializePlateNft",
-  "PlateNftInitialized",
-  "PlateNftInitializationFailed",
-  "CancelManagedAuction",
-  "TagitalSpaceProtocolExcesses",
-]) {
-  assert.ok(protocolNames.has(required), `Missing Registry protocol message: ${required}`);
-}
-
-// Registry reservation transition source invariants. These checks guard
-// the declared source structure; they are not a substitute for TVM tests.
-assert.match(registryState, /TAGITALSPACE_REGISTRY_AUCTION_PENDING = 5/);
-assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION_PENDING/);
-assert.match(registryTransitions, /entry\.pendingQueryId == queryId/);
-assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION,/);
-assert.match(registryTransitions, /tagitalSpaceCanReleaseRejectedAuction/);
-assert.match(registryStorage, /TagitalSpaceRegistryStorage\.load\(\)/);
-assert.match(registryStorage, /contract\.setData\(self\.toCell\(\)\)/);
-assert.match(registryStorage, /entries\.addIfNotExists\(identityKey, entry\.toCell\(\)\)/);
-assert.match(registryStorage, /entries\.replaceIfExists\(identityKey, entry\.toCell\(\)\)/);
-assert.match(registryStorage, /entries\.delete\(identityKey\)/);
-assert.match(registryRequest, /tagitalSpacePrepareRussiaFirstBid/);
-assert.match(registryRequest, /tagitalSpaceValidateRussiaRegionCode/);
-assert.match(registryRequest, /tagitalSpacePlateStartPrice/);
-assert.match(registryRequest, /tagitalSpaceValidateFirstBid/);
-assert.match(registryRequest, /identityCell\.hash\(\)/);
-assert.match(registryRequest, /tagitalSpaceCreatePendingAuctionEntry/);
-assert.match(registryContract, /contract TagitalSpaceRegistry/);
 assert.match(registryContract, /StartPlateAuction =>/);
-assert.match(registryContract, /tagitalSpaceRegistryTryInsertEntry/);
-assert.match(registryContract, /storage\.save\(\);[\s\S]*createMessage/);
-assert.match(registryContract, /SEND_MODE_PAY_FEES_SEPARATELY/);
-assert.match(registryContract, /ManagedAuctionCreated =>/);
-assert.match(registryContract, /ManagedAuctionRejected =>/);
-assert.match(registryContract, /in\.senderAddress == storage\.auctionManagerAddress/);
-assert.match(registryContract, /onBouncedMessage\(in: InMessageBounced\)/);
-assert.match(registryContract, /RichBounceBody\.fromSlice/);
-assert.match(registryContract, /pendingInitiator/);
-assert.match(registryState, /auctionManagerAddress: address/);
-assert.match(registryState, /pendingInitiator: address\?/);
+assert.match(registryContract, /PlateItemStorageNotInitialized/);
+assert.match(registryContract, /stateInit:/);
+assert.match(registryContract, /storage\.nftItemCode/);
+assert.match(registryContract, /SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE/);
+assert.match(registryState, /nftItemCode: cell/);
+assert.doesNotMatch(registryState + registryProtocol + registryContract, /auctionManagerAddress|ManagedAuction|Auction Manager/i);
+assert.match(itemContract, /contract TagitalSpacePlateItem/);
+assert.match(itemContract, /PlateItemInitData/);
+assert.match(itemContract, /tagitalSpaceProcessPlateBid/);
+assert.match(itemContract, /tagitalSpaceSettlePlateAuction/);
+assert.match(itemState, /auction: Cell<PlateAuctionState>\?/);
+assert.match(itemAuction, /highestBid \* 105 \/ 100/);
+assert.match(itemAuction, /auctionEndTime - blockchain\.now\(\) < TAGITALSPACE_ITEM_AUCTION_DURATION/);
+assert.match(itemAuction, /highestBid \* 50 \/ 100/);
+assert.match(itemAuction, /highestBid \* 30 \/ 100/);
+assert.match(itemAuction, /developmentSecurityFund/);
+assert.match(itemMessages, /SettlePlateAuction/);
 
-console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy, Registry protocol and reservation source checks.`);
+console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
