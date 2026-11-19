@@ -39,6 +39,7 @@ fun onInternalMessage(in: InMessage) {
                 value: 0,
                 body: PlateItemInitData {
                     firstBidder: in.senderAddress,
+                    firstBidAmount: prepared.startingPrice,
                     plateBody: msg.plateBody,
                     regionCode: msg.regionCode,
                     collectionOwner: storage.ownerAddress,
