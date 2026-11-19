@@ -13,7 +13,7 @@ const TAGITALSPACE_REGISTRY_RENEWAL_PENDING = 4;
 struct TagitalSpaceRegistryEntry {
     plateBody: cell
     regionCode: uint16
-    status: uint8
+    // One of the status constants above; AUCTION_PENDING closes the async race.\n    status: uint8
     auctionId: uint256
     auctionAddress: address?
     highestBidder: address?
