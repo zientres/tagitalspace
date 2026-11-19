@@ -60,3 +60,8 @@ The Russia-specific region allowlist is mirrored in `contracts/tolk/russia-regio
 ## Registry message protocol
 
 `contracts/tolk/registry-messages.tolk` is the initial shared protocol definition for the Registry, Auction Manager, and NFT item. It specifies query-correlated auction creation/callbacks, settlement notification, NFT initialization acknowledgements, and explicit cancellation requests. The definitions are not message handlers and are not yet proof of a working cross-contract flow. Every callback must authenticate its sender and match both the pending query ID and plate identity; a timeout must never automatically free a reserved plate.
+
+
+### Registry persistence helpers
+
+`contracts/tolk/registry-storage.tolk` now provides typed load/save helpers for Registry contract data and dictionary operations for reservation entries. Entries are stored under uint256 identity keys as serialized cells. New reservations use add-only insertion (`addIfNotExists`) so a second first-bid request cannot overwrite an existing entry; state changes use replace-only updates, and deletion is explicit. These helpers are storage primitives, not a deployable Registry: message authentication, query generation, value validation, send ordering, and bounce recovery still belong in the contract handler.
