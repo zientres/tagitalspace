@@ -8,7 +8,6 @@ const prices = JSON.parse(readFileSync(resolve(here, "plate-pricing-vectors.json
 const timings = JSON.parse(readFileSync(resolve(here, "auction-timing-vectors.json"), "utf8"));
 const registryProtocol = readFileSync(resolve(here, "../tolk/registry-messages.tolk"), "utf8");
 const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"), "utf8");
-const registryTransitions = readFileSync(resolve(here, "../tolk/registry-transitions.tolk"), "utf8");
 const registryStorage = readFileSync(resolve(here, "../tolk/registry-storage.tolk"), "utf8");
 const registryRequest = readFileSync(resolve(here, "../tolk/registry-request.tolk"), "utf8");
 const registryContract = readFileSync(resolve(here, "../tolk/TagitalSpaceRegistry.tolk"), "utf8");
