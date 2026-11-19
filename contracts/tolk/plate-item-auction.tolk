@@ -122,7 +122,7 @@ fun tagitalSpaceRenewPlateOwnership(
     assert (senderAddress == storage.ownerAddress!) throw 797;
     val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
     assert (blockchain.now() < expirationTime) throw 798;
-    storage.lastRenewalTime = expirationTime;
+    storage.lastRenewalTime = blockchain.now();
     storage.save();
 }
 
