@@ -25,6 +25,7 @@ struct TagitalSpaceRegistryEntry {
     ownerAddress: address?
     expiresAt: uint64
     pendingQueryId: uint64
+    pendingInitiator: address?
 }
 
 // Registry-level configuration and accounting.
@@ -33,6 +34,7 @@ struct TagitalSpaceRegistryEntry {
 struct TagitalSpaceRegistryStorage {
     ownerAddress: address
     developmentSecurityFund: address
+    auctionManagerAddress: address
     treasuryBalance: coins
     entries: map<uint256, cell>
 }
