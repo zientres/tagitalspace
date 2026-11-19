@@ -1,165 +1,53 @@
-# TagitalSpace contract architecture (implementation specification)
+# TagitalSpace contract architecture
 
-Status: design baseline; not deployable.
+Status: implementation in progress; not deployable.
 Network: TON Testnet only (network id -3).
 
+## Contract model — TON DNS pattern
+
+TagitalSpace follows the architecture of TON DNS:
+- TagitalSpaceRegistry is the collection contract. It validates the plate and Russian region, derives a deterministic item address from the item code and identity, and deploys that item with the first bid.
+- TagitalSpacePlateItem is a separate contract for each unique (plate body, region) pair. It stores that plate's auction state and handles later bids, outbid refunds, deadline extension, settlement and NFT ownership.
+- There is no Auction Manager and no shared contract that stores or operates all auctions.
+- The item address is deterministic from the identity key and Registry address, matching the DnsCollection / DnsItem StateInit pattern.
+- Repeating a first-bid request for an existing item must not overwrite its auction; the initialized item returns the attached value to the new requester.
+
 ## Identity and uniqueness
-- Canonical plate body is exactly six ASCII characters: letter, three digits, two letters (Russian allowed alphabet mapped to A B E K M H O P C T Y X).
-- Region is a separate validated numeric field (1–999 in the generic identity helper); the Russian registry must additionally enforce its explicit supported-region allowlist.
-- Registry identity is the pair (canonical plate body, region code). A plate body may exist in another region.
-- Canonicalization and region validation happen before any state transition.
-- No mint/auction operation may bypass the registry's uniqueness reservation.
+
+- Canonical plate body is exactly six ASCII characters: letter, three digits, two letters, using A B E K M H O P C T Y X.
+- Region is separate and validated against the Russia allowlist (212 supported codes; 20 excluded).
+- Identity is (canonical plate body, region code). The same body may exist in another region.
+- Starting price depends on the six-character body only.
 
 ## Auction policy
-- Any wallet may create an auction by submitting the first bid for an unreserved/unowned pair.
-- Starting bid is calculated from the six-character body: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both mirror blocks add; base is used only if neither special pattern applies; triples are not combined with mirror pricing in the same block.
-- Subsequent bid minimum is floor(current_bid * 105 / 100), matching TON DNS integer arithmetic. The reusable helper is in `contracts/tolk/auction-policy.tolk`; the threshold must be tested at rounding boundaries.
-- Auction starts with 3600 seconds (`tagitalSpaceInitialAuctionEndTime`).
-- When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension (`tagitalSpacePolicyAuctionEndTimeAfterBid`).
+
+- Any wallet may start an auction by submitting the first bid through Registry.
+- Starting price: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both blocks add; base applies only when no special pattern applies; triple does not stack with mirror pricing in its own block.
+- Each item's first bid initializes its local auction state.
+- Later bids must be at least floor(current bid × 105 / 100).
+- Initial duration is 3,600 seconds. A bid with strictly less than 3,600 seconds remaining extends the deadline to now + 3,600; exactly 3,600 seconds does not extend.
 - No bid history is stored.
-- No settlement may occur before deadline. Settlement requires an explicit message/getter-supported state transition; transaction ordering and idempotence must be protected.
-
-## Registry lifecycle
-States should be explicit and mutually exclusive: AVAILABLE, AUCTION, MINT_PENDING, OWNED, EXPIRED/RENEWAL_PENDING as appropriate.
-- Registry reserves the (plate, region) pair when an auction starts.
-- Reservation cannot be duplicated while auction, mint, or ownership is active.
-- Auction completion transitions to MINT_PENDING before deployment/notification, never directly to OWNED.
-- Only a verified successful mint/acknowledgement transitions to OWNED.
-- Failure/bounce paths must safely return to a retryable state without allowing a second mint or losing the reservation/payment accounting.
-- Annual renewal is an owner-only operation. Expiration policy and grace period must be explicitly implemented/tested before deployment; expiration should not silently release a pair while settlement is pending.
-
-## Auction manager
-- Stores auction state, deadline, current bid and bidder, canonical plate and region, and status.
-- Validate sender, attached amount, bid threshold, deadline, state, and uniqueness before changing state.
-- Outbid refund and incoming bid accounting must be robust to bounced outbound messages; refund liabilities must not be lost.
-- Single-settlement guard and replay protection.
-- Any fee reserve and gas calculation must be tested with realistic Testnet messages.
+- Anyone may trigger settlement after the deadline; the item contract persists the winner as owner and clears the auction once.
 
 ## Distribution
-Agreed split of auction proceeds: 50% owner, 30% retained in contract treasury, 20% development/security fund.
-- Define whether split applies to gross winning bid or net of gas; this specification assumes the percentages apply to the auction proceeds amount, with gas/reserve accounted separately and explicitly.
-- Transfers and treasury balances require accounting invariants, reentrancy/replay protections (message-based), and bounce recovery.
-- Treasury withdrawal must be owner-authorized, bounded to accounted funds, and support partial/full withdrawal.
-- Development/security wallet must be configurable only through protected owner/admin authorization and preferably a delayed or constrained change mechanism.
 
-## NFT implementation
-- NFT item state must encode plate, region, collection/registry identity, owner and renewal timestamps.
-- Item StateInit/address derivation must be deterministic and collision-safe.
-- Collection and item getters follow a documented NFT standard-compatible interface where applicable.
-- Mint acknowledgement is authenticated; duplicate init is rejected.
+The winning bid is divided:
+- 50% to the collection owner;
+- 30% to the Registry treasury;
+- 20% to the configured development/security fund.
 
-## Frontend
-- Frontend must read registry/auction state from contracts, not trust locally supplied state.
-- Wallet must remain locked to Testnet (network -3).
-- User-facing bid value is converted and validated; UI is not security authority.
-- Registry client must handle pending, confirmed, failed, bounced, and timeout states without claiming a transaction succeeded prematurely.
+The item contract is responsible for splitting its own auction proceeds. Registry records only treasury deposits; it does not manage bidder escrow or auction state. Bounce-safe payout claims and treasury withdrawal still require implementation and tests before deployment.
 
-## Verification gates (all required before deployment)
-1. Tolk compile and formatter/linter.
-2. Contract tests for identity normalization, pricing, threshold rounding, boundary timing, renewal, and every state transition.
-3. TVM tests for message serialization, insufficient value, sender authorization, replay, duplicate reservation, settlement, refund bounce, mint bounce, and treasury withdrawal.
-4. Property/invariant tests: one owner per pair, one auction per pair, no double settlement, accounting liabilities preserved, unauthorized state transitions impossible.
-5. Testnet end-to-end run with test wallets and controlled funds.
-6. Independent security review of the final compiled contracts and deployment configuration.
-7. Verify deployment addresses, code hashes, configuration, and wallet/network before deployment.
+## NFT lifecycle
 
-This specification is a design checklist only; it is not proof of implementation, compilation, or security.
+The per-plate item is itself the NFT item contract. Its deterministic StateInit includes the Registry address and identity key. Before settlement it reports no owner; after settlement the highest bidder becomes owner. Transfer, annual renewal and expiration/release flows remain to be implemented.
 
+## Required verification before deployment
 
-## Current helper implementation status
+1. Tolk compile, formatter and Acton build.
+2. TVM tests for item deployment, duplicate identity, bid thresholds, deadline boundaries, refund accounting, settlement, payout bounce and treasury accounting.
+3. StateInit/address derivation tests proving different regions produce different item addresses.
+4. Testnet end-to-end auction with controlled wallets.
+5. Independent security review of compiled contracts and deployment configuration.
 
-The first reusable TagitalSpace-specific Tolk helpers now exist:
-- `plate-identity.tolk`: canonical plate format, allowed ASCII alphabet, generic numeric region bounds, and identity-cell construction.
-- `auction-policy.tolk`: first-bid validation, floor-rounded 5% next-bid threshold, one-hour initial duration, extension boundary, and settlement-time predicate.
-
-These helpers are not yet wired into a deployable Registry or Auction Manager. The generic region bounds are not a substitute for the Russian region allowlist. The independent JavaScript checks are not Tolk/TVM execution evidence.
-
-
-## Registry storage layout (first draft)
-
-`contracts/tolk/registry-state.tolk` now defines the initial persisted data model:
-- Registry entry key: hash of the canonical plate-body + region identity.
-- Entry retains the original six-byte plate body and numeric region code for identity verification.
-- Explicit states: AUCTION, MINT_PENDING, OWNED, RENEWAL_PENDING. An absent key represents AVAILABLE.
-- Auction fields: auction ID/address, highest bidder, highest bid, and deadline.
-- Mint/ownership fields: NFT item address, owner, expiry, and pending query ID.
-- Registry configuration: owner, development/security fund, and accounted treasury balance.
-
-This is a storage schema only. It does not yet implement registry message handlers, map-key derivation, auction callbacks, mint acknowledgement, renewal, or bounce recovery. The Auction Manager must separately account for bidder escrow and refund liabilities; those funds must not be counted as the registry treasury.
-
-
-The Russia-specific allowlist is implemented separately in `contracts/tolk/russia-regions.tolk` and mirrors the 212 codes currently used by `From/Russia/Russia.html`; region 20 is excluded. The Russia registry must enforce this allowlist. The generic numeric 1–999 check is not sufficient for a Russia plate.
-
-
-## Auction Manager storage layout (first draft)
-
-`contracts/tolk/auction-manager-state.tolk` defines:
-- Per-auction identity, plate, region, status, highest bidder/bid, deadline, and payout recipients.
-- Explicit ACTIVE, SETTLED, and CANCELLED states.
-- Separate maps for bidder refunds, owner payouts, and development/security payouts.
-- Aggregate liabilities for active bid escrow, refunds, owner payouts, and security payouts.
-- A separately accounted 30% treasury balance.
-
-Settlement must be idempotent and move amounts between these accounting buckets exactly once. A previous highest bid becomes a refund liability when outbid; it must not be treated as free contract balance. Payout credits should be claimable and remain liabilities until successfully paid. Any claim implementation must restore a liability on bounced transfers. The storage file itself does not yet implement these transitions.
-
-
-## Registry message protocol (first draft)
-
-`contracts/tolk/registry-messages.tolk` defines stable opcodes and payload layouts for:
-- user request to start a first-bid auction;
-- Registry-to-Auction-Manager auction creation;
-- authenticated auction-created, rejected, and settled callbacks;
-- Registry-to-NFT initialization and NFT success/failure acknowledgements;
-- an explicit cancellation request for a separately authorized recovery path.
-
-The protocol carries a query ID and full plate identity through asynchronous transitions. A handler must match the query ID and identity against the stored pending entry, and authenticate the sender contract before applying any callback. A timeout alone is never proof that a remote operation failed; the Registry must not release a reservation solely because a response was delayed.
-
-This file defines message layouts only. It does not implement handlers, serialization tests, sender checks, bounce recovery, or deployment-ready contracts. The opcodes and field layouts must be treated as a versioned interface and covered by TVM serialization tests before integration.
-
-
-### Asynchronous reservation invariant
-
-The Registry state schema now includes `AUCTION_PENDING` as a distinct reservation state. The required sequence is:
-1. Validate the canonical plate and Russia region; derive the identity key.
-2. Confirm the key is absent, then persist `AUCTION_PENDING` with a fresh query ID before sending any message.
-3. Send `CreateManagedAuction` to the configured Auction Manager.
-4. Accept `ManagedAuctionCreated` only from that manager and only when query ID and identity key match; then transition to `AUCTION`.
-5. Accept a rejection only under the same authentication and correlation checks; only then may the matching pending reservation be cleared.
-6. Treat a bounce or timeout as an unresolved operation until a defined recovery procedure proves the manager did not create the auction.
-
-This ordering prevents two first-bid requests from racing for the same plate-and-region pair. The current schema and message definitions describe the invariant; the transaction handlers and bounce recovery remain unimplemented.
-
-
-### Registry auction reservation transition helpers
-
-`contracts/tolk/registry-transitions.tolk` now contains pure helpers for:
-- constructing an `AUCTION_PENDING` entry with a non-zero query ID;
-- promoting only the matching pending entry to `AUCTION` after receiving the auction ID, address, first bidder, bid and future deadline;
-- checking whether a rejection matches the exact pending query before a handler releases the map entry.
-
-The helper intentionally does not authenticate callback senders, write contract storage, transfer TON, or handle bounced messages. Those responsibilities belong in the deployable Registry message handlers. The source-level CI checks are structural guards only; they do not execute Tolk or validate TVM behavior.
-
-
-### Registry persistence primitives
-
-`contracts/tolk/registry-storage.tolk` implements the first persistence layer:
-- load the complete Registry storage struct from contract data and save it atomically;
-- initialize an empty entries dictionary with configured owner and development/security fund;
-- read an entry cell by its uint256 identity key;
-- insert only when the key is absent, replace only when it exists, and delete explicitly.
-
-The entry dictionary stores serialized `TagitalSpaceRegistryEntry` cells. The add-only operation is required for first-bid reservation races: a pending request must not overwrite an existing reservation. These primitives do not yet authenticate messages or perform the asynchronous auction creation flow.
-
-
-### First-bid validation boundary
-
-The `tagitalSpacePrepareRussiaFirstBid` helper validates the six-byte canonical plate, applies the Russia-specific region allowlist, computes the starting price from the plate body only, checks the actual attached value, derives the hash of the plate+region identity cell, and prepares the matching pending reservation. It does not read or mutate contract storage, authenticate the sender, or send messages. The contract handler must perform add-only insertion and persist it before the outbound manager message; the attached value must be the actual inbound message value, not a caller-supplied amount.
-
-
-### Initial Registry handler implementation
-
-The first contract entrypoint is in `contracts/tolk/TagitalSpaceRegistry.tolk`. It handles first-bid requests, persists an add-only pending reservation before dispatch, authenticates manager callbacks, activates the exact matching reservation on creation, and releases/refunds only a matching rejected or bounced request. The manager address is part of persistent Registry configuration. The outbound creation message uses rich bounce data so the Registry can recover the full original query and identity key; a 256-bit truncated bounce would not contain enough data for safe matching.
-
-The outbound first-bid message uses `SEND_MODE_PAY_FEES_SEPARATELY`: the Registry must maintain a TON reserve for forwarding fees so the Auction Manager receives the complete bid amount. On a manager rejection, the Manager is required to return the bid value with the authenticated rejection callback; the Registry forwards the value it receives to the original initiator. A bounce refund may be reduced by TON bounce/forward fees.
-
-This is a first lifecycle slice, not a deployable system. Auction Manager creation and rejection semantics, exact fee/balance behavior, Registry deployment initialization, Tolk compilation, TVM execution tests, and end-to-end testnet verification remain required.
+JavaScript source checks and design notes are not proof of Tolk compilation, TVM correctness or security.
