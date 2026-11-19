@@ -128,3 +128,13 @@ The Registry state schema now includes `AUCTION_PENDING` as a distinct reservati
 6. Treat a bounce or timeout as an unresolved operation until a defined recovery procedure proves the manager did not create the auction.
 
 This ordering prevents two first-bid requests from racing for the same plate-and-region pair. The current schema and message definitions describe the invariant; the transaction handlers and bounce recovery remain unimplemented.
+
+
+### Registry auction reservation transition helpers
+
+`contracts/tolk/registry-transitions.tolk` now contains pure helpers for:
+- constructing an `AUCTION_PENDING` entry with a non-zero query ID;
+- promoting only the matching pending entry to `AUCTION` after receiving the auction ID, address, first bidder, bid and future deadline;
+- checking whether a rejection matches the exact pending query before a handler releases the map entry.
+
+The helper intentionally does not authenticate callback senders, write contract storage, transfer TON, or handle bounced messages. Those responsibilities belong in the deployable Registry message handlers. The source-level CI checks are structural guards only; they do not execute Tolk or validate TVM behavior.
