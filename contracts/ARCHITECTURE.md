@@ -154,3 +154,12 @@ The entry dictionary stores serialized `TagitalSpaceRegistryEntry` cells. The ad
 ### First-bid validation boundary
 
 The `tagitalSpacePrepareRussiaFirstBid` helper validates the six-byte canonical plate, applies the Russia-specific region allowlist, computes the starting price from the plate body only, checks the actual attached value, derives the hash of the plate+region identity cell, and prepares the matching pending reservation. It does not read or mutate contract storage, authenticate the sender, or send messages. The contract handler must perform add-only insertion and persist it before the outbound manager message; the attached value must be the actual inbound message value, not a caller-supplied amount.
+
+
+### Initial Registry handler implementation
+
+The first contract entrypoint is in `contracts/tolk/TagitalSpaceRegistry.tolk`. It handles first-bid requests, persists an add-only pending reservation before dispatch, authenticates manager callbacks, activates the exact matching reservation on creation, and releases/refunds only a matching rejected or bounced request. The manager address is part of persistent Registry configuration. The outbound creation message uses rich bounce data so the Registry can recover the full original query and identity key; a 256-bit truncated bounce would not contain enough data for safe matching.
+
+The outbound first-bid message uses `SEND_MODE_PAY_FEES_SEPARATELY`: the Registry must maintain a TON reserve for forwarding fees so the Auction Manager receives the complete bid amount. On a manager rejection, the Manager is required to return the bid value with the authenticated rejection callback; the Registry forwards the value it receives to the original initiator. A bounce refund may be reduced by TON bounce/forward fees.
+
+This is a first lifecycle slice, not a deployable system. Auction Manager creation and rejection semantics, exact fee/balance behavior, Registry deployment initialization, Tolk compilation, TVM execution tests, and end-to-end testnet verification remain required.
