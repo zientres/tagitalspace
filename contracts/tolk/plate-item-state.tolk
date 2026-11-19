@@ -26,6 +26,8 @@ struct PlateItemStorageInitialized {
     ownerAddress: address?
     lastRenewalTime: uint64
     auction: Cell<PlateAuctionState>?
+    // Winning revenue whose previous transfer bounced and must be retried.
+    claimablePayout: coins
 }
 
 fun PlateItemStorageInitialized.save(self) {
