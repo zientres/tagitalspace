@@ -30,21 +30,9 @@ fun onInternalMessage(in: InMessage) {
                 in.valueCoins,
             );
 
-            val itemInitialStorage = PlateItemStorageNotInitialized {
-                identityKey: prepared.identityKey,
-                collectionAddress: contract.getAddress(),
-            };
-            val itemAddress = {
-                workchain: BASECHAIN,
-                stateInit: {
-                    code: storage.nftItemCode,
-                    data: itemInitialStorage.toCell(),
-                },
-            };
-
             val deployItem = createMessage({
                 bounce: BounceMode.RichBounce,
-                dest: itemAddress,
+                dest: calcDeployedPlateItem(prepared.identityKey, storage.nftItemCode),
                 value: 0,
                 body: PlateItemInitData {
                     firstBidder: in.senderAddress,
@@ -59,17 +47,10 @@ fun onInternalMessage(in: InMessage) {
 
         RegistryTreasuryDeposit => {
             var storage = TagitalSpaceRegistryStorage.load();
-            val expectedItemStorage = PlateItemStorageNotInitialized {
-                identityKey: msg.identityKey,
-                collectionAddress: contract.getAddress(),
-            };
-            val expectedItemAddress = {
-                workchain: BASECHAIN,
-                stateInit: {
-                    code: storage.nftItemCode,
-                    data: expectedItemStorage.toCell(),
-                },
-            }.calculateAddress();
+            val expectedItemAddress = calcDeployedPlateItem(
+                msg.identityKey,
+                storage.nftItemCode,
+            ).calculateAddress();
 
             assert (in.senderAddress == expectedItemAddress) throw 763;
             storage.treasuryBalance += in.valueCoins;
