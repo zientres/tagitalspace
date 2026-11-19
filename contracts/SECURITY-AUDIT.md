@@ -31,7 +31,7 @@ Registry storage now requires the owner address, development/security address an
 
 ### High — item lifecycle is incomplete
 
-NFT ownership is recorded after settlement, but transfer, annual renewal, expiration/release and safe recovery from failed payout actions remain unimplemented.
+NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. Annual renewal, expiration/release and safe recovery from failed payout actions remain unimplemented.
 
 ### High — treasury withdrawal is intentionally absent
 
