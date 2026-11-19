@@ -141,18 +141,18 @@ const itemMessages = readFileSync(resolve(here, "../tolk/plate-item-messages.tol
 const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"), "utf8");
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
 
-// Every item settlement pays the exact winning bid immediately to the
-// immutable revenue recipient; no cumulative payout balance or claim exists.
+// Every item settlement sends the exact winning bid to the immutable revenue
+// recipient. A bounced transfer restores the full amount as a retryable liability.
 const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
 assert.match(itemAuction, /dest: immutable.auctionRevenueAddress/);
 assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
-assert.match(itemAuction, /BounceMode\.NoBounce/);
+assert.match(itemAuction, /BounceMode\.RichBounce/);
 assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryStorage, /auctionRevenueAddress/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
 assert.match(deploymentConfig, new RegExp(revenueRecipient));
-assert.doesNotMatch(itemState + itemMessages + itemAuction + itemContract, /pending.*Payout|claim.*payout|unclaimed.*revenue|unsettled payout liabilities/i);
+assert.match(itemState, /claimablePayout: coins/);\nassert.match(itemContract, /fun onBouncedMessage\(in: InMessageBounced\)/);\nassert.match(itemContract, /storage\.claimablePayout \+= payout\.amount/);\nassert.match(itemContract, /get_claimable_payout/);\nassert.match(itemMessages, /RetryPlateItemPayout/);\nassert.match(itemAuction, /tagitalSpaceRetryPlatePayout/);
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 2, "Registry and Registry-to-item protocol messages are expected");
@@ -195,7 +195,7 @@ assert.match(deploymentConfig, /0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi
 assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout|pendingTreasuryPayout|pendingSecurityPayout|pendingAuctionRevenue|developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);
 assert.match(itemMessages, /TransferPlateOwnership/);
-assert.match(itemAuction, /entire winning bid is sent to the collection's fixed revenue address/);
+assert.match(itemAuction, /value: auction\.highestBid/);
 assert.match(itemAuction, /BounceMode.NoBounce/);
 
 assert.match(itemContract, /TransferPlateOwnership =>/);
