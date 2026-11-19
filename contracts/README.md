@@ -52,3 +52,6 @@ The current implementation step adds two TagitalSpace-specific Tolk modules:
 The current region helper accepts numeric codes from 1 through 999. A country-specific region allowlist must be enforced by the registry before deployment; numeric-format validation alone does not prove that a code is an officially supported Russian region.
 
 The JavaScript verifier includes independent mirror checks for plate identity, region separation, minimum-bid rounding, and deadline boundaries. These checks do not replace Tolk compilation or TVM contract tests.
+
+
+The Russia-specific region allowlist is mirrored in `contracts/tolk/russia-regions.tolk`. It currently contains 212 numeric codes from the registration selector in `From/Russia/Russia.html`; region 20 is intentionally excluded. The registry must call `tagitalSpaceValidateRussiaRegionCode` for the Russia collection rather than the generic numeric-only validator. The JS verifier checks the list size, representative extended codes, and exclusion of 20. Keep the frontend selector and this on-chain allowlist synchronized.
