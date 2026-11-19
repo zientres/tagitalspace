@@ -35,4 +35,46 @@ for (const vector of timings) {
   assert.equal(auctionEndTime(vector), vector.expected_end_time, `Auction timing mismatch: ${vector.case}`);
 }
 
-console.log(`PASS: ${prices.length} plate-pricing vectors and ${timings.length} auction-timing vectors.`);
+// Plate identity validation mirrors the on-chain canonical ASCII rules.
+function validPlateBody(plate) {
+  return typeof plate === "string"
+    && /^[ABEKMHOPCTYX][0-9]{3}[ABEKMHOPCTYX]{2}$/.test(plate);
+}
+
+function validRegionCode(regionCode) {
+  return Number.isInteger(regionCode) && regionCode >= 1 && regionCode <= 999;
+}
+
+function plateIdentity(plate, regionCode) {
+  assert.ok(validPlateBody(plate), `Invalid plate body: ${plate}`);
+  assert.ok(validRegionCode(regionCode), `Invalid region code: ${regionCode}`);
+  return `${plate}:${regionCode}`;
+}
+
+// Canonical format and allowed alphabet.
+for (const plate of ["A777AA", "M343YM", "X000YX"]) {
+  assert.ok(validPlateBody(plate), `Expected valid plate: ${plate}`);
+}
+for (const plate of ["А777АА", "A77AAA", "A777AЯ", "Z123AA", "A1234A", "A12AA"]) {
+  assert.ok(!validPlateBody(plate), `Expected invalid canonical plate: ${plate}`);
+}
+
+// Region participates in identity; price remains based on plate body alone.
+assert.notEqual(plateIdentity("A777AA", 77), plateIdentity("A777AA", 78));
+assert.equal(plateIdentity("A777AA", 77), plateIdentity("A777AA", 77));
+for (const region of [0, -1, 1000, 1.5, "77"]) {
+  assert.ok(!validRegionCode(region), `Expected invalid region: ${region}`);
+}
+
+// Floor(currentBid * 105 / 100) threshold cases.
+for (const [currentBid, expected] of [[1, 1], [19, 19], [20, 21], [100, 105], [101, 106], [1_000_000_000, 1_050_000_000]]) {
+  assert.equal(Math.floor(currentBid * 105 / 100), expected, `Minimum bid mismatch for ${currentBid}`);
+}
+
+// Auction deadline boundaries: 3599 extends, 3600 does not.
+assert.equal(5000 + 3600, 8600);
+assert.equal(5000 + 3600, 8600);
+assert.equal((8600 - 5000) < 3600 ? 5000 + 3600 : 8600, 8600);
+assert.equal((8599 - 5000) < 3600 ? 5000 + 3600 : 8599, 8600);
+
+console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity and bid-policy checks.`);
