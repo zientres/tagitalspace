@@ -1,3 +1,5 @@
+import "plate-identity"
+
 // Supported Russian vehicle registration region codes.
 // Source of truth currently mirrors the allowedRegions set in
 // From/Russia/Russia.html. Region 20 is intentionally excluded.
