@@ -55,3 +55,8 @@ The JavaScript verifier includes independent mirror checks for plate identity, r
 
 
 The Russia-specific region allowlist is mirrored in `contracts/tolk/russia-regions.tolk`. It currently contains 212 numeric codes from the registration selector in `From/Russia/Russia.html`; region 20 is intentionally excluded. The registry must call `tagitalSpaceValidateRussiaRegionCode` for the Russia collection rather than the generic numeric-only validator. The JS verifier checks the list size, representative extended codes, and exclusion of 20. Keep the frontend selector and this on-chain allowlist synchronized.
+
+
+## Registry message protocol
+
+`contracts/tolk/registry-messages.tolk` is the initial shared protocol definition for the Registry, Auction Manager, and NFT item. It specifies query-correlated auction creation/callbacks, settlement notification, NFT initialization acknowledgements, and explicit cancellation requests. The definitions are not message handlers and are not yet proof of a working cross-contract flow. Every callback must authenticate its sender and match both the pending query ID and plate identity; a timeout must never automatically free a reserved plate.
