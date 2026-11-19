@@ -1,0 +1,47 @@
+name: Acton contract build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Acton.toml"
+      - "contracts/tolk/**"
+      - "contracts/tests/**"
+      - ".github/workflows/acton-contracts.yml"
+  pull_request:
+    paths:
+      - "Acton.toml"
+      - "contracts/tolk/**"
+      - "contracts/tests/**"
+      - ".github/workflows/acton-contracts.yml"
+
+permissions: {}
+
+jobs:
+  build-and-check:
+    name: Build and check Tolk contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Set up Acton
+        uses: ton-blockchain/setup-acton@0f9f436843d740466cae2d7411ff59072dde942e
+        with:
+          version: "1.2.0"
+
+      - name: Build contracts
+        run: acton build
+
+      - name: Check Tolk formatting
+        run: acton fmt --check
+
+      - name: Lint Tolk contracts
+        run: acton check --output-format github
+
+      - name: Verify JavaScript specification checks
+        run: |
+          node --check contracts/tests/verify-vectors.mjs
+          node contracts/tests/verify-vectors.mjs
