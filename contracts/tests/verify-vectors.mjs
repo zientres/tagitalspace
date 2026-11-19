@@ -152,7 +152,12 @@ assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryStorage, /auctionRevenueAddress/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
 assert.match(deploymentConfig, new RegExp(revenueRecipient));
-assert.match(itemState, /claimablePayout: coins/);\nassert.match(itemContract, /fun onBouncedMessage\(in: InMessageBounced\)/);\nassert.match(itemContract, /storage\.claimablePayout \+= payout\.amount/);\nassert.match(itemContract, /get_claimable_payout/);\nassert.match(itemMessages, /RetryPlateItemPayout/);\nassert.match(itemAuction, /tagitalSpaceRetryPlatePayout/);
+assert.match(itemState, /claimablePayout: coins/);
+assert.match(itemContract, /fun onBouncedMessage\(in: InMessageBounced\)/);
+assert.match(itemContract, /storage\.claimablePayout \+= payout\.amount/);
+assert.match(itemContract, /get_claimable_payout/);
+assert.match(itemMessages, /RetryPlateItemPayout/);
+assert.match(itemAuction, /tagitalSpaceRetryPlatePayout/);
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 2, "Registry and Registry-to-item protocol messages are expected");
@@ -196,7 +201,7 @@ assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout
 assert.match(itemMessages, /SettlePlateAuction/);
 assert.match(itemMessages, /TransferPlateOwnership/);
 assert.match(itemAuction, /value: auction\.highestBid/);
-assert.match(itemAuction, /BounceMode.NoBounce/);
+assert.match(itemAuction, /BounceMode.RichBounce/);
 
 assert.match(itemContract, /TransferPlateOwnership =>/);
 assert.match(itemAuction, /tagitalSpaceTransferPlateOwnership/);
