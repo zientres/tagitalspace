@@ -16,7 +16,7 @@ fun tagitalSpaceProcessPlateBid(
 
     // Return the previous escrowed bid. The item keeps its storage reserve;
     // if the old bid cannot be returned in full, the transaction is rejected.
-    val balanceBeforeMessage = contract.getOriginalBalance() - valueCoins;
+    val balanceBeforeMessage = contract.getOriginalBalance();
     assert (balanceBeforeMessage >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE) throw 772;
 
     val refund = createMessage({
@@ -63,30 +63,25 @@ fun tagitalSpaceClaimPlatePayout(
     beneficiaryKind: uint8,
     mutate storage: PlateItemStorageInitialized,
 ) {
-    val amount: coins = match (beneficiaryKind) {
-        0 => {
-            assert (senderAddress == storage.collectionOwner) throw 779;
-            val value = storage.pendingOwnerPayout;
-            assert (value > 0) throw 780;
-            storage.pendingOwnerPayout = 0;
-            value
-        }
-        1 => {
-            assert (senderAddress == storage.collectionAddress) throw 781;
-            val value = storage.pendingTreasuryPayout;
-            assert (value > 0) throw 782;
-            storage.pendingTreasuryPayout = 0;
-            value
-        }
-        2 => {
-            assert (senderAddress == storage.developmentSecurityFund) throw 783;
-            val value = storage.pendingSecurityPayout;
-            assert (value > 0) throw 784;
-            storage.pendingSecurityPayout = 0;
-            value
-        }
-        else => throw 785,
-    };
+    var amount: coins = 0;
+    if (beneficiaryKind == 0) {
+        assert (senderAddress == storage.collectionOwner) throw 779;
+        amount = storage.pendingOwnerPayout;
+        assert (amount > 0) throw 780;
+        storage.pendingOwnerPayout = 0;
+    } else if (beneficiaryKind == 1) {
+        assert (senderAddress == storage.collectionAddress) throw 781;
+        amount = storage.pendingTreasuryPayout;
+        assert (amount > 0) throw 782;
+        storage.pendingTreasuryPayout = 0;
+    } else if (beneficiaryKind == 2) {
+        assert (senderAddress == storage.developmentSecurityFund) throw 783;
+        amount = storage.pendingSecurityPayout;
+        assert (amount > 0) throw 784;
+        storage.pendingSecurityPayout = 0;
+    } else {
+        throw 785;
+    }
 
     // Preserve the item's storage reserve; the claim is only cleared in the
     // same transaction that queues its non-bounceable value transfer.
