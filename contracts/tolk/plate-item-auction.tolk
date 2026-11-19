@@ -111,3 +111,17 @@ fun tagitalSpaceClaimPlatePayout(
         payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
     }
 }
+
+fun tagitalSpaceTransferPlateOwnership(
+    senderAddress: address,
+    newOwnerAddress: address,
+    mutate storage: PlateItemStorageInitialized,
+) {
+    assert (storage.auction == null) throw 790;
+    assert (storage.ownerAddress != null) throw 791;
+    assert (senderAddress == storage.ownerAddress!) throw 792;
+    assert (newOwnerAddress.getWorkchain() == BASECHAIN) throw 793;
+    storage.ownerAddress = newOwnerAddress;
+    storage.lastRenewalTime = blockchain.now();
+    storage.save();
+}
