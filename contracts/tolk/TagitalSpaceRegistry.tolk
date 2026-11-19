@@ -3,6 +3,8 @@ import "registry-messages"
 import "registry-storage"
 import "registry-request"
 import "plate-item-state"
+import "plate-identity"
+import "russia-regions"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
