@@ -4,7 +4,7 @@ import "registry-storage"
 import "registry-request"
 import "plate-item-state"
 import "plate-identity"
-import "russia-regions"
+import "russia-regions"\nimport "plate-item-messages"
 
 contract TagitalSpaceRegistry {
     author: "TagitalSpace"
@@ -14,7 +14,7 @@ contract TagitalSpaceRegistry {
     storage: TagitalSpaceRegistryStorage
 }
 
-type AllowedRegistryMessage = StartPlateAuction | RegistryTreasuryDeposit
+type AllowedRegistryMessage = StartPlateAuction | RegistryTreasuryDeposit | RequestRegistryTreasuryPayout
 
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and send the first bid directly to that item.
@@ -57,6 +57,24 @@ fun onInternalMessage(in: InMessage) {
             assert (in.senderAddress == expectedItemAddress) throw 763;
             storage.treasuryBalance += in.valueCoins;
             storage.save();
+        }
+
+        RequestRegistryTreasuryPayout => {
+            val storage = TagitalSpaceRegistryStorage.load();
+            val itemAddress = calcDeployedPlateItem(
+                msg.identityKey,
+                storage.nftItemCode,
+            );
+            val claim = createMessage({
+                bounce: BounceMode.NoBounce,
+                dest: itemAddress,
+                value: 0,
+                body: ClaimPlatePayout {
+                    queryId: msg.queryId,
+                    beneficiaryKind: 1,
+                },
+            });
+            claim.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
     }
 }
