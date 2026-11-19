@@ -15,7 +15,7 @@ Network: TON Testnet only (network id -3).
 - Starting bid is calculated from the six-character body: base 3 TON; mirrored letters 15 TON; mirrored digits 15 TON; triples 50 TON; both mirror blocks add; base is used only if neither special pattern applies; triples are not combined with mirror pricing in the same block.
 - Subsequent bid minimum is floor(current_bid * 105 / 100), matching TON DNS integer arithmetic. The reusable helper is in `contracts/tolk/auction-policy.tolk`; the threshold must be tested at rounding boundaries.
 - Auction starts with 3600 seconds (`tagitalSpaceInitialAuctionEndTime`).
-- When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension (`tagitalSpaceAuctionEndTimeAfterBid`).
+- When a bid arrives with less than 3600 seconds remaining, end time becomes now + 3600; at exactly 3600 seconds or more, no extension (`tagitalSpacePolicyAuctionEndTimeAfterBid`).
 - No bid history is stored.
 - No settlement may occur before deadline. Settlement requires an explicit message/getter-supported state transition; transaction ordering and idempotence must be protected.
 
