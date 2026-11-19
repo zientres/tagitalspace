@@ -6,6 +6,7 @@ const TAGITALSPACE_REGISTRY_AUCTION = 1;
 const TAGITALSPACE_REGISTRY_MINT_PENDING = 2;
 const TAGITALSPACE_REGISTRY_OWNED = 3;
 const TAGITALSPACE_REGISTRY_RENEWAL_PENDING = 4;
+const TAGITALSPACE_REGISTRY_AUCTION_PENDING = 5;
 
 // One map entry is keyed by the hash of the canonical plate+region identity.
 // plateBody stores the six canonical ASCII bytes so the key can be checked
@@ -13,7 +14,8 @@ const TAGITALSPACE_REGISTRY_RENEWAL_PENDING = 4;
 struct TagitalSpaceRegistryEntry {
     plateBody: cell
     regionCode: uint16
-    // One of the status constants above; AUCTION_PENDING closes the async race.\n    status: uint8
+    // One of the status constants above; AUCTION_PENDING closes the async race.
+    status: uint8
     auctionId: uint256
     auctionAddress: address?
     highestBidder: address?
