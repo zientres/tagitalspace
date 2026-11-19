@@ -1,5 +1,5 @@
 // Registry -> per-plate item protocol.
-// Each plate item owns its auction state; Registry deploys items and forwards revenue claims.
+// Each plate item owns its auction state and pays proceeds to the fixed recipient.
 struct (0x54530001) StartPlateAuction {
     queryId: uint64
     plateBody: cell
@@ -10,10 +10,5 @@ struct (0x54531006) PlateItemInitData {
     firstBidAmount: coins
     plateBody: cell
     regionCode: uint16
-    collectionOwner: address
     auctionRevenueAddress: address
-}
-struct (0x54530003) RequestAuctionRevenuePayout {
-    queryId: uint64
-    identityKey: uint256
 }
