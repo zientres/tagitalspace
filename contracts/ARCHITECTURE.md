@@ -101,3 +101,17 @@ The Russia-specific allowlist is implemented separately in `contracts/tolk/russi
 - A separately accounted 30% treasury balance.
 
 Settlement must be idempotent and move amounts between these accounting buckets exactly once. A previous highest bid becomes a refund liability when outbid; it must not be treated as free contract balance. Payout credits should be claimable and remain liabilities until successfully paid. Any claim implementation must restore a liability on bounced transfers. The storage file itself does not yet implement these transitions.
+
+
+## Registry message protocol (first draft)
+
+`contracts/tolk/registry-messages.tolk` defines stable opcodes and payload layouts for:
+- user request to start a first-bid auction;
+- Registry-to-Auction-Manager auction creation;
+- authenticated auction-created, rejected, and settled callbacks;
+- Registry-to-NFT initialization and NFT success/failure acknowledgements;
+- an explicit cancellation request for a separately authorized recovery path.
+
+The protocol carries a query ID and full plate identity through asynchronous transitions. A handler must match the query ID and identity against the stored pending entry, and authenticate the sender contract before applying any callback. A timeout alone is never proof that a remote operation failed; the Registry must not release a reservation solely because a response was delayed.
+
+This file defines message layouts only. It does not implement handlers, serialization tests, sender checks, bounce recovery, or deployment-ready contracts. The opcodes and field layouts must be treated as a versioned interface and covered by TVM serialization tests before integration.
