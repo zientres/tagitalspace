@@ -48,7 +48,7 @@ fun onInternalMessage(in: InMessage) {
 
     // A repeated first-bid request resolves to the same deterministic item.
     // Return its attached value instead of replacing the existing auction.
-    if (in.senderAddress == storage.collectionAddress) {
+    if (in.senderAddress == storage.collectionAddress && in.body.preloadUint(32) != 0x54531004) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         val refund = createMessage({
             bounce: false,
