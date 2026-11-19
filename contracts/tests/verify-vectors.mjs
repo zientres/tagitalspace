@@ -7,6 +7,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const prices = JSON.parse(readFileSync(resolve(here, "plate-pricing-vectors.json"), "utf8"));
 const timings = JSON.parse(readFileSync(resolve(here, "auction-timing-vectors.json"), "utf8"));
 const registryProtocol = readFileSync(resolve(here, "../tolk/registry-messages.tolk"), "utf8");
+const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"), "utf8");
+const registryTransitions = readFileSync(resolve(here, "../tolk/registry-transitions.tolk"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -131,4 +133,12 @@ for (const required of [
   assert.ok(protocolNames.has(required), `Missing Registry protocol message: ${required}`);
 }
 
-console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy and Registry protocol checks.`);
+// Registry reservation transition source invariants. These checks guard
+// the declared source structure; they are not a substitute for TVM tests.
+assert.match(registryState, /TAGITALSPACE_REGISTRY_AUCTION_PENDING = 5/);
+assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION_PENDING/);
+assert.match(registryTransitions, /entry\.pendingQueryId == queryId/);
+assert.match(registryTransitions, /status: TAGITALSPACE_REGISTRY_AUCTION,/);
+assert.match(registryTransitions, /tagitalSpaceCanReleaseRejectedAuction/);
+
+console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy, Registry protocol and reservation source checks.`);
