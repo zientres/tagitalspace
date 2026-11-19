@@ -70,3 +70,16 @@ The Russia-specific region allowlist is mirrored in `contracts/tolk/russia-regio
 ### First-bid request preparation
 
 `contracts/tolk/registry-request.tolk` now combines the Russia plate-body validator, the 212-code region allowlist, canonical starting-price calculation, attached-value check, identity-key derivation, and creation of an `AUCTION_PENDING` entry. It is deliberately a pure preparation helper: the Registry handler must still check that the identity key is absent, insert the pending entry and save storage before sending the attached bid to Auction Manager.
+
+
+### Initial Registry handler
+
+`contracts/tolk/TagitalSpaceRegistry.tolk` now contains the first executable handler path:
+- any wallet may submit `StartPlateAuction`;
+- the handler validates the plate, Russian region, starting price, and attached bid;
+- the identity reservation is inserted add-only and saved before the message to Auction Manager is emitted;
+- the Registry forwards the full attached bid while paying forwarding fees separately from its own reserve;
+- `ManagedAuctionCreated` and `ManagedAuctionRejected` callbacks are accepted only from the configured Auction Manager and matched to the pending identity/query;
+- a rich bounce from the configured manager releases only the exact pending reservation and forwards the bounced value back to the initiating wallet.
+
+The Auction Manager implementation, deployment configuration, callback-value guarantees, compilation, and TVM tests are still outstanding. The Registry must be deployed with a correctly configured manager address and enough native balance to pay forwarding fees separately.
