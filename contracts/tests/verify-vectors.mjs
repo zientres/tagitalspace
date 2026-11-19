@@ -182,4 +182,4 @@ assert.match(itemContract, /storage\.pendingTreasuryPayout > 0/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
-console.log(\`PASS: \${prices.length} plate-pricing vectors, \${timings.length} auction-timing vectors, annual lifecycle boundaries, identity, bid-policy and TON DNS-style per-item auction source checks.\`);
+console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, annual lifecycle boundaries, identity, bid-policy and TON DNS-style per-item auction source checks.`);
