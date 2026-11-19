@@ -11,6 +11,7 @@ const registryState = readFileSync(resolve(here, "../tolk/registry-state.tolk"),
 const registryTransitions = readFileSync(resolve(here, "../tolk/registry-transitions.tolk"), "utf8");
 const registryStorage = readFileSync(resolve(here, "../tolk/registry-storage.tolk"), "utf8");
 const registryRequest = readFileSync(resolve(here, "../tolk/registry-request.tolk"), "utf8");
+const registryContract = readFileSync(resolve(here, "../tolk/TagitalSpaceRegistry.tolk"), "utf8");
 
 const allowedLetters = "ABEKMHOPCTYX";
 
@@ -153,5 +154,18 @@ assert.match(registryRequest, /tagitalSpacePlateStartPrice/);
 assert.match(registryRequest, /tagitalSpaceValidateFirstBid/);
 assert.match(registryRequest, /identityCell\.hash\(\)/);
 assert.match(registryRequest, /tagitalSpaceCreatePendingAuctionEntry/);
+assert.match(registryContract, /contract TagitalSpaceRegistry/);
+assert.match(registryContract, /StartPlateAuction =>/);
+assert.match(registryContract, /tagitalSpaceRegistryTryInsertEntry/);
+assert.match(registryContract, /storage\.save\(\);[\s\S]*createMessage/);
+assert.match(registryContract, /SEND_MODE_PAY_FEES_SEPARATELY/);
+assert.match(registryContract, /ManagedAuctionCreated =>/);
+assert.match(registryContract, /ManagedAuctionRejected =>/);
+assert.match(registryContract, /in\.senderAddress == storage\.auctionManagerAddress/);
+assert.match(registryContract, /onBouncedMessage\(in: InMessageBounced\)/);
+assert.match(registryContract, /RichBounceBody\.fromSlice/);
+assert.match(registryContract, /pendingInitiator/);
+assert.match(registryState, /auctionManagerAddress: address/);
+assert.match(registryState, /pendingInitiator: address\?/);
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, identity, bid-policy, Registry protocol and reservation source checks.`);
