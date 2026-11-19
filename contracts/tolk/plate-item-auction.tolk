@@ -3,6 +3,7 @@ import "plate-item-messages"
 import "registry-messages"
 
 const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600;
+const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60;
 const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05");
 
 fun tagitalSpaceProcessPlateBid(
@@ -110,6 +111,19 @@ fun tagitalSpaceClaimPlatePayout(
         });
         payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
     }
+}
+
+fun tagitalSpaceRenewPlateOwnership(
+    senderAddress: address,
+    mutate storage: PlateItemStorageInitialized,
+) {
+    assert (storage.auction == null) throw 795;
+    assert (storage.ownerAddress != null) throw 796;
+    assert (senderAddress == storage.ownerAddress!) throw 797;
+    val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
+    assert (blockchain.now() < expirationTime) throw 798;
+    storage.lastRenewalTime = expirationTime;
+    storage.save();
 }
 
 fun tagitalSpaceTransferPlateOwnership(
