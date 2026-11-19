@@ -37,8 +37,9 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - Every later bid is at least floor(current bid × 105 / 100).
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
-- Winning proceeds are split 50% collection owner, 30% Registry treasury, 20% development/security fund.
-- Settlement records three claimable liabilities in the plate item; it does not immediately push funds. Only the configured beneficiary can claim their share. This avoids losing the accounting record before a payout is queued.
+- **100% of every settled winning bid** is allocated to the single auction revenue address configured in the Registry at deployment: `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
+- Each plate item records the full winning bid as one claimable liability. Anyone may trigger the Registry claim request, but the item can only pay the immutable configured revenue address; callers cannot redirect proceeds.
+- The current flow is claim-based, not an automatic push during settlement. A claim request is required for each plate item after settlement. Payout messages are non-bounceable and still require bounce/TVM verification.
 
 ## NFT ownership lifecycle
 
@@ -46,7 +47,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - The current owner may renew before expiration by sending `RenewPlateOwnership`; renewal restarts the one-year period from that transaction.
 - Ownership transfer is owner-authorized and restarts the one-year period for the recipient.
 - Expiration does not create an auction automatically. The next valid first-bid request reuses the same deterministic item contract and starts a new one-hour auction.
-- Unpaid owner, treasury and security payouts remain recorded in the item across reauctions. New settlements add to existing liabilities instead of overwriting them.
+- Unclaimed auction revenue remains recorded in the item across reauctions. New settlements add the full winning bid to the existing liability instead of overwriting it.
 - No renewal price has been configured yet; the renewal message currently requires only network fees.
 
 ## Implementation status
