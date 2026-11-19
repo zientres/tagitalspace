@@ -12,7 +12,7 @@ contract TagitalSpacePlateItem {
     storageAtDeployment: PlateItemStorageNotInitialized
 }
 
-type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction
+type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | ClaimPlatePayout
 
 fun onInternalMessage(in: InMessage) {
     val loading = startLoadingPlateItemStorage();
@@ -78,6 +78,15 @@ fun onInternalMessage(in: InMessage) {
             assert (!unpacked.0) throw 778;
             tagitalSpaceSettlePlateAuction(mutate storage, unpacked.1, msg.queryId);
         }
+        ClaimPlatePayout => {
+            assert (storage.auction == null) throw 787;
+            tagitalSpaceClaimPlatePayout(
+                in.senderAddress,
+                msg.queryId,
+                msg.beneficiaryKind,
+                mutate storage,
+            );
+        }
     }
 }
 
@@ -115,4 +124,15 @@ get fun get_auction_info(): PlateAuctionState? {
         return null;
     }
     return storage.auction!.load();
+}
+
+get fun get_pending_payouts(): (coins, coins, coins) {
+    val loading = startLoadingPlateItemStorage();
+    assert (loading.isInitialized()) throw 788;
+    val storage = loading.parseInitialized();
+    return (
+        storage.pendingOwnerPayout,
+        storage.pendingTreasuryPayout,
+        storage.pendingSecurityPayout,
+    );
 }
