@@ -137,6 +137,13 @@ get fun get_auction_info(): PlateAuctionState? {
     return storage.auction!.load();
 }
 
+get fun get_last_renewal_time(): uint64 {
+    val loading = startLoadingPlateItemStorage();
+    assert (loading.isInitialized()) throw 794;
+    val storage = loading.parseInitialized();
+    return storage.lastRenewalTime;
+}
+
 get fun get_pending_payouts(): (coins, coins, coins) {
     val loading = startLoadingPlateItemStorage();
     assert (loading.isInitialized()) throw 788;
