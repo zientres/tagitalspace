@@ -1,6 +1,6 @@
-import "plate-item-state"
-import "plate-item-messages"
 import "plate-item-auction"
+import "plate-item-messages"
+import "plate-item-state"
 import "registry-messages"
 
 contract TagitalSpacePlateItem {
@@ -12,7 +12,11 @@ contract TagitalSpacePlateItem {
     storageAtDeployment: PlateItemStorageNotInitialized
 }
 
-type AllowedPlateItemMessage = PlateItemBid | SettlePlateAuction | RenewPlateOwnership | TransferPlateOwnership
+type AllowedPlateItemMessage =
+    | PlateItemBid
+    | SettlePlateAuction
+    | RenewPlateOwnership
+    | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
     val loading = startLoadingPlateItemStorage();
@@ -53,9 +57,8 @@ fun onInternalMessage(in: InMessage) {
     if (in.senderAddress == immutable.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
-        val isExpired = storage.ownerAddress != null
-            && storage.auction == null
-            && blockchain.now() >= expirationTime;
+        val isExpired = storage.ownerAddress != null && storage.auction == null &&
+            blockchain.now() >= expirationTime;
         // Reuse the deterministic item address for the next auction after expiry.
         if (isExpired) {
             storage.ownerAddress = null;
@@ -89,7 +92,13 @@ fun onInternalMessage(in: InMessage) {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 777;
             var auction = unpacked.1;
-            tagitalSpaceProcessPlateBid(in.senderAddress, in.valueCoins, msg.bidAmount, mutate storage, mutate auction);
+            tagitalSpaceProcessPlateBid(
+                in.senderAddress,
+                in.valueCoins,
+                msg.bidAmount,
+                mutate storage,
+                mutate auction,
+            );
         }
         SettlePlateAuction => {
             val unpacked = storage.unpackAuction();
