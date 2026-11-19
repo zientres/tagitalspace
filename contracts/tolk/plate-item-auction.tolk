@@ -1,9 +1,9 @@
-import "plate-item-state"
 import "plate-item-messages"
+import "plate-item-state"
 
-const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600;
-const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60;
-const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05");
+const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600
+const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60
+const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05")
 
 fun tagitalSpaceProcessPlateBid(
     senderAddress: address,
