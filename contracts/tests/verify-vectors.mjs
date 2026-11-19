@@ -132,6 +132,25 @@ assert.ok(!canRenew(expirationTime(1_000), 1_000));
 assert.ok(!canRelease(expirationTime(1_000) - 1, 1_000));
 assert.ok(canRelease(expirationTime(1_000), 1_000));
 
+
+// Unclaimed proceeds survive reauction: each settlement adds, never replaces.
+function addSettlementLiabilities(previous, winningBid) {
+  const owner = winningBid * 50n / 100n;
+  const treasury = winningBid * 30n / 100n;
+  const security = winningBid - owner - treasury;
+  return {
+    owner: previous.owner + owner,
+    treasury: previous.treasury + treasury,
+    security: previous.security + security
+  };
+}
+const firstSettlement = addSettlementLiabilities(
+  { owner: 0n, treasury: 0n, security: 0n }, 101n
+);
+const secondSettlement = addSettlementLiabilities(firstSettlement, 200n);
+assert.deepEqual(secondSettlement, { owner: 150n, treasury: 90n, security: 61n });
+assert.equal(secondSettlement.owner + secondSettlement.treasury + secondSettlement.security, 301n);
+
 // TON DNS-style architecture checks: Registry deploys deterministic items;
 // each item contract owns its auction and no shared Auction Manager exists.
 const itemState = readFileSync(resolve(here, "../tolk/plate-item-state.tolk"), "utf8");
@@ -177,8 +196,11 @@ assert.match(itemAuction, /tagitalSpaceRenewPlateOwnership/);
 assert.match(itemAuction, /storage\.lastRenewalTime = blockchain\.now\(\)/);
 assert.match(itemContract, /RenewPlateOwnership =>/);
 assert.match(itemContract, /get_expiration_time/);
-assert.match(itemContract, /isExpired && !hasUnpaidLiabilities/);
-assert.match(itemContract, /storage\.pendingTreasuryPayout > 0/);
+assert.match(itemContract, /if \(isExpired\)/);
+assert.doesNotMatch(itemContract, /hasUnpaidLiabilities/);
+assert.match(itemAuction, /storage\.pendingOwnerPayout \+=/);
+assert.match(itemAuction, /storage\.pendingTreasuryPayout \+=/);
+assert.match(itemAuction, /storage\.pendingSecurityPayout \+=/);
 assert.match(registryContract, /RequestRegistryTreasuryPayout/);
 assert.match(registryContract, /ClaimPlatePayout/);
 
