@@ -182,7 +182,6 @@ assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryContract, /auctionRevenueAddress: storage\.auctionRevenueAddress/);
 assert.doesNotMatch(itemAuction + itemState + registryState, /pendingOwnerPayout|pendingTreasuryPayout|pendingSecurityPayout|pendingAuctionRevenue|developmentSecurityFund/);
 assert.match(itemMessages, /SettlePlateAuction/);
-assert.match(itemMessages, /ClaimPlatePayout/);
 assert.match(itemMessages, /TransferPlateOwnership/);
 assert.match(itemAuction, /entire winning bid is sent to the collection's fixed revenue address/);
 assert.match(itemAuction, /BounceMode.NoBounce/);
