@@ -1,5 +1,6 @@
 import "plate-item-state"
 import "plate-item-messages"
+import "registry-messages"
 
 const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600;
 const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05");
@@ -67,7 +68,10 @@ fun tagitalSpaceSettlePlateAuction(
         bounce: false,
         dest: storage.collectionAddress,
         value: treasuryShare,
-        body: RegistryTreasuryDeposit { queryId },
+        body: RegistryTreasuryDeposit {
+            queryId,
+            identityKey: storage.identityKey,
+        },
     });
     treasuryPayment.send(SEND_MODE_PAY_FEES_SEPARATELY);
 
