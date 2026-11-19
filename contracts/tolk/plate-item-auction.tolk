@@ -41,45 +41,78 @@ fun tagitalSpaceProcessPlateBid(
 fun tagitalSpaceSettlePlateAuction(
     mutate storage: PlateItemStorageInitialized,
     auction: PlateAuctionState,
-    queryId: uint64,
+    _queryId: uint64,
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
 
-    // Persist settlement before outbound payments. The winning bidder becomes
-    // the NFT owner exactly once; distribution is split 50/30/20.
+    // Settlement creates three explicit liabilities. Funds remain in this
+    // item contract until each configured beneficiary claims their share.
     storage.ownerAddress = auction.highestBidder;
     storage.auction = null;
+    storage.pendingOwnerPayout = auction.highestBid * 50 / 100;
+    storage.pendingTreasuryPayout = auction.highestBid * 30 / 100;
+    storage.pendingSecurityPayout =
+        auction.highestBid - storage.pendingOwnerPayout - storage.pendingTreasuryPayout;
+    storage.save();
+}
+
+fun tagitalSpaceClaimPlatePayout(
+    senderAddress: address,
+    queryId: uint64,
+    beneficiaryKind: uint8,
+    mutate storage: PlateItemStorageInitialized,
+) {
+    val amount: coins = match (beneficiaryKind) {
+        0 => {
+            assert (senderAddress == storage.collectionOwner) throw 779;
+            val value = storage.pendingOwnerPayout;
+            assert (value > 0) throw 780;
+            storage.pendingOwnerPayout = 0;
+            value
+        }
+        1 => {
+            assert (senderAddress == storage.collectionAddress) throw 781;
+            val value = storage.pendingTreasuryPayout;
+            assert (value > 0) throw 782;
+            storage.pendingTreasuryPayout = 0;
+            value
+        }
+        2 => {
+            assert (senderAddress == storage.developmentSecurityFund) throw 783;
+            val value = storage.pendingSecurityPayout;
+            assert (value > 0) throw 784;
+            storage.pendingSecurityPayout = 0;
+            value
+        }
+        else => throw 785,
+    };
+
+    // Preserve the item's storage reserve; the claim is only cleared in the
+    // same transaction that queues its non-bounceable value transfer.
+    assert (
+        contract.getOriginalBalance() >= amount + TAGITALSPACE_ITEM_MIN_STORAGE
+    ) throw 786;
     storage.save();
 
-    val ownerShare = auction.highestBid * 50 / 100;
-    val treasuryShare = auction.highestBid * 30 / 100;
-    val securityShare = auction.highestBid - ownerShare - treasuryShare;
-
-    val ownerPayment = createMessage({
-        bounce: false,
-        dest: storage.collectionOwner,
-        value: ownerShare,
-        body: PlateItemExcesses { queryId },
-    });
-    ownerPayment.send(SEND_MODE_PAY_FEES_SEPARATELY);
-
-    val treasuryPayment = createMessage({
-        bounce: false,
-        dest: storage.collectionAddress,
-        value: treasuryShare,
-        body: RegistryTreasuryDeposit {
-            queryId,
-            identityKey: storage.identityKey,
-        },
-    });
-    treasuryPayment.send(SEND_MODE_PAY_FEES_SEPARATELY);
-
-    val securityPayment = createMessage({
-        bounce: false,
-        dest: storage.developmentSecurityFund,
-        value: securityShare,
-        body: PlateItemExcesses { queryId },
-    });
-    securityPayment.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    if (beneficiaryKind == 1) {
+        val payout = createMessage({
+            bounce: BounceMode.NoBounce,
+            dest: storage.collectionAddress,
+            value: amount,
+            body: RegistryTreasuryDeposit {
+                queryId,
+                identityKey: storage.identityKey,
+            },
+        });
+        payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    } else {
+        val payout = createMessage({
+            bounce: BounceMode.NoBounce,
+            dest: senderAddress,
+            value: amount,
+            body: PlateItemExcesses { queryId },
+        });
+        payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    }
 }
