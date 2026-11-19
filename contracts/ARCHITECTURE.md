@@ -149,3 +149,8 @@ The helper intentionally does not authenticate callback senders, write contract 
 - insert only when the key is absent, replace only when it exists, and delete explicitly.
 
 The entry dictionary stores serialized `TagitalSpaceRegistryEntry` cells. The add-only operation is required for first-bid reservation races: a pending request must not overwrite an existing reservation. These primitives do not yet authenticate messages or perform the asynchronous auction creation flow.
+
+
+### First-bid validation boundary
+
+The `tagitalSpacePrepareRussiaFirstBid` helper validates the six-byte canonical plate, applies the Russia-specific region allowlist, computes the starting price from the plate body only, checks the actual attached value, derives the hash of the plate+region identity cell, and prepares the matching pending reservation. It does not read or mutate contract storage, authenticate the sender, or send messages. The contract handler must perform add-only insertion and persist it before the outbound manager message; the attached value must be the actual inbound message value, not a caller-supplied amount.
