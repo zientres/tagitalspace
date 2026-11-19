@@ -41,6 +41,7 @@ fun tagitalSpacePrepareRussiaFirstBid(
             plateBody,
             regionCode,
             queryId,
+            initiator,
         ),
     };
 }
