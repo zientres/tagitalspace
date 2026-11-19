@@ -1,9 +1,7 @@
 // TagitalSpace Registry collection storage.
-// Auctions live in deterministic per-plate item contracts, as in TON DNS.
-
+// Every plate item pays 100% of settled auction proceeds to one configured address.
 struct TagitalSpaceRegistryStorage {
     ownerAddress: address
-    developmentSecurityFund: address
+    auctionRevenueAddress: address
     nftItemCode: cell
-    treasuryBalance: coins
 }
