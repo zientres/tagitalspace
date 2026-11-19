@@ -44,7 +44,7 @@ The per-plate item is itself the NFT item contract. Its deterministic StateInit 
 ## Required verification before deployment
 
 1. Tolk compile, formatter and Acton build.
-2. TVM tests for item deployment, duplicate identity, bid thresholds, deadline boundaries, refund accounting, settlement, payout bounce and treasury accounting.
+2. TVM tests for item deployment, duplicate identity, bid thresholds, deadline boundaries, refund accounting, settlement payout and reserve accounting.
 3. StateInit/address derivation tests proving different regions produce different item addresses.
 4. Testnet end-to-end auction with controlled wallets.
 5. Independent security review of compiled contracts and deployment configuration.
