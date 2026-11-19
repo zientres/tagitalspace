@@ -40,7 +40,7 @@ The item contract is responsible for splitting its own auction proceeds. Registr
 
 ## NFT lifecycle
 
-The per-plate item is itself the NFT item contract. Its deterministic StateInit includes the Registry address and identity key. Before settlement it reports no owner; after settlement the highest bidder becomes owner. Basic owner-authorized NFT transfer is implemented. Annual renewal and expiration/release flows remain to be implemented.
+The per-plate item is itself the NFT item contract. Its deterministic StateInit includes the Registry address and identity key. Before settlement it reports no owner; after settlement the highest bidder becomes owner. Basic owner-authorized NFT transfer is implemented. Each item has a one-year ownership period measured from its last renewal/transfer. The current owner may renew once before expiration; renewal resets the one-year period from the renewal time. After expiration, the next valid first-bid request can restart the auction in the same deterministic item contract. Expiration does not start an auction by itself. Release/restart is blocked while any of the three settlement payout liabilities remain unpaid. A separate renewal price has not been configured; renewal currently requires only the on-chain owner message and network fees.
 
 ## Required verification before deployment
 
