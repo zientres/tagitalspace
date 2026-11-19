@@ -13,17 +13,17 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 - Each plate item stores its own auction, bidder and deadline.
 - Later bids, outbid refunds and settlement are handled by that item contract.
 - No shared Auction Manager is part of the intended architecture.
-- Settlement currently attempts the 50/30/20 split: collection owner, Registry treasury and development/security wallet.
+- Settlement records 50/30/20 payout liabilities in the plate item. The collection owner and security fund claim directly; the Registry owner triggers the Registry's treasury claim. The payout transfers are currently non-bounceable and have not been tested in TVM.
 
 ## Blocking findings
 
 ### Critical — build and TVM behavior are unverified
 
-The new project-specific Tolk files have not yet been compiled or executed in TVM tests. Message layouts, StateInit address derivation, storage serialization and all action-phase behavior must be verified before deployment.
+The new project-specific Tolk files, including the new claim flow, have not yet been compiled or executed in TVM tests. Message layouts, StateInit address derivation, storage serialization and all action-phase behavior must be verified before deployment.
 
 ### Critical — escrow and bounce safety are incomplete
 
-Outbid refunds and settlement payouts currently use direct outbound messages. The implementation does not yet maintain claimable refund/payout liabilities or restore them on bounced transfers. This can cause accounting loss and must be fixed before real funds are used.
+Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement payouts are now recorded as three claimable balances, but claim transfers are also non-bounceable and there is no bounce-recovery path. Action-phase rollback, fee coverage, repeated claims and recipient behavior are unverified. This remains a critical blocker before real funds are used.
 
 ### High — Registry deployment configuration is incomplete
 
