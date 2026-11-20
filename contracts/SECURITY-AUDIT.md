@@ -17,9 +17,9 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ## Blocking findings
 
-### Critical — build and TVM behavior are unverified
+### Verification progress — build and core TVM paths now pass
 
-The new project-specific Tolk files, including the automatic settlement payout, have not yet been compiled or executed in TVM tests. Message layouts, StateInit address derivation, storage serialization and all action-phase behavior must be verified before deployment.
+The current branch compiles with Acton 1.2.1 and passes 9 TVM tests: 7 PlateItem tests and 2 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
@@ -35,7 +35,7 @@ NFT ownership is recorded after settlement and can be transferred by its current
 
 ### High — Registry deployment bounce recovery is missing
 
-The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then returns the value actually bounced (after network fees) to the original first bidder. A Registry TVM test now exercises an actual failed deployment using an invalid item code and checks that the bidder receives the refund. This closes the previously identified missing-handler path, but the test still needs to be run in CI and reviewed for adversarial edge cases.
+The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then returns the value actually bounced (after network fees) to the original first bidder. A Registry TVM test now exercises an actual failed deployment using an invalid item code and checks that the bidder receives the refund. This closes the previously identified missing-handler path for the tested compute-phase deployment failure. Both Registry integration tests pass in CI, including a real RichBounce refund and a successful item deployment followed by a duplicate first-bid request. Adversarial bounce and action-phase failure cases still require review.
 
 ### High — outbid refund recovery is missing
 
@@ -63,8 +63,8 @@ The browser registry client and frontend message construction must be implemente
 
 ## Required verification gates
 
-1. Tolk formatter, compiler and Acton build.
-2. TVM tests for Registry deployment bounce/refund, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution.
+1. Tolk formatter, compiler and Acton build (currently passing in CI).
+2. Expand TVM tests for Registry deployment bounce/refund, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution. Current CI covers Registry bounce/refund and duplicate request behavior, plus core item auction paths.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
