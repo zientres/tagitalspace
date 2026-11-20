@@ -3,10 +3,10 @@ import { Script } from "node:vm";
 
 const pagePath = new URL("../From/Russia/Russia.html", import.meta.url);
 const html = readFileSync(pagePath, "utf8");
-const blocks = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+const blocks = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
     .filter(([, attributes]) => {
-        if (/\\bsrc\\s*=/i.test(attributes)) return false;
-        if (/\\btype\\s*=\\s*["'](?:application\\/json|application\\/ld\\+json)/i.test(attributes)) return false;
+        if (/\bsrc\s*=/i.test(attributes)) return false;
+        if (/\btype\s*=\s*["'](?:application\/json|application\/ld\+json)/i.test(attributes)) return false;
         return true;
     });
 
@@ -16,8 +16,8 @@ if (blocks.length === 0) {
 
 blocks.forEach(([, , source], index) => {
     new Script(source, {
-        filename: `From/Russia/Russia.html:inline-script-${index + 1}`,
+        filename: \`From/Russia/Russia.html:inline-script-\${index + 1}\`,
     });
 });
 
-process.stdout.write(`Validated ${blocks.length} inline JavaScript block(s) in Russia.html\\n`);
+process.stdout.write(\`Validated \${blocks.length} inline JavaScript block(s) in Russia.html\n\`);
