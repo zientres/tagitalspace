@@ -16,6 +16,8 @@ fun deployTestRegistry(
         ownerAddress: owner.address,
         auctionRevenueAddress: revenue.address,
         nftItemCode: itemCode,
+        claimableRefunds: [],
+        claimableRefundTotal: 0,
     });
     val deployed = registry.deploy(owner.address, { value: grams("0.2") });
     expect(deployed).toHaveSuccessfulDeploy({ to: registry.address });
@@ -40,7 +42,19 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     );
 
     expect(result).toHaveSuccessfulTx({ to: registry.address });
-    expect(result).toHaveTx({ to: bidder.address });
+    val claimable = registry.getClaimableRefund(bidder.address);
+    expect(claimable > 0).toEqual(true);
+    expect(registry.getClaimableRefundTotal()).toEqual(claimable);
+
+    val claim = registry.sendClaimRegistryRefund(
+        bidder.address,
+        2,
+        { value: grams("0.1") },
+    );
+    expect(claim).toHaveSuccessfulTx({ to: registry.address });
+    expect(claim).toHaveTx({ to: bidder.address, value: claimable });
+    expect(registry.getClaimableRefund(bidder.address)).toEqual(0);
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
 }
 
 get fun `test Registry deploys an item and rejects duplicate first-bid requests`() {
@@ -75,7 +89,8 @@ get fun `test Registry deploys an item and rejects duplicate first-bid requests`
         { value: grams("3.2") },
     );
 
-    expect(duplicateRequest).toHaveTx({ to: secondBidder.address });
+    expect(duplicateRequest).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(secondBidder.address) > 0).toEqual(true);
     val auctionAfterDuplicate = item.getAuctionInfo()!;
     expect(auctionAfterDuplicate.highestBid).toEqual(grams("3"));
     expect(auctionAfterDuplicate.highestBidder).toEqual(firstBidder.address);
