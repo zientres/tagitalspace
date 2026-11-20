@@ -17,7 +17,7 @@ struct PlateItemImmutableData {
     identityKey: uint256
     nftIndex: uint64
     collectionAddress: address
-    plateBody: cell
+    plateBody: string
     regionCode: uint16
     auctionRevenueAddress: address
 }
@@ -58,7 +58,7 @@ struct PlateItemNftData {
     identityKey: uint256
     collectionAddress: address
     ownerAddress: address?
-    plateBody: cell?
+    plateBody: string?
     regionCode: uint16
 }
 
