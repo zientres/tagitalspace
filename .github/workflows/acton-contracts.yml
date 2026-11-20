@@ -23,6 +23,10 @@ on:
       - "tests/**"
       - "wrappers/**"
       - "scripts/**"
+      - "registry-client.js"
+      - "registry-config.js"
+      - "script.js"
+      - "From/Russia/Russia.html"
       - ".github/workflows/acton-contracts.yml"
 
 permissions: {}
