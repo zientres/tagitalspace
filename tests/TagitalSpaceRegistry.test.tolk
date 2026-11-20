@@ -235,3 +235,39 @@ get fun `test expired plate item can start a new auction at the same address`() 
     );
 }
 
+get fun `test Registry refund bounce cannot inflate liability beyond returned value plus fee buffer`() {
+    val owner = testing.treasury("registry-forged-owner");
+    val bidder = testing.treasury("registry-forged-bidder");
+    val revenue = testing.treasury("registry-forged-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    val originalBody = RegistryRefund {
+        queryId: 11,
+        recipient: bidder.address,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("1"),
+        dest: registry.address,
+        body: forgedBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(bidder.address, forgedBounce);
+    expect(registry.getClaimableRefund(bidder.address)).toEqual(0);
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
+}
+
