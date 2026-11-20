@@ -258,8 +258,12 @@ get fun get_nft_data(): (int, int, address, address?, cell) {
     val immutable = storage.immutable.load();
     val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
     val isOwned = storage.ownerAddress != null && blockchain.now() < expirationTime;
-    val owner = if (isOwned) storage.ownerAddress else null;
-    val initialized = if (isOwned) 1 else 0;
+    var owner: address? = null;
+    var initialized = 0;
+    if (isOwned) {
+        owner = storage.ownerAddress;
+        initialized = 1;
+    }
     val content = tagitalSpaceBuildPlateItemContent(
         immutable.plateBody,
         immutable.regionCode,
