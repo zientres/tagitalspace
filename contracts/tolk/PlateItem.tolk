@@ -1,5 +1,6 @@
 import "plate-item-auction"
 import "plate-item-messages"
+import "plate-item-metadata"
 import "plate-item-state"
 import "registry-messages"
 
@@ -17,10 +18,17 @@ type AllowedPlateItemMessage =
     | SettlePlateAuction
     | RetryPlateItemPayout
     | ClaimPlateItemRefund
+    | GetNftStaticData
     | RenewPlateOwnership
     | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
+    if (!in.body.isEmpty() && in.body.preloadUint(32) == 0x5fcc3d14) {
+        // TEP-62 read interface is exposed for indexing, but marketplace
+        // transfers are intentionally disabled. Use TagitalSpace transfer flow.
+        throw 805;
+    }
+
     val loading = startLoadingPlateItemStorage();
 
     if (!loading.isInitialized()) {
@@ -36,6 +44,7 @@ fun onInternalMessage(in: InMessage) {
         };
         val immutable = PlateItemImmutableData {
             identityKey: uninitialized.identityKey,
+            nftIndex: init.nftIndex,
             collectionAddress: uninitialized.collectionAddress,
             plateBody: init.plateBody,
             regionCode: init.regionCode,
@@ -61,6 +70,7 @@ fun onInternalMessage(in: InMessage) {
     // auction. Each completed auction pays its winning bid immediately.
     if (in.senderAddress == immutable.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
+        assert (init.nftIndex == immutable.nftIndex) throw 804;
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
         val isExpired = storage.ownerAddress != null && storage.auction == null &&
             blockchain.now() >= expirationTime;
@@ -131,6 +141,19 @@ fun onInternalMessage(in: InMessage) {
                 msg.queryId,
             );
         }
+        GetNftStaticData => {
+            val response = createMessage({
+                bounce: false,
+                dest: in.senderAddress,
+                value: 0,
+                body: ReportNftStaticData {
+                    queryId: msg.queryId,
+                    index: immutable.nftIndex as uint256,
+                    collectionAddress: immutable.collectionAddress,
+                },
+            });
+            response.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+        }
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
         }
@@ -193,7 +216,7 @@ fun onBouncedMessage(in: InMessageBounced) {
     throw 789;
 }
 
-get fun get_nft_data(): PlateItemNftData {
+get fun get_plate_data(): PlateItemNftData {
     val loading = startLoadingPlateItemStorage();
     if (!loading.isInitialized()) {
         val uninitialized = loading.parseNotInitialized();
@@ -216,6 +239,39 @@ get fun get_nft_data(): PlateItemNftData {
         plateBody: immutable.plateBody,
         regionCode: immutable.regionCode,
     };
+}
+
+get fun get_nft_data(): (int, int, address, address?, cell) {
+    val loading = startLoadingPlateItemStorage();
+    if (!loading.isInitialized()) {
+        val uninitialized = loading.parseNotInitialized();
+        return (
+            0,
+            0,
+            uninitialized.collectionAddress,
+            null,
+            beginCell().endCell(),
+        );
+    }
+
+    val storage = loading.parseInitialized();
+    val immutable = storage.immutable.load();
+    val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
+    val isOwned = storage.ownerAddress != null && blockchain.now() < expirationTime;
+    val owner = if (isOwned) storage.ownerAddress else null;
+    val initialized = if (isOwned) 1 else 0;
+    val content = tagitalSpaceBuildPlateItemContent(
+        immutable.plateBody,
+        immutable.regionCode,
+    );
+
+    return (
+        initialized,
+        immutable.nftIndex as int,
+        immutable.collectionAddress,
+        owner,
+        content,
+    );
 }
 
 get fun get_auction_info(): PlateAuctionState? {
