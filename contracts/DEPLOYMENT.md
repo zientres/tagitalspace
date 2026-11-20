@@ -67,4 +67,4 @@ These flows have emulator coverage, but the current source-level review is not a
 
 ## Current status
 
-The Registry deployment script is implemented and is exercised by CI in local emulation. No Registry has been deployed to Testnet by this change. Save the printed Registry address after a successful Testnet deployment; do not assume an address before the deployment transaction is confirmed.
+The Registry deployment script is implemented and is exercised by CI in local emulation. The browser client and Russia page are wired to a configurable Registry address, but no Registry has been deployed to Testnet by this change. Save the printed Registry address after a successful Testnet deployment; do not assume an address before the deployment transaction is confirmed.
