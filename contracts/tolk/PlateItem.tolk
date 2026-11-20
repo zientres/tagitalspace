@@ -138,10 +138,14 @@ fun onBouncedMessage(in: InMessageBounced) {
 
     var storage = startLoadingPlateItemStorage().parseInitialized();
     val immutable = storage.immutable.load();
+    val originalInfo = rich.originalInfo.load();
 
     // Only a bounced payout from the immutable revenue destination is recoverable here.
     assert (in.senderAddress == immutable.auctionRevenueAddress) throw 789;
     assert (payout.amount > 0) throw 789;
+
+    // The payload amount must match the actual value of the bounced outgoing message.
+    assert (payout.amount == originalInfo.valueCoins) throw 789;
 
     storage.claimablePayout += payout.amount;
     storage.save();
