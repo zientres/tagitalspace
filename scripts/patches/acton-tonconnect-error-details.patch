@@ -1,10 +1,6 @@
 --- a/src/tonconnect.rs
 +++ b/src/tonconnect.rs
-@@
-                 WalletMessage::Response(WalletResponse::Error {
-                     error,
-                     id: response_id,
-                 }) if response_id == id => {
+@@ -268,4 +268,7 @@
                      self.persist_session(&state)?;
 +                    let code = error.code as u16;
                      let message = error.message;
@@ -14,4 +10,3 @@
 +                    anyhow::bail!(
 +                        "TON Connect transaction failed (code {code}): {message}; data: {data:?}"
 +                    );
-                 }
