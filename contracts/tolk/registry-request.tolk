@@ -10,7 +10,7 @@ struct TagitalSpacePreparedAuctionRequest {
 }
 
 fun tagitalSpacePrepareRussiaFirstBid(
-    plateBody: cell,
+    plateBody: string,
     regionCode: uint16,
     queryId: uint64,
     attachedValue: coins,
