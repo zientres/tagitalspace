@@ -19,7 +19,7 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ### Verification progress — build and core TVM paths now pass
 
-The current branch compiles with Acton 1.2.1 and passes 17 TVM tests: 11 PlateItem tests and 6 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+The current branch compiles with Acton 1.2.1 and passes 20 TVM tests: 13 PlateItem tests and 7 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
@@ -31,7 +31,7 @@ Registry storage now requires the owner address, the fixed auction revenue addre
 
 ### High — item lifecycle and renewal economics need further verification
 
-NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. The item now supports owner-only annual renewal and expiration-triggered release on the next first-bid request; each completed auction pays its full proceeds immediately to the configured revenue address. Renewal currently has no configured protocol fee. Payout recovery is implemented, but multi-bounce and fee-exhaustion behavior still needs more testing.
+NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. Owner-only annual renewal, renewal boundary behavior, owner-only transfer and expiration-triggered re-auction at the same deterministic address now have TVM coverage. Renewal currently has no configured protocol fee. Payout recovery is implemented, but multi-bounce and fee-exhaustion behavior still needs more testing.
 
 ### High — Registry deployment bounce recovery needs expanded testing
 
@@ -64,7 +64,7 @@ The browser registry client and frontend message construction must be implemente
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim, duplicate request refund accounting, invalid inputs, region-separated addresses and owner-only deployment, plus outbid refund bounce/claim.
+2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment and expired-item re-auction, plus outbid refund bounce/claim and annual renewal/transfer authorization.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
