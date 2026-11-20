@@ -899,6 +899,34 @@
             localized("Не удалось определить состояние номера.", "Could not determine the plate status."));
         }
 
+        const registryRefund = lookup.claimableRegistryRefund || 0n;
+        const itemRefund = lookup.claimableItemRefund || 0n;
+        if (registryRefund > 0n || itemRefund > 0n) {
+          addResultText(card, "registry-result-detail",
+            localized(
+              "Доступен возврат: " + formatTon(registryRefund + itemRefund) + " TON.",
+              "Refund available: " + formatTon(registryRefund + itemRefund) + " TON."
+            ));
+          const claimButton = document.createElement("button");
+          claimButton.type = "button";
+          claimButton.className = "primary-button registry-action-button";
+          claimButton.textContent = localized("Получить возврат", "Claim refund");
+          claimButton.addEventListener("click", async () => {
+            claimButton.disabled = true;
+            claimButton.textContent = localized("Ожидание подтверждения…", "Waiting for confirmation…");
+            try {
+              await window.tagitalSpaceRegistry.claimRefunds(lookup.itemAddress);
+              const updated = await window.tagitalSpaceRegistry.lookupRussianPlate(searchedPlate);
+              renderLookup(searchedPlate, updated, localized("Возврат получен.", "Refund claimed."));
+            } catch (error) {
+              claimButton.disabled = false;
+              claimButton.textContent = localized("Получить возврат", "Claim refund");
+              addResultText(card, "registry-result-message", error.message || localized("Не удалось получить возврат.", "Could not claim the refund."));
+            }
+          });
+          card.append(claimButton);
+        }
+
         if (notice) addResultText(card, "registry-result-message", notice);
         result.appendChild(card);
       }
