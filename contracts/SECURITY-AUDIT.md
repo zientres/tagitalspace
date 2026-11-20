@@ -45,9 +45,21 @@ Outbid refunds are sent with `bounce: false`. If the previous bidder's address c
 
 The item has a RichBounce-based liability and retry mechanism for revenue payouts. The configured revenue address is immutable after Registry deployment, so it must be checked carefully before deployment.
 
+### High — frontend Registry client is missing and still targets the old protocol
+
+`From/Russia/Russia.html` loads `registry-client.js` and calls `window.tagitalSpaceRegistry.lookupRussianPlate`, `startRussianAuctionWithFirstBid` and `placeBid`. There is no `registry-client.js` in the current repository tree. The page's auction rendering also expects fields such as `auctionId`, `status`, `startingBid` and `minimumBidStep`, while the current per-item contract exposes a `PlateAuctionState` with `highestBidder`, `highestBid` and `auctionEndTime`. The browser flow is therefore not integrated with the current contract architecture.
+
+### High — current item is not a standard TON NFT implementation
+
+The item uses custom `get_nft_data` fields and a custom `TransferPlateOwnership` opcode (`0x5fcc3d15`), rather than the standard TEP-62 NFT item getter and transfer message protocol. It also lacks the standard collection/content getters and metadata plumbing expected by NFT marketplaces. As written, this contract should not be assumed to appear or trade correctly on Getgems.
+
+### High — Registry TVM coverage is missing
+
+The current test suite exercises the PlateItem contract, but does not deploy and exercise `TagitalSpaceRegistry`. It does not prove first-bid forwarding, deterministic address derivation, duplicate requests, Registry-to-item bounce handling, or refund of a failed item deployment. The Registry path is a critical money-handling path and needs dedicated emulator tests before deployment.
+
 ### High — frontend integration is not verified
 
-The browser registry client and frontend message construction must be checked against the new per-item contract addresses, opcodes and getters.
+The browser registry client and frontend message construction must be implemented and checked against the new per-item contract addresses, opcodes and getters.
 
 ## Required verification gates
 
