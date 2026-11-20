@@ -46,3 +46,13 @@ struct (0x5fcc3d15) TransferPlateOwnership {
     queryId: uint64
     newOwnerAddress: address
 }
+
+struct (0x2fcb26a2) GetNftStaticData {
+    queryId: uint64
+}
+
+struct (0x8b771735) ReportNftStaticData {
+    queryId: uint64
+    index: uint256
+    collectionAddress: address
+}
