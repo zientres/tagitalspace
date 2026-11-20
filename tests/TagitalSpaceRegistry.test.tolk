@@ -96,3 +96,65 @@ get fun `test Registry deploys an item and rejects duplicate first-bid requests`
     expect(auctionAfterDuplicate.highestBidder).toEqual(firstBidder.address);
 }
 
+get fun `test Registry rejects invalid plate and unsupported region`() {
+    val owner = testing.treasury("registry-validation-owner");
+    val bidder = testing.treasury("registry-validation-bidder");
+    val revenue = testing.treasury("registry-validation-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    val invalidPlate = registry.sendStartPlateAuction(
+        bidder.address,
+        4,
+        beginCell().storeUint(0x493132334243, 48).endCell(),
+        77,
+        { value: grams("3.2") },
+    );
+    expect(invalidPlate).toHaveFailedTx({
+        to: registry.address,
+        exitCode: 730,
+    });
+
+    val unsupportedRegion = registry.sendStartPlateAuction(
+        bidder.address,
+        5,
+        beginCell().storeUint(0x413132334243, 48).endCell(),
+        20,
+        { value: grams("3.2") },
+    );
+    expect(unsupportedRegion).toHaveFailedTx({
+        to: registry.address,
+        exitCode: 731,
+    });
+}
+
+get fun `test Registry derives different item addresses for different regions`() {
+    val owner = testing.treasury("registry-address-owner");
+    val revenue = testing.treasury("registry-address-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+    val plateBody = beginCell().storeUint(0x413132334243, 48).endCell();
+
+    val region77Address = registry.getPlateItemAddress(plateBody, 77);
+    val region78Address = registry.getPlateItemAddress(plateBody, 78);
+    expect(region77Address == region78Address).toEqual(false);
+    expect(registry.getAuctionRevenueAddress()).toEqual(revenue.address);
+}
+
+get fun `test Registry rejects empty-body messages from non-owner`() {
+    val owner = testing.treasury("registry-empty-owner");
+    val attacker = testing.treasury("registry-empty-attacker");
+    val revenue = testing.treasury("registry-empty-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    val unauthorizedDeploy = createMessage({
+        bounce: false,
+        value: grams("0.05"),
+        dest: registry.address,
+    });
+    val result = net.send(attacker.address, unauthorizedDeploy);
+
+    expect(result).toHaveFailedTx({
+        to: registry.address,
+        exitCode: 734,
+    });
+}
+
