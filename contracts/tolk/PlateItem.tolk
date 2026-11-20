@@ -278,6 +278,29 @@ get fun get_auction_info(): PlateAuctionState? {
     return storage.auction!.load();
 }
 
+
+get fun get_plate_state(): (int, address?, coins, uint64, uint64) {
+    val loading = startLoadingPlateItemStorage();
+    if (!loading.isInitialized()) {
+        return (0, null, 0, 0, 0);
+    }
+
+    val storage = loading.parseInitialized();
+    val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
+    if (storage.auction != null) {
+        val auction = storage.auction!.load();
+        if (blockchain.now() <= auction.auctionEndTime) {
+            return (1, null, auction.highestBid, auction.auctionEndTime, expirationTime);
+        }
+        return (2, null, auction.highestBid, auction.auctionEndTime, expirationTime);
+    }
+
+    if (storage.ownerAddress != null && blockchain.now() < expirationTime) {
+        return (3, storage.ownerAddress, 0, 0, expirationTime);
+    }
+    return (0, null, 0, 0, expirationTime);
+}
+
 get fun get_claimable_payout(): coins {
     val loading = startLoadingPlateItemStorage();
     assert (loading.isInitialized()) throw 794;
