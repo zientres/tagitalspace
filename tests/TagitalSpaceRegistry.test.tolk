@@ -40,7 +40,7 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     val result = registry.sendStartPlateAuction(
         bidder.address,
         1,
-        beginCell().storeUint(0x413132334243, 48).endCell(),
+        "A123BC",
         77,
         { value: grams("3.2") },
     );
@@ -67,7 +67,7 @@ get fun `test Registry deploys an item and rejects duplicate first-bid requests`
     val secondBidder = testing.treasury("registry-success-second-bidder");
     val revenue = testing.treasury("registry-success-revenue");
     val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
-    val plateBody = beginCell().storeUint(0x413132334243, 48).endCell();
+    val plateBody = "A123BC";
 
     val firstRequest = registry.sendStartPlateAuction(
         firstBidder.address,
@@ -109,7 +109,7 @@ get fun `test Registry rejects invalid plate and unsupported region`() {
     val invalidPlate = registry.sendStartPlateAuction(
         bidder.address,
         4,
-        beginCell().storeUint(0x493132334243, 48).endCell(),
+        "I123BC",
         77,
         { value: grams("3.2") },
     );
@@ -121,7 +121,7 @@ get fun `test Registry rejects invalid plate and unsupported region`() {
     val unsupportedRegion = registry.sendStartPlateAuction(
         bidder.address,
         5,
-        beginCell().storeUint(0x413132334243, 48).endCell(),
+        "A123BC",
         20,
         { value: grams("3.2") },
     );
@@ -135,7 +135,7 @@ get fun `test Registry derives different item addresses for different regions`()
     val owner = testing.treasury("registry-address-owner");
     val revenue = testing.treasury("registry-address-revenue");
     val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
-    val plateBody = beginCell().storeUint(0x413132334243, 48).endCell();
+    val plateBody = "A123BC";
 
     val region77Address = registry.getPlateItemAddress(plateBody, 77);
     val region78Address = registry.getPlateItemAddress(plateBody, 78);
@@ -171,7 +171,7 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     val request = registry.sendStartPlateAuction(
         bidder,
         6,
-        beginCell().storeUint(0x413132334243, 48).endCell(),
+        "A123BC",
         77,
         { value: grams("3.2") },
     );
@@ -196,7 +196,7 @@ get fun `test expired plate item can start a new auction at the same address`() 
     val secondBidder = testing.treasury("registry-expiry-second-bidder");
     val revenue = testing.treasury("registry-expiry-revenue");
     val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
-    val plateBody = beginCell().storeUint(0x413132334243, 48).endCell();
+    val plateBody = "A123BC";
 
     val firstRequest = registry.sendStartPlateAuction(
         firstBidder.address,
@@ -289,7 +289,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(collectionContentSlice.loadUint(8)).toEqual(0);
     expect(collectionContentSlice.loadUint(1)).toEqual(1);
 
-    val plateOne = beginCell().storeUint(0x413132334243, 48).endCell();
+    val plateOne = "A123BC";
     val firstRequest = registry.sendStartPlateAuction(
         bidder.address,
         12,
@@ -350,7 +350,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(mintedCollection).toEqual(registry.address);
     expect(mintedOwner!).toEqual(bidder.address);
 
-    val plateTwo = beginCell().storeUint(0x423132334243, 48).endCell();
+    val plateTwo = "B123BC";
     val secondRequest = registry.sendStartPlateAuction(
         secondBidder.address,
         15,
