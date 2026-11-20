@@ -5,6 +5,7 @@ struct (0x54530001) StartPlateAuction {
     plateBody: cell
     regionCode: uint16
 }
+
 struct (0x54531006) PlateItemInitData {
     firstBidder: address
     firstBidAmount: coins
