@@ -2,7 +2,7 @@
 // Each plate item owns its auction state and pays proceeds to the fixed recipient.
 struct (0x54530001) StartPlateAuction {
     queryId: uint64
-    plateBody: cell
+    plateBody: string
     regionCode: uint16
 }
 
