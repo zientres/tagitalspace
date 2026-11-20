@@ -1,5 +1,4 @@
 import "plate-identity"
-import "plate-item-messages"
 import "plate-item-state"
 import "plate-pricing"
 import "registry-messages"

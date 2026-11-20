@@ -294,7 +294,7 @@ get fun get_auction_info(): PlateAuctionState? {
     if (storage.auction == null) {
         return null;
     }
-    return storage.auction!.load();
+    return storage.auction.load();
 }
 
 get fun get_plate_state(): (int, address?, coins, uint64, uint64) {
@@ -306,7 +306,7 @@ get fun get_plate_state(): (int, address?, coins, uint64, uint64) {
     val storage = loading.parseInitialized();
     val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
     if (storage.auction != null) {
-        val auction = storage.auction!.load();
+        val auction = storage.auction.load();
         if (blockchain.now() <= auction.auctionEndTime) {
             return (1, null, auction.highestBid, auction.auctionEndTime, expirationTime);
         }

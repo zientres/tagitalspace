@@ -3,12 +3,16 @@
 // The region code is intentionally excluded.
 // Return value is denominated in nanotons.
 
-const TAGITALSPACE_ONE_TON = 1_000_000_000;
+const TAGITALSPACE_ONE_TON = 1_000_000_000
 
 fun tagitalSpaceIsPlateLetter(value: int): bool {
-    return value == 65 || value == 66 || value == 69 || value == 75
-        || value == 77 || value == 72 || value == 79 || value == 80
-        || value == 67 || value == 84 || value == 89 || value == 88;
+    return value == 65 || value == 66 || value == 69 || value == 75 || value == 77 || value == 72 ||
+        value == 79 ||
+        value == 80 ||
+        value == 67 ||
+        value == 84 ||
+        value == 89 ||
+        value == 88;
 }
 
 fun tagitalSpaceIsDigit(value: int): bool {
@@ -27,12 +31,11 @@ fun tagitalSpacePlateStartPrice(plate: slice): int {
     val thirdLetter = chars.loadUint(8);
 
     assert (
-        tagitalSpaceIsPlateLetter(firstLetter)
-        && tagitalSpaceIsDigit(firstDigit)
-        && tagitalSpaceIsDigit(secondDigit)
-        && tagitalSpaceIsDigit(thirdDigit)
-        && tagitalSpaceIsPlateLetter(secondLetter)
-        && tagitalSpaceIsPlateLetter(thirdLetter)
+        tagitalSpaceIsPlateLetter(firstLetter) && tagitalSpaceIsDigit(firstDigit) &&
+        tagitalSpaceIsDigit(secondDigit) &&
+        tagitalSpaceIsDigit(thirdDigit) &&
+        tagitalSpaceIsPlateLetter(secondLetter) &&
+        tagitalSpaceIsPlateLetter(thirdLetter)
     ) throw 701;
 
     var lettersPrice = 0;

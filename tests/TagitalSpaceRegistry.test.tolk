@@ -1,12 +1,11 @@
-import "@stdlib/gas-payments"
 import "../.acton/build"
+import "../wrappers/TagitalSpacePlateItem.gen"
+import "../wrappers/TagitalSpaceRegistry.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
 import "../.acton/testing/expect"
-import "../wrappers/TagitalSpaceRegistry.gen"
-import "../wrappers/TagitalSpacePlateItem.gen"
-import "../contracts/tolk/registry-state"
 import "../contracts/tolk/registry-messages"
+import "../contracts/tolk/registry-state"
 
 fun deployTestRegistry(
     owner: Treasury,
@@ -303,8 +302,13 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(firstRequest).toHaveSuccessfulDeploy({ to: itemOneAddress });
     expect(itemOneAddress).toEqual(registry.getPlateItemAddress(plateOne, 77));
 
-    val (initFlag, itemIndex, collectionAddress, nftOwner, individualContent) =
-        itemOne.getNftStandardData();
+    val (
+        initFlag,
+        itemIndex,
+        collectionAddress,
+        nftOwner,
+        individualContent,
+    ) = itemOne.getNftStandardData();
     expect(initFlag).toEqual(0);
     expect(itemIndex).toEqual(0);
     expect(collectionAddress).toEqual(registry.address);
@@ -349,8 +353,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     );
     expect(settlement).toHaveSuccessfulTx({ to: itemOneAddress });
 
-    val (mintedFlag, mintedIndex, mintedCollection, mintedOwner, _) =
-        itemOne.getNftStandardData();
+    val (mintedFlag, mintedIndex, mintedCollection, mintedOwner, _) = itemOne.getNftStandardData();
     expect(mintedFlag).toEqual(1);
     expect(mintedIndex).toEqual(0);
     expect(mintedCollection).toEqual(registry.address);
@@ -374,4 +377,3 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     val finalCollectionData = registry.getCollectionData();
     expect(finalCollectionData.0).toEqual(2);
 }
-

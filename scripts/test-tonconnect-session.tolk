@@ -1,6 +1,5 @@
 import "../.acton/io"
 import "../.acton/prompts"
-import "../.acton/emulation/network"
 import "../.acton/emulation/scripts"
 
 /// Checks TON Connect session establishment only. Does not send a transaction.

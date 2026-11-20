@@ -1,8 +1,7 @@
-import "@stdlib/gas-payments"
+import "../wrappers/TagitalSpacePlateItem.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
 import "../.acton/testing/expect"
-import "../wrappers/TagitalSpacePlateItem.gen"
 import "../contracts/tolk/plate-identity"
 import "../contracts/tolk/plate-item-messages"
 import "../contracts/tolk/registry-messages"
@@ -11,7 +10,14 @@ fun testPlateIdentityKey(): uint256 {
     return tagitalSpaceBuildPlateIdentity("A123BC".beginParse(), 77).hash();
 }
 
-fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury, Treasury) {
+fun setupTest(): (
+    TagitalSpacePlateItem,
+    Treasury,
+    Treasury,
+    Treasury,
+    Treasury,
+    Treasury,
+) {
     val collection = testing.treasury("collection");
     val firstBidder = testing.treasury("first-bidder");
     val secondBidder = testing.treasury("second-bidder");
@@ -26,10 +32,7 @@ fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury,
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
             nftIndex: 0,
@@ -54,7 +57,14 @@ fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury,
 }
 
 get fun `test bid refund auction extension and payout`() {
-    val (contract, collection, firstBidder, secondBidder, thirdBidder, revenue) = setupTest();
+    val (
+        contract,
+        collection,
+        firstBidder,
+        secondBidder,
+        thirdBidder,
+        revenue,
+    ) = setupTest();
 
     val initialAuction = contract.getAuctionInfo();
     expect(initialAuction).toBeNotNull();
@@ -123,7 +133,14 @@ get fun `test bid refund auction extension and payout`() {
 }
 
 get fun `test bid below minimum is rejected`() {
-    val (contract, _, _, secondBidder, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        _,
+        secondBidder,
+        _,
+        _,
+    ) = setupTest();
 
     val result = contract.sendPlateItemBid(
         secondBidder.address,
@@ -142,7 +159,14 @@ get fun `test bid below minimum is rejected`() {
 }
 
 get fun `test settlement deadline boundaries`() {
-    val (contract, collection, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        collection,
+        _,
+        _,
+        _,
+        revenue,
+    ) = setupTest();
     val auction = contract.getAuctionInfo()!;
     val deadline = auction.auctionEndTime;
 
@@ -185,7 +209,6 @@ get fun `test settlement deadline boundaries`() {
     expect(contract.getAuctionInfo()).toBeNull();
 }
 
-
 get fun `test bounced revenue payout becomes claimable`() {
     val collection = testing.treasury("bounce-collection");
     val firstBidder = testing.treasury("bounce-first-bidder");
@@ -199,10 +222,7 @@ get fun `test bounced revenue payout becomes claimable`() {
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
             nftIndex: 0,
@@ -232,7 +252,6 @@ get fun `test bounced revenue payout becomes claimable`() {
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
 
-
 get fun `test failed retry restores claimable payout`() {
     val collection = testing.treasury("retry-collection");
     val firstBidder = testing.treasury("retry-first-bidder");
@@ -246,10 +265,7 @@ get fun `test failed retry restores claimable payout`() {
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
             nftIndex: 0,
@@ -286,9 +302,15 @@ get fun `test failed retry restores claimable payout`() {
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
 
-
 get fun `test forged bounce with mismatched amount is rejected`() {
-    val (contract, _, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        _,
+        _,
+        _,
+        _,
+        revenue,
+    ) = setupTest();
 
     val originalBody = PlateItemRevenuePayout {
         queryId: 40,
@@ -315,13 +337,20 @@ get fun `test forged bounce with mismatched amount is rejected`() {
         body: forgedBody,
     }).bounced();
 
-    val result = testing.processSingleTraceStep(revenue.address, forgedBounce);
+    val _result = testing.processSingleTraceStep(revenue.address, forgedBounce);
     // A forged bounce must not create a claimable liability.
     expect(contract.getClaimablePayout()).toEqual(0);
 }
 
 get fun `test bounce from unexpected sender is rejected`() {
-    val (contract, _, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        _,
+        _,
+        _,
+        _,
+        _revenue,
+    ) = setupTest();
     val attacker = testing.treasury("bounce-attacker");
 
     val originalBody = PlateItemRevenuePayout {
@@ -368,10 +397,7 @@ get fun `test bounced outbid refund becomes claimable`() {
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: unavailableBidder,
             nftIndex: 0,
@@ -409,7 +435,14 @@ get fun `test bounced outbid refund becomes claimable`() {
 }
 
 get fun `test original bidder can claim a bounced refund`() {
-    val (contract, _, firstBidder, secondBidder, thirdBidder, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        secondBidder,
+        thirdBidder,
+        _,
+    ) = setupTest();
 
     // Seed the claim through a bounced message from the same address that
     // received the original refund. The value is actually attached to the test
@@ -512,7 +545,14 @@ get fun `test original bidder can claim a bounced refund`() {
 }
 
 get fun `test bounced refund with mismatched amount is rejected`() {
-    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        _,
+        _,
+        _,
+    ) = setupTest();
 
     val originalBody = PlateItemBidRefund {
         queryId: 60,
@@ -545,7 +585,14 @@ get fun `test bounced refund with mismatched amount is rejected`() {
 }
 
 get fun `test bounced refund from unexpected sender is rejected`() {
-    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        _,
+        _,
+        _,
+    ) = setupTest();
     val attacker = testing.treasury("refund-bounce-attacker");
 
     val originalBody = PlateItemBidRefund {
@@ -579,7 +626,14 @@ get fun `test bounced refund from unexpected sender is rejected`() {
 }
 
 get fun `test only the current owner can renew and renewal extends one year`() {
-    val (contract, collection, owner, secondBidder, _, _) = setupTest();
+    val (
+        contract,
+        collection,
+        owner,
+        secondBidder,
+        _,
+        _,
+    ) = setupTest();
     val auction = contract.getAuctionInfo()!;
     testing.setNow((auction.auctionEndTime + 1) as uint32);
 
@@ -626,7 +680,14 @@ get fun `test only the current owner can renew and renewal extends one year`() {
 }
 
 get fun `test only the owner can transfer plate ownership`() {
-    val (contract, collection, owner, secondBidder, thirdBidder, _) = setupTest();
+    val (
+        contract,
+        collection,
+        owner,
+        secondBidder,
+        thirdBidder,
+        _,
+    ) = setupTest();
     val auction = contract.getAuctionInfo()!;
     testing.setNow((auction.auctionEndTime + 1) as uint32);
 
@@ -662,7 +723,14 @@ get fun `test only the owner can transfer plate ownership`() {
 }
 
 get fun `test payout bounce cannot create a liability larger than returned value plus fee buffer`() {
-    val (contract, _, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        _,
+        _,
+        _,
+        _,
+        revenue,
+    ) = setupTest();
 
     val originalBody = PlateItemRevenuePayout {
         queryId: 90,
@@ -693,7 +761,14 @@ get fun `test payout bounce cannot create a liability larger than returned value
 }
 
 get fun `test refund bounce cannot create a liability larger than returned value plus fee buffer`() {
-    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        _,
+        _,
+        _,
+    ) = setupTest();
 
     val originalBody = PlateItemBidRefund {
         queryId: 91,
@@ -737,10 +812,7 @@ get fun `test item rejects initialization with a mismatched deterministic identi
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: bidder.address,
             nftIndex: 0,
@@ -769,10 +841,7 @@ get fun `test item rejects initialization with a forged starting price`() {
     val initMessage = createMessage({
         bounce: false,
         value: grams("3.2"),
-        dest: {
-            workchain: contract.address.getWorkchain(),
-            stateInit: contract.stateInit!,
-        },
+        dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: bidder.address,
             nftIndex: 0,
@@ -790,7 +859,14 @@ get fun `test item rejects initialization with a forged starting price`() {
 }
 
 get fun `test expired item rejects changes to immutable identity and payout destination`() {
-    val (contract, collection, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        collection,
+        _,
+        _,
+        _,
+        revenue,
+    ) = setupTest();
     val auction = contract.getAuctionInfo()!;
     testing.setNow((auction.auctionEndTime + 1) as uint32);
     val settlement = contract.sendSettlePlateAuction(
@@ -838,4 +914,3 @@ get fun `test expired item rejects changes to immutable identity and payout dest
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getNftData().ownerAddress).toBeNotNull();
 }
-

@@ -1,5 +1,3 @@
-import "registry-messages"
-
 struct PlateItemStorageNotInitialized {
     identityKey: uint256
     collectionAddress: address

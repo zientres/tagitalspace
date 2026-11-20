@@ -1,5 +1,3 @@
-import "registry-messages"
-
 struct (0x00000000) PlateItemBid {
     queryId: uint64
     bidAmount: coins

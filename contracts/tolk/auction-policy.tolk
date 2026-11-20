@@ -1,10 +1,10 @@
 // TagitalSpace auction policy.
 // Monetary values are denominated in nanotons.
 
-const TAGITALSPACE_AUCTION_DURATION = 3600;
-const TAGITALSPACE_AUCTION_EXTENSION_WINDOW = 3600;
-const TAGITALSPACE_MINIMUM_BID_NUMERATOR = 105;
-const TAGITALSPACE_MINIMUM_BID_DENOMINATOR = 100;
+const TAGITALSPACE_AUCTION_DURATION = 3600
+const TAGITALSPACE_AUCTION_EXTENSION_WINDOW = 3600
+const TAGITALSPACE_MINIMUM_BID_NUMERATOR = 105
+const TAGITALSPACE_MINIMUM_BID_DENOMINATOR = 100
 
 // First bid must cover the plate's configured starting price.
 fun tagitalSpaceValidateFirstBid(attachedValue: coins, startingPrice: coins): bool {
@@ -15,8 +15,7 @@ fun tagitalSpaceValidateFirstBid(attachedValue: coins, startingPrice: coins): bo
 // matching TON DNS integer rounding.
 fun tagitalSpaceMinimumNextBid(currentBid: coins): coins {
     assert (currentBid > 0) throw 720;
-    return currentBid * TAGITALSPACE_MINIMUM_BID_NUMERATOR
-        / TAGITALSPACE_MINIMUM_BID_DENOMINATOR;
+    return currentBid * TAGITALSPACE_MINIMUM_BID_NUMERATOR / TAGITALSPACE_MINIMUM_BID_DENOMINATOR;
 }
 
 fun tagitalSpaceValidateNextBid(attachedValue: coins, currentBid: coins): bool {

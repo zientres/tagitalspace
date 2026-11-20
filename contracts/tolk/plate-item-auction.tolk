@@ -11,7 +11,7 @@ fun tagitalSpaceItemActiveBidAmount(storage: PlateItemStorageInitialized): coins
     if (storage.auction == null) {
         return 0;
     }
-    return storage.auction!.load().highestBid;
+    return storage.auction.load().highestBid;
 }
 
 fun tagitalSpaceRecordClaimableRefund(
@@ -177,7 +177,7 @@ fun tagitalSpaceRenewPlateOwnership(
 ) {
     assert (storage.auction == null) throw 795;
     assert (storage.ownerAddress != null) throw 796;
-    assert (senderAddress == storage.ownerAddress!) throw 797;
+    assert (senderAddress == storage.ownerAddress) throw 797;
     val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
     assert (blockchain.now() < expirationTime) throw 798;
     storage.lastRenewalTime = blockchain.now();
@@ -191,7 +191,7 @@ fun tagitalSpaceTransferPlateOwnership(
 ) {
     assert (storage.auction == null) throw 790;
     assert (storage.ownerAddress != null) throw 791;
-    assert (senderAddress == storage.ownerAddress!) throw 792;
+    assert (senderAddress == storage.ownerAddress) throw 792;
     assert (newOwnerAddress.getWorkchain() == BASECHAIN) throw 793;
     storage.ownerAddress = newOwnerAddress;
     storage.lastRenewalTime = blockchain.now();
