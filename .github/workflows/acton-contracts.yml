@@ -17,6 +17,8 @@ on:
       - "contracts/tolk/**"
       - "contracts/tests/**"
       - "tests/**"
+      - "wrappers/**"
+      - "scripts/**"
       - ".github/workflows/acton-contracts.yml"
 
 permissions: {}
