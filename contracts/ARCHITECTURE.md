@@ -11,7 +11,8 @@ TagitalSpace follows the architecture of TON DNS:
 - There is no Auction Manager and no shared contract that stores or operates all auctions.
 - The item address is deterministic from the identity key and Registry address, matching the DnsCollection / DnsItem StateInit pattern.
 - Repeating a first-bid request for an existing item must not overwrite its auction; the initialized item returns the attached value to the new requester.
-- If a newly requested item deployment fails, the Registry validates the RichBounce against the deterministic item address and original init payload, then refunds the bounced value (minus network fees) to the first bidder.
+- If a newly requested item deployment fails, the Registry validates the RichBounce against the deterministic item address and original init payload, then records the bounced value as claimable for the first bidder. The bidder withdraws it with `ClaimRegistryRefund`; a failed claim is restored by another RichBounce.
+- A duplicate first-bid request for an existing item is stored as a claimable refund inside that item, rather than sent in a non-bounceable transfer.
 
 ## Identity and uniqueness
 
@@ -37,7 +38,7 @@ TagitalSpace follows the architecture of TON DNS:
 
 **100% of each settled winning bid goes to one fixed address:** `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
 
-The Registry stores this address in its initial data and passes it into every deterministic plate item at initialization. When anyone triggers settlement after the deadline, the item sends the entire winning bid directly to that stored revenue address in the same transaction. There is no split, claim step or caller-controlled destination. The payout uses `BounceMode.RichBounce`. A failed payout is recorded in `claimablePayout` by the item's bounce handler and can be retried by sending `RetryPlateItemPayout`. The retry clears the liability before sending and relies on a subsequent RichBounce to restore it if the retry also fails. Outbid refund liabilities are tracked separately per bidder, with an aggregate total used to protect escrow and storage reserves. The bidder must attach a fee buffer when claiming. Both payout and outbid-refund recovery have emulator tests, but action-phase edge cases and adversarial bounce handling still require review.
+The Registry stores this address in its initial data and passes it into every deterministic plate item at initialization. When anyone triggers settlement after the deadline, the item sends the entire winning bid directly to that stored revenue address in the same transaction. There is no split, claim step or caller-controlled destination. The payout uses `BounceMode.RichBounce`. A failed payout is recorded in `claimablePayout` by the item's bounce handler and can be retried by sending `RetryPlateItemPayout`. The retry clears the liability before sending and relies on a subsequent RichBounce to restore it if the retry also fails. Outbid refund liabilities are tracked separately per bidder, with an aggregate total used to protect escrow and storage reserves. The bidder must attach a fee buffer when claiming. Registry deployment refunds and duplicate-request excesses follow the same claimable-refund model. Both payout and outbid-refund recovery have emulator tests, but action-phase edge cases and adversarial bounce handling still require review.
 
 ## NFT lifecycle
 
