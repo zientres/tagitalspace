@@ -19,7 +19,7 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ### Verification progress — build and core TVM paths now pass
 
-The current branch compiles with Acton 1.2.1 and passes 23 TVM tests: 15 PlateItem tests and 8 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+The current branch compiles with Acton 1.2.1 and passes 24 TVM tests: 15 PlateItem tests and 9 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
@@ -49,9 +49,9 @@ The item has a RichBounce-based liability and retry mechanism for revenue payout
 
 `From/Russia/Russia.html` loads `registry-client.js` and calls `window.tagitalSpaceRegistry.lookupRussianPlate`, `startRussianAuctionWithFirstBid` and `placeBid`. There is no `registry-client.js` in the current repository tree. The page's auction rendering also expects fields such as `auctionId`, `status`, `startingBid` and `minimumBidStep`, while the current per-item contract exposes a `PlateAuctionState` with `highestBidder`, `highestBid` and `auctionEndTime`. The browser flow is therefore not integrated with the current contract architecture.
 
-### High — current item is not a standard TON NFT implementation
+### High — read-only TEP-62 surface is implemented; Getgems indexing remains unverified
 
-The item uses custom `get_nft_data` fields and a custom `TransferPlateOwnership` opcode (`0x5fcc3d15`), rather than the standard TEP-62 NFT item getter and transfer message protocol. It also lacks the standard collection/content getters and metadata plumbing expected by NFT marketplaces. As written, this contract should not be assumed to appear or trade correctly on Getgems.
+The item now exposes the standard `get_nft_data` tuple and `get_static_data` response. Registry exposes `get_collection_data`, `get_nft_address_by_index` and `get_nft_content`, with sequential identity-to-index mapping. Collection and item metadata use on-chain TEP-64 dictionaries; each item includes a generated SVG plate image and plate/region attributes. The standard TEP-62 transfer opcode `0x5fcc3d14` is deliberately rejected, so marketplace transfers and sales cannot complete through Getgems. TagitalSpace's separate owner-authorized transfer message remains available. This is intentionally read-only compatibility, not full TEP-62 transfer compliance. Getgems Testnet must still be checked for actual indexing, image rendering and failed sale behavior after deployment.
 
 ### High — Registry TVM coverage is still partial
 
@@ -64,7 +64,7 @@ The browser registry client and frontend message construction must be implemente
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment and expired-item re-auction, plus outbid refund bounce/claim and annual renewal/transfer authorization.
+2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment, expired-item re-auction and TEP-62 collection enumeration/read-only transfer rejection, plus outbid refund bounce/claim and annual renewal/transfer authorization.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
