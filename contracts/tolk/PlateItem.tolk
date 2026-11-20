@@ -16,6 +16,7 @@ type AllowedPlateItemMessage =
     | PlateItemBid
     | SettlePlateAuction
     | RetryPlateItemPayout
+    | ClaimPlateItemRefund
     | RenewPlateOwnership
     | TransferPlateOwnership
 
@@ -46,6 +47,8 @@ fun onInternalMessage(in: InMessage) {
             auction: initialAuction.toCell(),
             lastRenewalTime: blockchain.now(),
             claimablePayout: 0,
+            claimableRefunds: [],
+            claimableRefundTotal: 0,
         };
         storage.save();
         return;
@@ -119,6 +122,14 @@ fun onInternalMessage(in: InMessage) {
                 msg.queryId,
             );
         }
+        ClaimPlateItemRefund => {
+            tagitalSpaceClaimPlateItemRefund(
+                in.senderAddress,
+                in.valueCoins,
+                mutate storage,
+                msg.queryId,
+            );
+        }
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
         }
@@ -134,21 +145,55 @@ fun onInternalMessage(in: InMessage) {
 
 fun onBouncedMessage(in: InMessageBounced) {
     val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
-    val payout = lazy PlateItemRevenuePayout.fromSlice(rich.originalBody.beginParse());
+    val originalBody = rich.originalBody.beginParse();
+    val opcode = originalBody.preloadUint(32);
 
-    var storage = startLoadingPlateItemStorage().parseInitialized();
-    val immutable = storage.immutable.load();
-    val originalInfo = rich.originalInfo.load();
+    if (opcode == 0x54531008) {
+        val payout = lazy PlateItemRevenuePayout.fromSlice(rich.originalBody.beginParse());
+        val originalInfo = rich.originalInfo.load();
 
-    // Only a bounced payout from the immutable revenue destination is recoverable here.
-    assert (in.senderAddress == immutable.auctionRevenueAddress) throw 789;
-    assert (payout.amount > 0) throw 789;
+        var storage = startLoadingPlateItemStorage().parseInitialized();
+        val immutable = storage.immutable.load();
 
-    // The payload amount must match the actual value of the bounced outgoing message.
-    assert (payout.amount == originalInfo.valueCoins) throw 789;
+        // Only a bounced payout from the immutable revenue destination is recoverable here.
+        assert (in.senderAddress == immutable.auctionRevenueAddress) throw 789;
+        assert (payout.amount > 0) throw 789;
 
-    storage.claimablePayout += payout.amount;
-    storage.save();
+        // The payload amount must match the actual value of the bounced outgoing message.
+        assert (payout.amount == originalInfo.valueCoins) throw 789;
+        assert (in.valueCoins > 0) throw 789;
+
+        storage.claimablePayout += in.valueCoins;
+        storage.save();
+        return;
+    }
+
+    if (opcode == 0x54531009) {
+        val refund = lazy PlateItemBidRefund.fromSlice(rich.originalBody.beginParse());
+        val originalInfo = rich.originalInfo.load();
+
+        var storage = startLoadingPlateItemStorage().parseInitialized();
+
+        // The original recipient is the only address allowed to own this refund claim.
+        assert (in.senderAddress == refund.recipient) throw 799;
+        assert (refund.amount > 0) throw 799;
+        assert (refund.amount == originalInfo.valueCoins) throw 799;
+        assert (in.valueCoins > 0) throw 799;
+
+        var refunds = storage.claimableRefunds;
+        val previous = refunds.get(refund.recipient);
+        var claimableAmount = in.valueCoins;
+        if (previous.isFound) {
+            claimableAmount += previous.loadValue();
+        }
+        refunds.set(refund.recipient, claimableAmount);
+        storage.claimableRefunds = refunds;
+        storage.claimableRefundTotal += in.valueCoins;
+        storage.save();
+        return;
+    }
+
+    throw 789;
 }
 
 get fun get_nft_data(): PlateItemNftData {
