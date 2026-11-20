@@ -81,13 +81,14 @@ fun onInternalMessage(in: InMessage) {
 
         // Duplicate requests and active items are rejected by returning the
         // incoming bid to their sender.
-        val refund = createMessage({
-            bounce: false,
-            dest: init.firstBidder,
-            value: 0,
-            body: PlateItemExcesses { queryId: blockchain.logicalTime() as uint64 },
-        });
-        refund.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+        // Keep duplicate-request funds claimable in the item instead of
+        // risking a non-bounceable transfer to a contract that rejects it.
+        tagitalSpaceRecordClaimableRefund(
+            init.firstBidder,
+            in.valueCoins,
+            mutate storage,
+        );
+        storage.save();
         return;
     }
 
@@ -180,15 +181,11 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (refund.amount == originalInfo.valueCoins) throw 799;
         assert (in.valueCoins > 0) throw 799;
 
-        var refunds = storage.claimableRefunds;
-        val previous = refunds.get(refund.recipient);
-        var claimableAmount = refund.amount;
-        if (previous.isFound) {
-            claimableAmount += previous.loadValue();
-        }
-        refunds.set(refund.recipient, claimableAmount);
-        storage.claimableRefunds = refunds;
-        storage.claimableRefundTotal += refund.amount;
+        tagitalSpaceRecordClaimableRefund(
+            refund.recipient,
+            refund.amount,
+            mutate storage,
+        );
         storage.save();
         return;
     }
