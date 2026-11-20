@@ -1,11 +1,11 @@
-import "@acton/io"
-import "@acton/emulation/network"
-import "@acton/emulation/scripts"
-import "@acton/build"
-import "@acton/prompts"
-import "@acton/testing/assert"
+import "../.acton/io"
+import "../.acton/emulation/network"
+import "../.acton/emulation/scripts"
+import "../.acton/build"
+import "../.acton/prompts"
+import "../.acton/testing/assert"
 
-import "@wrappers/TagitalSpaceRegistry.gen"
+import "../wrappers/TagitalSpaceRegistry.gen"
 import "../contracts/tolk/registry-storage"
 
 const TAGITALSPACE_TESTNET_REVENUE_ADDRESS =
