@@ -25,9 +25,9 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     val bidder = testing.treasury("registry-bidder");
     val revenue = testing.treasury("registry-revenue");
 
-    // An empty code cell makes the deterministic item deployment fail in TVM,
-    // exercising the real RichBounce path rather than a hand-crafted message.
-    val registry = deployTestRegistry(owner, revenue, beginCell().endCell());
+    // Registry bytecode is deliberately used as the item code. It rejects the
+    // PlateItemInitData opcode, causing a genuine TVM RichBounce.
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpaceRegistry"));
 
     val result = registry.sendStartPlateAuction(
         bidder.address,
