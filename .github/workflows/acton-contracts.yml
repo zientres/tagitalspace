@@ -48,7 +48,7 @@ jobs:
         run: acton script scripts/deploy-registry.tolk
 
       - name: Check Tolk formatting
-        run: acton fmt --check contracts/tolk/TagitalSpaceRegistry.tolk contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk contracts/tolk/registry-refunds.tolk contracts/tolk/registry-messages.tolk contracts/tolk/registry-state.tolk contracts/tolk/registry-storage.tolk contracts/tolk/registry-request.tolk scripts/deploy-registry.tolk wrappers/*.gen.tolk
+        run: acton fmt --check contracts/tolk/TagitalSpaceRegistry.tolk contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk contracts/tolk/registry-refunds.tolk contracts/tolk/registry-messages.tolk contracts/tolk/registry-state.tolk contracts/tolk/registry-storage.tolk contracts/tolk/registry-request.tolk contracts/tolk/registry-metadata.tolk contracts/tolk/plate-item-metadata.tolk scripts/deploy-registry.tolk wrappers/*.gen.tolk
 
       - name: Lint Tolk contracts
         run: acton check --output-format github
