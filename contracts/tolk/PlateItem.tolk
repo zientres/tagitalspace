@@ -278,7 +278,6 @@ get fun get_auction_info(): PlateAuctionState? {
     return storage.auction!.load();
 }
 
-
 get fun get_plate_state(): (int, address?, coins, uint64, uint64) {
     val loading = startLoadingPlateItemStorage();
     if (!loading.isInitialized()) {
