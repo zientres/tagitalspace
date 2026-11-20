@@ -27,6 +27,7 @@ fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury,
         },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
+            nftIndex: 0,
             firstBidAmount: grams("3"),
             plateBody: beginCell().storeString("A123BC").endCell(),
             regionCode: 77,
@@ -366,6 +367,7 @@ get fun `test bounced outbid refund becomes claimable`() {
         },
         body: PlateItemInitData {
             firstBidder: unavailableBidder,
+            nftIndex: 0,
             firstBidAmount: grams("3"),
             plateBody: beginCell().storeString("A123BC").endCell(),
             regionCode: 77,
