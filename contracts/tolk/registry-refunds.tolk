@@ -25,9 +25,9 @@ fun tagitalSpaceRegistryRecordClaimableRefund(
 fun tagitalSpaceClaimRegistryRefund(
     senderAddress: address,
     valueCoins: coins,
-    mutate storage: TagitalSpaceRegistryStorage,
     queryId: uint64,
 ) {
+    var storage = TagitalSpaceRegistryStorage.load();
     var refunds = storage.claimableRefunds;
     val lookup = refunds.get(senderAddress);
     assert (lookup.isFound) throw 741;
