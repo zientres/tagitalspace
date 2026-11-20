@@ -144,10 +144,10 @@
         return runtime.Address.parse(account.address);
     }
 
-    async function getClaimableAmount(client, contractAddress, getterName, walletAddress) {
-        const tuple = new (await loadRuntime()).TupleBuilder();
+    async function getClaimableAmount(runtime, contractAddress, getterName, walletAddress) {
+        const tuple = new runtime.TupleBuilder();
         tuple.writeAddress(walletAddress);
-        const result = await client.runMethod(contractAddress, getterName, tuple.build());
+        const result = await runtime.client.runMethod(contractAddress, getterName, tuple.build());
         return result.stack.readBigNumber();
     }
 
@@ -158,7 +158,7 @@
         }
 
         const claimableRegistryRefund = await getClaimableAmount(
-            runtime.client,
+            runtime,
             runtime.registryAddress,
             "get_claimable_registry_refund",
             walletAddress,
@@ -167,7 +167,7 @@
         if (itemDeployed) {
             try {
                 claimableItemRefund = await getClaimableAmount(
-                    runtime.client,
+                    runtime,
                     itemAddress,
                     "get_claimable_refund",
                     walletAddress,
@@ -377,7 +377,7 @@
             await sendWalletTransaction(runtime, runtime.registryAddress, 100_000_000n, body);
             await waitForConfirmation(async () => {
                 const remaining = await getClaimableAmount(
-                    runtime.client,
+                    runtime,
                     runtime.registryAddress,
                     "get_claimable_registry_refund",
                     walletAddress,
@@ -395,7 +395,7 @@
             await sendWalletTransaction(runtime, itemAddress, 100_000_000n, body);
             await waitForConfirmation(async () => {
                 const remaining = await getClaimableAmount(
-                    runtime.client,
+                    runtime,
                     itemAddress,
                     "get_claimable_refund",
                     walletAddress,
