@@ -28,6 +28,8 @@ struct PlateItemStorageInitialized {
     auction: Cell<PlateAuctionState>?
     // Winning revenue whose previous transfer bounced and must be retried.
     claimablePayout: coins
+    // Outbid refunds that bounced, indexed by the original bidder.
+    claimableRefunds: map<address, coins>
 }
 
 fun PlateItemStorageInitialized.save(self) {
