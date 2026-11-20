@@ -1,11 +1,11 @@
 import "plate-identity"
 import "plate-item-auction"
 import "plate-item-messages"
-import "plate-pricing"
-import "russia-regions"
 import "plate-item-metadata"
 import "plate-item-state"
+import "plate-pricing"
 import "registry-messages"
+import "russia-regions"
 
 contract TagitalSpacePlateItem {
     author: "TagitalSpace"
