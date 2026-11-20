@@ -3,8 +3,13 @@ import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
 import "../.acton/testing/expect"
 import "../wrappers/TagitalSpacePlateItem.gen"
+import "../contracts/tolk/plate-identity"
 import "../contracts/tolk/plate-item-messages"
 import "../contracts/tolk/registry-messages"
+
+fun testPlateIdentityKey(): uint256 {
+    return tagitalSpaceBuildPlateIdentity("A123BC".beginParse(), 77).hash();
+}
 
 fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury, Treasury) {
     val collection = testing.treasury("collection");
@@ -14,7 +19,7 @@ fun setupTest(): (TagitalSpacePlateItem, Treasury, Treasury, Treasury, Treasury,
     val revenue = testing.treasury("revenue");
 
     val contract = TagitalSpacePlateItem.fromStorage({
-        identityKey: 1,
+        identityKey: testPlateIdentityKey(),
         collectionAddress: collection.address,
     });
 
@@ -187,7 +192,7 @@ get fun `test bounced revenue payout becomes claimable`() {
     val revenueAddress = randomAddress("missing-revenue");
 
     val contract = TagitalSpacePlateItem.fromStorage({
-        identityKey: 2,
+        identityKey: testPlateIdentityKey(),
         collectionAddress: collection.address,
     });
 
@@ -234,7 +239,7 @@ get fun `test failed retry restores claimable payout`() {
     val revenueAddress = randomAddress("retry-missing-revenue");
 
     val contract = TagitalSpacePlateItem.fromStorage({
-        identityKey: 3,
+        identityKey: testPlateIdentityKey(),
         collectionAddress: collection.address,
     });
 
@@ -357,7 +362,7 @@ get fun `test bounced outbid refund becomes claimable`() {
     val revenue = testing.treasury("refund-bounce-revenue");
 
     val contract = TagitalSpacePlateItem.fromStorage({
-        identityKey: 4,
+        identityKey: testPlateIdentityKey(),
         collectionAddress: collection.address,
     });
     val initMessage = createMessage({
@@ -718,5 +723,119 @@ get fun `test refund bounce cannot create a liability larger than returned value
     testing.processSingleTraceStep(firstBidder.address, forgedBounce);
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
     expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
+get fun `test item rejects initialization with a mismatched deterministic identity`() {
+    val collection = testing.treasury("identity-check-collection");
+    val bidder = testing.treasury("identity-check-bidder");
+    val revenue = testing.treasury("identity-check-revenue");
+    val contract = TagitalSpacePlateItem.fromStorage({
+        identityKey: testPlateIdentityKey(),
+        collectionAddress: collection.address,
+    });
+
+    val initMessage = createMessage({
+        bounce: false,
+        value: grams("3.2"),
+        dest: {
+            workchain: contract.address.getWorkchain(),
+            stateInit: contract.stateInit!,
+        },
+        body: PlateItemInitData {
+            firstBidder: bidder.address,
+            nftIndex: 0,
+            firstBidAmount: grams("3"),
+            plateBody: "B123BC",
+            regionCode: 77,
+            auctionRevenueAddress: revenue.address,
+        },
+    });
+    val result = net.send(collection.address, initMessage);
+    expect(result).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 808,
+    });
+}
+
+get fun `test item rejects initialization with a forged starting price`() {
+    val collection = testing.treasury("price-check-collection");
+    val bidder = testing.treasury("price-check-bidder");
+    val revenue = testing.treasury("price-check-revenue");
+    val contract = TagitalSpacePlateItem.fromStorage({
+        identityKey: testPlateIdentityKey(),
+        collectionAddress: collection.address,
+    });
+
+    val initMessage = createMessage({
+        bounce: false,
+        value: grams("3.2"),
+        dest: {
+            workchain: contract.address.getWorkchain(),
+            stateInit: contract.stateInit!,
+        },
+        body: PlateItemInitData {
+            firstBidder: bidder.address,
+            nftIndex: 0,
+            firstBidAmount: grams("2.9"),
+            plateBody: "A123BC",
+            regionCode: 77,
+            auctionRevenueAddress: revenue.address,
+        },
+    });
+    val result = net.send(collection.address, initMessage);
+    expect(result).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 809,
+    });
+}
+
+get fun `test expired item rejects changes to immutable identity and payout destination`() {
+    val (contract, collection, _, _, _, revenue) = setupTest();
+    val auction = contract.getAuctionInfo()!;
+    testing.setNow((auction.auctionEndTime + 1) as uint32);
+    val settlement = contract.sendSettlePlateAuction(
+        collection.address,
+        100,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: contract.address });
+    testing.setNow(contract.getExpirationTime() as uint32);
+
+    val alteredIdentity = contract.sendAny(
+        collection.address,
+        PlateItemInitData {
+            firstBidder: collection.address,
+            nftIndex: 0,
+            firstBidAmount: grams("3"),
+            plateBody: "B123BC",
+            regionCode: 77,
+            auctionRevenueAddress: revenue.address,
+        }.toCell(),
+        { value: grams("3.2") },
+    );
+    expect(alteredIdentity).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 804,
+    });
+
+    val otherRevenue = testing.treasury("altered-revenue-destination");
+    val alteredRevenue = contract.sendAny(
+        collection.address,
+        PlateItemInitData {
+            firstBidder: collection.address,
+            nftIndex: 0,
+            firstBidAmount: grams("3"),
+            plateBody: "A123BC",
+            regionCode: 77,
+            auctionRevenueAddress: otherRevenue.address,
+        }.toCell(),
+        { value: grams("3.2") },
+    );
+    expect(alteredRevenue).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 804,
+    });
+    expect(contract.getAuctionInfo()).toBeNull();
+    expect(contract.getNftData().ownerAddress).toBeNotNull();
 }
 
