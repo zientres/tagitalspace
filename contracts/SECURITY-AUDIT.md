@@ -47,7 +47,7 @@ The item has a RichBounce-based liability and retry mechanism for revenue payout
 
 ### High — browser client is implemented; Testnet end-to-end validation remains
 
-`registry-config.js` now holds the Testnet Registry address (intentionally blank until deployment). `registry-client.js` uses TON SDK/TonCenter to query the Registry's deterministic item address and starting price, read the compact item state, and submit first bids, later bids and permissionless settlement through TonConnect. `From/Russia/Russia.html` loads the config/client and exposes the settlement action. CI checks browser JavaScript syntax, but no live wallet/RPC test has been performed because no Registry has been deployed to Testnet. Refund-claim UI is also not implemented yet.
+`registry-config.js` now holds the Testnet Registry address (intentionally blank until deployment). `registry-client.js` uses TON SDK/TonCenter to query the Registry's deterministic item address and starting price, read the compact item state, and submit first bids, later bids and permissionless settlement through TonConnect. `From/Russia/Russia.html` loads the config/client and exposes settlement and refund-claim actions. CI checks both browser client syntax and the page's inline JavaScript, but no live wallet/RPC test has been performed because no Registry has been deployed to Testnet.
 
 ### High — read-only TEP-62 surface is implemented; Getgems indexing remains unverified
 
@@ -57,9 +57,9 @@ The item now exposes the standard `get_nft_data` tuple and `get_static_data` res
 
 CI now covers failed item deployment and claim, successful item deployment, duplicate-request refund accounting, invalid plate/region rejection, different deterministic item addresses for different regions, revenue-recipient getter, and owner-only empty-body deployment. Remaining gaps include action-phase failures, StateInit code-hash assertions and repeated claim bounce scenarios.
 
-### High — frontend integration is not verified
+### High — live frontend integration is not yet verified
 
-The browser registry client and frontend message construction must be implemented and checked against the new per-item contract addresses, opcodes and getters.
+The browser registry client and message construction are implemented against the current Registry/item getters and opcodes. They still require a live Testnet wallet flow, including lookup, first bid, later bid, settlement, refund claims and handling of bounced transactions.
 
 ## Required verification gates
 
