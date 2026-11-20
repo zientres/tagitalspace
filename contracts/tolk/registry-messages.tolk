@@ -10,7 +10,7 @@ struct (0x54531006) PlateItemInitData {
     firstBidder: address
     nftIndex: uint64
     firstBidAmount: coins
-    plateBody: cell
+    plateBody: string
     regionCode: uint16
     auctionRevenueAddress: address
 }
