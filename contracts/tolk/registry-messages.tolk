@@ -12,3 +12,13 @@ struct (0x54531006) PlateItemInitData {
     regionCode: uint16
     auctionRevenueAddress: address
 }
+
+struct (0x54530002) ClaimRegistryRefund {
+    queryId: uint64
+}
+
+struct (0x54530003) RegistryRefund {
+    queryId: uint64
+    recipient: address
+    amount: coins
+}
