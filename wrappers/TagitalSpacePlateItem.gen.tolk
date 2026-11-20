@@ -161,7 +161,28 @@ fun TagitalSpacePlateItem.sendAny(
 }
 
 fun TagitalSpacePlateItem.getNftData(self): PlateItemNftData {
+    return net.runGetMethod(self.address, "get_plate_data");
+}
+
+fun TagitalSpacePlateItem.getNftStandardData(
+    self,
+): (int, int, address, address?, cell) {
     return net.runGetMethod(self.address, "get_nft_data");
+}
+
+fun TagitalSpacePlateItem.sendGetNftStaticData(
+    self,
+    from: address,
+    queryId: uint64,
+    config: SendParams = {},
+): SendResultList {
+    val genericMsg = createMessage({
+        bounce: config.bounce,
+        value: config.value,
+        dest: self.address,
+        body: GetNftStaticData { queryId },
+    });
+    return net.send(from, genericMsg);
 }
 
 fun TagitalSpacePlateItem.getAuctionInfo(self): PlateAuctionState? {
