@@ -4,6 +4,7 @@ import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
 import "../.acton/testing/expect"
 import "../wrappers/TagitalSpaceRegistry.gen"
+import "../wrappers/TagitalSpacePlateItem.gen"
 import "../contracts/tolk/registry-state"
 
 fun deployTestRegistry(
