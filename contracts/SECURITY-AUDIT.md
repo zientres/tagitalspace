@@ -45,9 +45,9 @@ The recovery mechanism has been implemented: bounced outbid refunds are tracked 
 
 The item has a RichBounce-based liability and retry mechanism for revenue payouts. The configured revenue address is immutable after Registry deployment, so it must be checked carefully before deployment.
 
-### High — frontend Registry client is missing and still targets the old protocol
+### High — browser client is implemented; Testnet end-to-end validation remains
 
-`From/Russia/Russia.html` loads `registry-client.js` and calls `window.tagitalSpaceRegistry.lookupRussianPlate`, `startRussianAuctionWithFirstBid` and `placeBid`. There is no `registry-client.js` in the current repository tree. The page's auction rendering also expects fields such as `auctionId`, `status`, `startingBid` and `minimumBidStep`, while the current per-item contract exposes a `PlateAuctionState` with `highestBidder`, `highestBid` and `auctionEndTime`. The browser flow is therefore not integrated with the current contract architecture.
+`registry-config.js` now holds the Testnet Registry address (intentionally blank until deployment). `registry-client.js` uses TON SDK/TonCenter to query the Registry's deterministic item address and starting price, read the compact item state, and submit first bids, later bids and permissionless settlement through TonConnect. `From/Russia/Russia.html` loads the config/client and exposes the settlement action. CI checks browser JavaScript syntax, but no live wallet/RPC test has been performed because no Registry has been deployed to Testnet. Refund-claim UI is also not implemented yet.
 
 ### High — read-only TEP-62 surface is implemented; Getgems indexing remains unverified
 
