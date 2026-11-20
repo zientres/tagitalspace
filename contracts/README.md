@@ -42,6 +42,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - The payout uses `BounceMode.RichBounce`. If the revenue transfer bounces, the item records the full payout amount in `claimablePayout`; anyone can trigger `RetryPlateItemPayout`, and a second bounce restores the liability.
 - Outbid refunds also use `BounceMode.RichBounce`. If a refund bounces, the item records the full amount in a per-bidder `claimableRefunds` map and increases `claimableRefundTotal`. The original bidder can later call `ClaimPlateItemRefund`; a failed claim restores the liability. The claim must include a 0.05 TON fee buffer.
 - Settlement, payout retry and refund claims preserve active bid escrow, existing payout/refund liabilities and the minimum storage reserve.
+- If Registry cannot deploy an item, it records the bounced value as a claimable Registry refund. The original bidder uses `ClaimRegistryRefund`; a failed claim is restored by RichBounce. Duplicate first-bid requests against an existing item are likewise recorded as claimable refunds in that item.
 
 ## NFT ownership lifecycle
 
@@ -54,7 +55,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Implementation status
 
-The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. CI currently passes 13 TVM tests (11 PlateItem and 2 Registry), plus build, formatting, lint and JavaScript specification checks. The tested paths include payout bounce/retry, outbid refund bounce/claim, Registry deployment bounce/refund and duplicate first-bid handling. Multi-bounce adversarial cases, action-phase accounting, frontend integration and deployment configuration remain incomplete. The repository currently has no Registry deployment script.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. CI currently passes 13 TVM tests (11 PlateItem and 2 Registry), plus build, formatting, lint and JavaScript specification checks. The tested paths include payout bounce/retry, outbid refund bounce/claim, Registry deployment bounce/claim and duplicate first-bid refund accounting. Multi-bounce adversarial cases, action-phase accounting, frontend integration and deployment configuration remain incomplete. The repository currently has no Registry deployment script.
 
 ## Source attribution
 
