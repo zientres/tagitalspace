@@ -26,15 +26,15 @@
         }
 
         if (!clientPromise) {
-            clientPromise = loadRuntime().then(({ TonClient, Address }) => {
+            clientPromise = loadRuntime().then(({ TonClient, Address, TupleBuilder, beginCell }) => {
                 const options = { endpoint: config.endpoint };
                 if (config.apiKey) options.apiKey = config.apiKey;
                 return {
                     client: new TonClient(options),
                     registryAddress: Address.parse(config.registryAddress),
                     Address,
-                    TupleBuilder: ton.TupleBuilder,
-                    beginCell: ton.beginCell,
+                    TupleBuilder,
+                    beginCell,
                 };
             });
         }
