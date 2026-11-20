@@ -138,6 +138,47 @@
         };
     }
 
+    function getConnectedWalletAddress(runtime) {
+        const account = window.tagitalSpaceTonConnect && window.tagitalSpaceTonConnect.account;
+        if (!account || !account.address) return null;
+        return runtime.Address.parse(account.address);
+    }
+
+    async function getClaimableAmount(client, contractAddress, getterName, walletAddress) {
+        const tuple = new (await loadRuntime()).TupleBuilder();
+        tuple.writeAddress(walletAddress);
+        const result = await client.runMethod(contractAddress, getterName, tuple.build());
+        return result.stack.readBigNumber();
+    }
+
+    async function getRefundBalances(runtime, itemAddress, itemDeployed) {
+        const walletAddress = getConnectedWalletAddress(runtime);
+        if (!walletAddress) {
+            return { claimableRegistryRefund: 0n, claimableItemRefund: 0n };
+        }
+
+        const claimableRegistryRefund = await getClaimableAmount(
+            runtime.client,
+            runtime.registryAddress,
+            "get_claimable_registry_refund",
+            walletAddress,
+        );
+        let claimableItemRefund = 0n;
+        if (itemDeployed) {
+            try {
+                claimableItemRefund = await getClaimableAmount(
+                    runtime.client,
+                    itemAddress,
+                    "get_claimable_refund",
+                    walletAddress,
+                );
+            } catch (_) {
+                // An item may be deployed but not yet have initialized storage.
+            }
+        }
+        return { claimableRegistryRefund, claimableItemRefund };
+    }
+
     function buildStartAuctionBody(runtime, plateBody, regionCode) {
         return runtime.beginCell()
             .storeUint(0x54530001, 32)
@@ -184,12 +225,14 @@
         ]);
         const itemAddressText = friendlyAddress(itemAddress);
         const deployed = await runtime.client.isContractDeployed(itemAddress);
+        const refunds = await getRefundBalances(runtime, itemAddress, deployed);
 
         if (!deployed) {
             return {
                 status: "free",
                 itemAddress: itemAddressText,
                 startingBid,
+                ...refunds,
             };
         }
 
@@ -200,6 +243,7 @@
                 itemAddress: itemAddressText,
                 startingBid,
                 expirationTime: state.expirationTime,
+                ...refunds,
             };
         }
 
@@ -216,6 +260,7 @@
                     minimumBidStep: minimumNextBid - state.highestBid,
                     endTime: state.endTime,
                 },
+                ...refunds,
             };
         }
 
@@ -225,6 +270,7 @@
                 itemAddress: itemAddressText,
                 ownerAddress: state.ownerAddress ? friendlyAddress(state.ownerAddress) : null,
                 expirationTime: state.expirationTime,
+                ...refunds,
             };
         }
 
@@ -307,10 +353,66 @@
         return transaction;
     }
 
+    async function claimRefunds(itemAddressText) {
+        const runtime = await getClientContext();
+        const walletAddress = getConnectedWalletAddress(runtime);
+        if (!walletAddress) {
+            throw new Error("Подключите Keeper, чтобы получить возврат.");
+        }
+
+        const itemAddress = runtime.Address.parse(itemAddressText);
+        const balances = await getRefundBalances(
+            runtime,
+            itemAddress,
+            await runtime.client.isContractDeployed(itemAddress),
+        );
+        let claimedRegistryRefund = 0n;
+        let claimedItemRefund = 0n;
+
+        if (balances.claimableRegistryRefund > 0n) {
+            const body = runtime.beginCell()
+                .storeUint(0x54530002, 32)
+                .storeUint(BigInt(Date.now()), 64)
+                .endCell();
+            await sendWalletTransaction(runtime, runtime.registryAddress, 100_000_000n, body);
+            await waitForConfirmation(async () => {
+                const remaining = await getClaimableAmount(
+                    runtime.client,
+                    runtime.registryAddress,
+                    "get_claimable_registry_refund",
+                    walletAddress,
+                );
+                return remaining === 0n;
+            }, "возврат из Registry");
+            claimedRegistryRefund = balances.claimableRegistryRefund;
+        }
+
+        if (balances.claimableItemRefund > 0n) {
+            const body = runtime.beginCell()
+                .storeUint(0x5453100A, 32)
+                .storeUint(BigInt(Date.now()), 64)
+                .endCell();
+            await sendWalletTransaction(runtime, itemAddress, 100_000_000n, body);
+            await waitForConfirmation(async () => {
+                const remaining = await getClaimableAmount(
+                    runtime.client,
+                    itemAddress,
+                    "get_claimable_refund",
+                    walletAddress,
+                );
+                return remaining === 0n;
+            }, "возврат из контракта номера");
+            claimedItemRefund = balances.claimableItemRefund;
+        }
+
+        return { claimedRegistryRefund, claimedItemRefund };
+    }
+
     window.tagitalSpaceRegistry = Object.freeze({
         lookupRussianPlate,
         startRussianAuctionWithFirstBid,
         placeBid,
         settleAuction,
+        claimRefunds,
     });
 })();
