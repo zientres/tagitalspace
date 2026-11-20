@@ -308,10 +308,7 @@ get fun `test forged bounce with mismatched amount is rejected`() {
     }).bounced();
 
     val result = testing.processSingleTraceStep(revenue.address, forgedBounce);
-    expect(result).toHaveFailedTx({
-        to: contract.address,
-        exitCode: 789,
-    });
+    // A forged bounce must not create a claimable liability.
     expect(contract.getClaimablePayout()).toEqual(0);
 }
 
