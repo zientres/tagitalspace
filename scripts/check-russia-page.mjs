@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Script } from "node:vm";
 
-const pagePath = new URL("../../From/Russia/Russia.html", import.meta.url);
+const pagePath = new URL("../From/Russia/Russia.html", import.meta.url);
 const html = readFileSync(pagePath, "utf8");
 const blocks = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
     .filter(([, attributes]) => {
