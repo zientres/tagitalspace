@@ -79,7 +79,7 @@ fun TagitalSpaceRegistry.sendClaimRegistryRefund(
 
 fun TagitalSpaceRegistry.getPlateItemAddress(
     self,
-    plateBody: cell,
+    plateBody: string,
     regionCode: uint16,
 ): address {
     return net.runGetMethod(self.address, "get_plate_item_address", [plateBody, regionCode]);
