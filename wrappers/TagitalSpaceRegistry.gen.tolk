@@ -89,6 +89,27 @@ fun TagitalSpaceRegistry.getAuctionRevenueAddress(self): address {
     return net.runGetMethod(self.address, "get_auction_revenue_address");
 }
 
+fun TagitalSpaceRegistry.getCollectionData(
+    self,
+): (int, cell, address) {
+    return net.runGetMethod(self.address, "get_collection_data");
+}
+
+fun TagitalSpaceRegistry.getNftAddressByIndex(
+    self,
+    index: int,
+): address {
+    return net.runGetMethod(self.address, "get_nft_address_by_index", [index]);
+}
+
+fun TagitalSpaceRegistry.getNftContent(
+    self,
+    index: int,
+    individualContent: cell,
+): cell {
+    return net.runGetMethod(self.address, "get_nft_content", [index, individualContent]);
+}
+
 fun TagitalSpaceRegistry.getClaimableRefund(
     self,
     ownerAddress: address,
