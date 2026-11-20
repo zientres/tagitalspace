@@ -652,3 +652,67 @@ get fun `test only the owner can transfer plate ownership`() {
     );
 }
 
+get fun `test payout bounce cannot create a liability larger than returned value plus fee buffer`() {
+    val (contract, _, _, _, _, revenue) = setupTest();
+
+    val originalBody = PlateItemRevenuePayout {
+        queryId: 90,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("1"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(revenue.address, forgedBounce);
+    expect(contract.getClaimablePayout()).toEqual(0);
+}
+
+get fun `test refund bounce cannot create a liability larger than returned value plus fee buffer`() {
+    val (contract, _, firstBidder, _, _, _) = setupTest();
+
+    val originalBody = PlateItemBidRefund {
+        queryId: 91,
+        recipient: firstBidder.address,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("1"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(firstBidder.address, forgedBounce);
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
+    expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
