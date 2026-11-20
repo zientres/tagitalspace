@@ -144,7 +144,7 @@ fun onBouncedMessage(in: InMessageBounced) {
     storage.save();
 }
 
-get fun get_plate_item_address(plateBody: cell, regionCode: uint16): address {
+get fun get_plate_item_address(plateBody: string, regionCode: uint16): address {
     val storage = TagitalSpaceRegistryStorage.load();
     val plate = plateBody.beginParse();
     assert (tagitalSpaceValidatePlateBody(plate)) throw 730;
