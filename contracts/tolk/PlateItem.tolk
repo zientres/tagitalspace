@@ -163,7 +163,7 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (payout.amount == originalInfo.valueCoins) throw 789;
         assert (in.valueCoins > 0) throw 789;
 
-        storage.claimablePayout += in.valueCoins;
+        storage.claimablePayout += payout.amount;
         storage.save();
         return;
     }
@@ -182,13 +182,13 @@ fun onBouncedMessage(in: InMessageBounced) {
 
         var refunds = storage.claimableRefunds;
         val previous = refunds.get(refund.recipient);
-        var claimableAmount = in.valueCoins;
+        var claimableAmount = refund.amount;
         if (previous.isFound) {
             claimableAmount += previous.loadValue();
         }
         refunds.set(refund.recipient, claimableAmount);
         storage.claimableRefunds = refunds;
-        storage.claimableRefundTotal += in.valueCoins;
+        storage.claimableRefundTotal += refund.amount;
         storage.save();
         return;
     }
