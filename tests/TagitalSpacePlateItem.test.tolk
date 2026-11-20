@@ -224,3 +224,56 @@ get fun `test bounced revenue payout becomes claimable`() {
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
+
+
+get fun `test failed retry restores claimable payout`() {
+    val collection = testing.treasury("retry-collection");
+    val firstBidder = testing.treasury("retry-first-bidder");
+    val revenueAddress = randomAddress("retry-missing-revenue");
+
+    val contract = TagitalSpacePlateItem.fromStorage({
+        identityKey: 3,
+        collectionAddress: collection.address,
+    });
+
+    val initMessage = createMessage({
+        bounce: false,
+        value: grams("3.2"),
+        dest: {
+            workchain: contract.address.getWorkchain(),
+            stateInit: contract.stateInit!,
+        },
+        body: PlateItemInitData {
+            firstBidder: firstBidder.address,
+            firstBidAmount: grams("3"),
+            plateBody: beginCell().storeString("A123BC").endCell(),
+            regionCode: 77,
+            auctionRevenueAddress: revenueAddress,
+        },
+    });
+
+    val deployResult = net.send(collection.address, initMessage);
+    expect(deployResult).toHaveSuccessfulDeploy({ to: contract.address });
+
+    val auction = contract.getAuctionInfo()!;
+    testing.setNow((auction.auctionEndTime + 1) as uint32);
+
+    val settlement = contract.sendSettlePlateAuction(
+        collection.address,
+        30,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
+
+    // Retrying to the same unavailable destination must bounce again.
+    // The cleared liability must be restored by the second RichBounce.
+    val retry = contract.sendRetryPlateItemPayout(
+        collection.address,
+        31,
+        { value: grams("0.1") },
+    );
+
+    expect(retry).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
+}
