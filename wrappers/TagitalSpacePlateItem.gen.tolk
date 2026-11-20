@@ -170,6 +170,12 @@ fun TagitalSpacePlateItem.getNftStandardData(
     return net.runGetMethod(self.address, "get_nft_data");
 }
 
+fun TagitalSpacePlateItem.getPlateState(
+    self,
+): (int, address?, coins, uint64, uint64) {
+    return net.runGetMethod(self.address, "get_plate_state");
+}
+
 fun TagitalSpacePlateItem.sendGetNftStaticData(
     self,
     from: address,
