@@ -45,7 +45,7 @@ fun tagitalSpaceSettlePlateAuction(
     // Include the settlement message value and retain storage plus a fee buffer.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-            auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 786;
     val immutable = storage.immutable.load();
     storage.ownerAddress = auction.highestBidder;
@@ -56,7 +56,10 @@ fun tagitalSpaceSettlePlateAuction(
         bounce: BounceMode.RichBounce,
         dest: immutable.auctionRevenueAddress,
         value: auction.highestBid,
-        body: PlateItemRevenuePayout { queryId, amount: auction.highestBid },
+        body: PlateItemRevenuePayout {
+            queryId,
+            amount: auction.highestBid,
+        },
     });
     payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
 }
@@ -71,7 +74,7 @@ fun tagitalSpaceRetryPlatePayout(
     // The caller may top up bounce/forward fees; the full winning bid is never reduced.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-            amount + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        amount + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 788;
     val immutable = storage.immutable.load();
     storage.claimablePayout = 0;
