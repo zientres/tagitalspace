@@ -55,7 +55,6 @@ fun onInternalMessage(in: InMessage) {
     }
 }
 
-
 fun onBouncedMessage(in: InMessageBounced) {
     val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
     val init = lazy PlateItemInitData.fromSlice(rich.originalBody.beginParse());
