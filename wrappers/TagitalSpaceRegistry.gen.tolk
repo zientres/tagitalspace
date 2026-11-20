@@ -62,10 +62,36 @@ fun TagitalSpaceRegistry.sendStartPlateAuction(
     return net.send(from, message);
 }
 
+fun TagitalSpaceRegistry.sendClaimRegistryRefund(
+    self,
+    from: address,
+    queryId: uint64,
+    config: SendParams = {},
+): SendResultList {
+    val message = createMessage({
+        bounce: config.bounce,
+        value: config.value,
+        dest: self.address,
+        body: ClaimRegistryRefund { queryId },
+    });
+    return net.send(from, message);
+}
+
 fun TagitalSpaceRegistry.getPlateItemAddress(
     self,
     plateBody: cell,
     regionCode: uint16,
 ): address {
     return net.runGetMethod(self.address, "get_plate_item_address", [plateBody, regionCode]);
+}
+
+fun TagitalSpaceRegistry.getClaimableRefund(
+    self,
+    ownerAddress: address,
+): coins {
+    return net.runGetMethod(self.address, "get_claimable_registry_refund", [ownerAddress]);
+}
+
+fun TagitalSpaceRegistry.getClaimableRefundTotal(self): coins {
+    return net.runGetMethod(self.address, "get_claimable_registry_refund_total");
 }
