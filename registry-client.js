@@ -86,6 +86,23 @@
         });
     }
 
+    function delay(milliseconds) {
+        return new Promise((resolve) => setTimeout(resolve, milliseconds));
+    }
+
+    async function waitForConfirmation(check, description) {
+        const deadline = Date.now() + 30_000;
+        while (Date.now() < deadline) {
+            try {
+                if (await check()) return;
+            } catch (_) {
+                // A newly deployed item may not be queryable until the next block.
+            }
+            await delay(1_500);
+        }
+        throw new Error("Транзакция отправлена, но " + description + " пока не подтверждена в Testnet. Повторите поиск номера чуть позже.");
+    }
+
     async function getPlateItemAddress(runtime, plateBody, regionCode) {
         const tuple = new runtime.TupleBuilder();
         tuple.writeString(plateBody);
@@ -217,10 +234,24 @@
     async function startRussianAuctionWithFirstBid(fullPlate) {
         const parsed = parsePlate(fullPlate);
         const runtime = await getClientContext();
-        const startingBid = await getStartingPrice(runtime, parsed.plateBody);
+        const [startingBid, itemAddress] = await Promise.all([
+            getStartingPrice(runtime, parsed.plateBody),
+            getPlateItemAddress(runtime, parsed.plateBody, parsed.regionCode),
+        ]);
         const body = buildStartAuctionBody(runtime, parsed.plateBody, parsed.regionCode);
         const attachedValue = startingBid + START_AUCTION_BUFFER;
-        return sendWalletTransaction(runtime, runtime.registryAddress, attachedValue, body);
+        const transaction = await sendWalletTransaction(
+            runtime,
+            runtime.registryAddress,
+            attachedValue,
+            body,
+        );
+        await waitForConfirmation(async () => {
+            if (!(await runtime.client.isContractDeployed(itemAddress))) return false;
+            const state = await getPlateState(runtime.client, itemAddress);
+            return state.status === 1 || state.status === 2;
+        }, "создание аукциона");
+        return transaction;
     }
 
     async function placeBid(auctionId, amountTon) {
@@ -238,12 +269,17 @@
         }
 
         const body = buildBidBody(runtime, bidAmount);
-        return sendWalletTransaction(
+        const transaction = await sendWalletTransaction(
             runtime,
             itemAddress,
             bidAmount + BID_BUFFER,
             body,
         );
+        await waitForConfirmation(async () => {
+            const updated = await getPlateState(runtime.client, itemAddress);
+            return (updated.status === 1 || updated.status === 2) && updated.highestBid >= bidAmount;
+        }, "новая ставка");
+        return transaction;
     }
 
     window.tagitalSpaceRegistry = Object.freeze({
