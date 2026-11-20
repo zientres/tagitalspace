@@ -33,6 +33,8 @@
                     client: new TonClient(options),
                     registryAddress: Address.parse(config.registryAddress),
                     Address,
+                    TupleBuilder: ton.TupleBuilder,
+                    beginCell: ton.beginCell,
                 };
             });
         }
