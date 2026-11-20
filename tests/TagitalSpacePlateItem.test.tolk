@@ -386,6 +386,17 @@ get fun `test bounced outbid refund becomes claimable`() {
     expect(contract.getClaimableRefund(unavailableBidder)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
     expect(contract.getAuctionInfo()!.highestBidder).toEqual(nextBidder.address);
+
+    // The unavailable bidder attempts to claim while its address is still
+    // uninitialized. The outgoing refund bounces and must restore the liability.
+    val failedClaim = contract.sendClaimPlateItemRefund(
+        unavailableBidder,
+        41,
+        { value: grams("0.1") },
+    );
+    expect(failedClaim).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getClaimableRefund(unavailableBidder)).toEqual(grams("3"));
+    expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
 }
 
 get fun `test original bidder can claim a bounced refund`() {
