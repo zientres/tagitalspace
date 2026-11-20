@@ -15,5 +15,7 @@ fun tagitalSpaceRegistryCreateInitialStorage(
         ownerAddress,
         auctionRevenueAddress,
         nftItemCode,
+        claimableRefunds: [],
+        claimableRefundTotal: 0,
     };
 }
