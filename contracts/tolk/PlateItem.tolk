@@ -126,13 +126,13 @@ fun onInternalMessage(in: InMessage) {
         PlateItemBid => {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 777;
-            var auction = unpacked.1;
+            var _auction = unpacked.1;
             tagitalSpaceProcessPlateBid(
                 in.senderAddress,
                 in.valueCoins,
                 msg.bidAmount,
                 mutate storage,
-                mutate auction,
+                mutate _auction,
             );
         }
         SettlePlateAuction => {
