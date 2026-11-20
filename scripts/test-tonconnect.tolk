@@ -19,11 +19,9 @@ fun main() {
         dest: wallet.address,
     });
     val result = net.send(wallet.address, message);
-    val transaction = result.waitForFirstTransaction();
-
-    if (transaction == null) {
+    if (result.waitForFirstTransaction() == null) {
         Assert.fail("TON Connect self-transfer was not confirmed on Testnet");
     }
 
-    println("TON Connect diagnostic transaction confirmed: {}", transaction);
+    println("TON Connect diagnostic transaction confirmed on Testnet.");
 }
