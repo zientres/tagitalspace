@@ -27,7 +27,7 @@ Bid amounts are now explicit message fields, separate from attached TON reserves
 
 ### High — Registry deployment configuration is incomplete
 
-Registry storage now requires the owner address, the fixed auction revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`, and NFT item code. The deployment initializer and deterministic item code hash/address checks must be wired and tested.
+Registry storage now requires the owner address, the fixed auction revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`, and NFT item code. The Registry deployment script now initializes the fixed revenue address, owner and compiled item code, and is exercised in local emulation by CI. The script has not yet been broadcast to Testnet; on-chain deployment confirmation and an independent check of the deployed StateInit/address remain required.
 
 ### High — item lifecycle and renewal economics need further verification
 
