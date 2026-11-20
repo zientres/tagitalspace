@@ -34,12 +34,14 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 - First bid starts the item's one-hour auction. The bid amount is encoded separately from attached TON: the opening transaction must attach the starting price plus 0.15 TON for item reserve and deployment/forwarding costs; the item records only the calculated starting price as the bid.
 - Later bid messages include an explicit `bidAmount`; any additional attached TON remains as contract reserve and is not counted as part of the bid.
-- Every later bid is at least floor(current bid × 105 / 100).
+- Every later bid is at least floor(current bid × 105 / 100) and attaches at least 0.05 TON above the bid amount as a refund/forwarding fee buffer.
 - A bid with less than one hour remaining resets the deadline to one hour from the bid; exactly one hour remaining does not extend.
 - No bid history is stored.
 - **100% of every settled winning bid** is allocated to the single auction revenue address configured in the Registry at deployment: `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
 - When an auction is settled, its item contract sends **the entire winning bid** to the immutable revenue address in the same transaction. No claim request or manual withdrawal is required.
-- The payout uses `BounceMode.RichBounce`. If the revenue transfer bounces, the item records the exact amount in `claimablePayout`; anyone can trigger `RetryPlateItemPayout`, and a second bounce restores the liability. The bounce and retry paths have emulator tests, but action-phase edge cases and the full Registry deployment path still require verification.
+- The payout uses `BounceMode.RichBounce`. If the revenue transfer bounces, the item records the full payout amount in `claimablePayout`; anyone can trigger `RetryPlateItemPayout`, and a second bounce restores the liability.
+- Outbid refunds also use `BounceMode.RichBounce`. If a refund bounces, the item records the full amount in a per-bidder `claimableRefunds` map and increases `claimableRefundTotal`. The original bidder can later call `ClaimPlateItemRefund`; a failed claim restores the liability. The claim must include a 0.05 TON fee buffer.
+- Settlement, payout retry and refund claims preserve active bid escrow, existing payout/refund liabilities and the minimum storage reserve.
 
 ## NFT ownership lifecycle
 
@@ -52,7 +54,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Implementation status
 
-The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The latest test run is not yet confirmed successful. The per-item payout-bounce and retry paths have dedicated emulator tests, but Registry-to-item bounce recovery, outbid-refund recovery, action-phase accounting, frontend integration and deployment configuration remain incomplete. The repository currently has no Registry deployment script.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. CI currently passes 11 TVM tests (9 PlateItem and 2 Registry), plus build, formatting, lint and JavaScript specification checks. The tested paths include payout bounce/retry, outbid refund bounce/claim, Registry deployment bounce/refund and duplicate first-bid handling. Multi-bounce adversarial cases, action-phase accounting, frontend integration and deployment configuration remain incomplete. The repository currently has no Registry deployment script.
 
 ## Source attribution
 
