@@ -9,8 +9,5 @@ fun tagitalSpaceBuildCollectionContent(): cell {
         "image".sha256(),
         "https://zientres.github.io/tagitalspace/logo.png",
     );
-    return beginCell()
-        .storeUint(0, 8)
-        .storeDict(metadata.toLowLevelDict())
-        .endCell();
+    return beginCell().storeUint(0, 8).storeDict(metadata.toLowLevelDict()).endCell();
 }
