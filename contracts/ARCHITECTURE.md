@@ -35,7 +35,7 @@ TagitalSpace follows the architecture of TON DNS:
 
 **100% of each settled winning bid goes to one fixed address:** `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
 
-The Registry stores this address in its initial data and passes it into every deterministic plate item at initialization. When anyone triggers settlement after the deadline, the item sends the entire winning bid directly to that stored revenue address in the same transaction. There is no split, claim step or caller-controlled destination. The payout uses a non-bounceable message; bounce recovery and action-phase behavior remain unverified.
+The Registry stores this address in its initial data and passes it into every deterministic plate item at initialization. When anyone triggers settlement after the deadline, the item sends the entire winning bid directly to that stored revenue address in the same transaction. There is no split, claim step or caller-controlled destination. The payout uses `BounceMode.RichBounce`. A failed payout is recorded in `claimablePayout` by the item's bounce handler and can be retried by sending `RetryPlateItemPayout`. The retry clears the liability before sending and relies on a subsequent RichBounce to restore it if the retry also fails. This flow has source-level and emulator tests, but still requires review of action-phase edge cases and adversarial bounce handling.
 
 ## NFT lifecycle
 
