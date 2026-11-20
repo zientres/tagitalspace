@@ -186,3 +186,52 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
 }
 
+get fun `test expired plate item can start a new auction at the same address`() {
+    val owner = testing.treasury("registry-expiry-owner");
+    val firstBidder = testing.treasury("registry-expiry-first-bidder");
+    val secondBidder = testing.treasury("registry-expiry-second-bidder");
+    val revenue = testing.treasury("registry-expiry-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+    val plateBody = beginCell().storeUint(0x413132334243, 48).endCell();
+
+    val firstRequest = registry.sendStartPlateAuction(
+        firstBidder.address,
+        8,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    val itemAddress = registry.getPlateItemAddress(plateBody, 77);
+    val item = TagitalSpacePlateItem.fromAddress(itemAddress);
+    expect(firstRequest).toHaveSuccessfulDeploy({ to: itemAddress });
+
+    val firstAuction = item.getAuctionInfo()!;
+    testing.setNow((firstAuction.auctionEndTime + 1) as uint32);
+    val settlement = item.sendSettlePlateAuction(
+        owner.address,
+        9,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getNftData().ownerAddress!).toEqual(firstBidder.address);
+
+    val expiration = item.getExpirationTime();
+    testing.setNow(expiration as uint32);
+
+    val secondRequest = registry.sendStartPlateAuction(
+        secondBidder.address,
+        10,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    expect(secondRequest).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getNftData().ownerAddress).toBeNull();
+    val secondAuction = item.getAuctionInfo()!;
+    expect(secondAuction.highestBidder).toEqual(secondBidder.address);
+    expect(secondAuction.highestBid).toEqual(grams("3"));
+    expect(secondAuction.auctionEndTime).toEqual(
+        (testing.getNow() as uint64) + 3600,
+    );
+}
+
