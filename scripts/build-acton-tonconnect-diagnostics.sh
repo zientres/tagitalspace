@@ -8,6 +8,7 @@ INSTALL_PATH="$INSTALL_DIR/acton-tonconnect-diagnostics"
 
 command -v git >/dev/null || { echo "git is required"; exit 1; }
 command -v curl >/dev/null || { echo "curl is required"; exit 1; }
+command -v patch >/dev/null || { echo "patch is required"; exit 1; }
 
 if ! command -v rustup >/dev/null 2>&1; then
     echo "Installing the Rust toolchain required by Acton 1.2.1..."
@@ -22,7 +23,7 @@ git clone --depth 1 --branch v1.2.1 https://github.com/ton-blockchain/acton.git 
 patch -d "$WORKDIR" -p1 < "$ROOT/scripts/patches/acton-tonconnect-error-details.patch"
 
 echo "Building diagnostic Acton..."
-CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}" cargo +1.98.1 build --release --bin acton --manifest-path "$WORKDIR/Cargo.toml"
+CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}" cargo +1.98.1 build --locked --release --bin acton --manifest-path "$WORKDIR/Cargo.toml"
 
 mkdir -p "$INSTALL_DIR"
 install -m 755 "$WORKDIR/target/release/acton" "$INSTALL_PATH"
