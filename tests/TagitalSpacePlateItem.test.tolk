@@ -346,3 +346,94 @@ get fun `test bounce from unexpected sender is rejected`() {
     // must not create a claimable liability.
     expect(contract.getClaimablePayout()).toEqual(0);
 }
+
+get fun `test bounced outbid refund becomes claimable`() {
+    val collection = testing.treasury("refund-bounce-collection");
+    val unavailableBidder = randomAddress("refund-bounce-unavailable-bidder");
+    val nextBidder = testing.treasury("refund-bounce-next-bidder");
+    val revenue = testing.treasury("refund-bounce-revenue");
+
+    val contract = TagitalSpacePlateItem.fromStorage({
+        identityKey: 4,
+        collectionAddress: collection.address,
+    });
+    val initMessage = createMessage({
+        bounce: false,
+        value: grams("3.2"),
+        dest: {
+            workchain: contract.address.getWorkchain(),
+            stateInit: contract.stateInit!,
+        },
+        body: PlateItemInitData {
+            firstBidder: unavailableBidder,
+            firstBidAmount: grams("3"),
+            plateBody: beginCell().storeString("A123BC").endCell(),
+            regionCode: 77,
+            auctionRevenueAddress: revenue.address,
+        },
+    });
+    val deployed = net.send(collection.address, initMessage);
+    expect(deployed).toHaveSuccessfulDeploy({ to: contract.address });
+
+    val nextBid = contract.sendPlateItemBid(
+        nextBidder.address,
+        40,
+        grams("3.15"),
+        { value: grams("3.3") },
+    );
+
+    expect(nextBid).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getClaimableRefund(unavailableBidder)).toEqual(grams("3"));
+    expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
+    expect(contract.getAuctionInfo()!.highestBidder).toEqual(nextBidder.address);
+}
+
+get fun `test original bidder can claim a bounced refund`() {
+    val (contract, _, firstBidder, _, _, _) = setupTest();
+
+    // Seed the claim through a bounced message from the same address that
+    // received the original refund. The value is actually attached to the test
+    // transaction, so the claim cannot create an unfunded liability.
+    val originalBody = PlateItemBidRefund {
+        queryId: 50,
+        recipient: firstBidder.address,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val bounceBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val bouncedMessage = createMessage({
+        bounce: false,
+        value: grams("3"),
+        dest: contract.address,
+        body: bounceBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(firstBidder.address, bouncedMessage);
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
+
+    val claim = contract.sendClaimPlateItemRefund(
+        firstBidder.address,
+        51,
+        { value: grams("0.1") },
+    );
+
+    expect(claim).toHaveSuccessfulTx({ to: contract.address });
+    expect(claim).toHaveTx({
+        to: firstBidder.address,
+        value: grams("3"),
+    });
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
+    expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
