@@ -13,13 +13,13 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 - Each plate item stores its own auction, bidder and deadline.
 - Later bids, outbid refunds and settlement are handled by that item contract.
 - No shared Auction Manager is part of the intended architecture.
-- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer uses `BounceMode.RichBounce`; the item has a claimable-payout liability and retry path. The current tests exercise payout bounce/retry, outbid refund recovery, Registry deployment bounce/claim and duplicate-request refund accounting, but do not cover every action-phase failure mode or all multi-bounce sequences.
+- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer uses `BounceMode.RichBounce`; the item has a claimable-payout liability and retry path. The current tests exercise payout bounce/retry, outbid refund recovery, Registry deployment bounce/claim and duplicate-request refund accounting, owner-only renewal/transfer, expiration/re-auction, and rejection of underfunded forged bounce liabilities. They do not cover every action-phase failure mode or all multi-bounce sequences.
 
 ## Blocking findings
 
 ### Verification progress — build and core TVM paths now pass
 
-The current branch compiles with Acton 1.2.1 and passes 20 TVM tests: 13 PlateItem tests and 7 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+The current branch compiles with Acton 1.2.1 and passes 23 TVM tests: 15 PlateItem tests and 8 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
@@ -64,7 +64,7 @@ The browser registry client and frontend message construction must be implemente
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment and expired-item re-auction, plus outbid refund bounce/claim and annual renewal/transfer authorization.
+2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment and expired-item re-auction, plus outbid refund bounce/claim and annual renewal/transfer authorization.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
