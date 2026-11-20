@@ -13,12 +13,12 @@ fun main() {
     println("A single self-transfer of 0.01 Testnet TON will be requested.");
     println("No contract will be deployed.");
 
-    val message = createMessage({
+    val transferMessage = createMessage({
         bounce: false,
         value: grams("0.01"),
         dest: wallet.address,
     });
-    val result = net.send(wallet.address, message);
+    val result = net.send(wallet.address, transferMessage);
     if (result.waitForFirstTransaction() == null) {
         Assert.fail("TON Connect self-transfer was not confirmed on Testnet");
     }
