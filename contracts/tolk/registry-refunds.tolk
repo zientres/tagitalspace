@@ -58,16 +58,3 @@ fun tagitalSpaceClaimRegistryRefund(
     });
     refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
 }
-
-get fun get_claimable_registry_refund(ownerAddress: address): coins {
-    val storage = TagitalSpaceRegistryStorage.load();
-    val lookup = storage.claimableRefunds.get(ownerAddress);
-    if (!lookup.isFound) {
-        return 0;
-    }
-    return lookup.loadValue();
-}
-
-get fun get_claimable_registry_refund_total(): coins {
-    return TagitalSpaceRegistryStorage.load().claimableRefundTotal;
-}
