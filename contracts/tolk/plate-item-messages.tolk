@@ -31,6 +31,17 @@ struct (0x54531008) PlateItemRevenuePayout {
     amount: coins
 }
 
+// Bounced outbid refunds and refund claims are accounted per original bidder.
+struct (0x54531009) PlateItemBidRefund {
+    queryId: uint64
+    recipient: address
+    amount: coins
+}
+
+struct (0x5453100A) ClaimPlateItemRefund {
+    queryId: uint64
+}
+
 struct (0x5fcc3d15) TransferPlateOwnership {
     queryId: uint64
     newOwnerAddress: address
