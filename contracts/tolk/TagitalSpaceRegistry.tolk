@@ -2,6 +2,7 @@ import "plate-identity"
 import "plate-item-messages"
 import "plate-item-state"
 import "registry-messages"
+import "registry-metadata"
 import "registry-refunds"
 import "registry-request"
 import "registry-state"
@@ -167,4 +168,33 @@ get fun get_claimable_registry_refund(ownerAddress: address): coins {
 
 get fun get_claimable_registry_refund_total(): coins {
     return TagitalSpaceRegistryStorage.load().claimableRefundTotal;
+}
+
+get fun get_collection_data(): (int, cell, address) {
+    val storage = TagitalSpaceRegistryStorage.load();
+    return (
+        storage.nextItemIndex as int,
+        tagitalSpaceBuildCollectionContent(),
+        storage.ownerAddress,
+    );
+}
+
+get fun get_nft_address_by_index(index: int): address {
+    val storage = TagitalSpaceRegistryStorage.load();
+    assert (index >= 0) throw 744;
+    assert (index < storage.nextItemIndex as int) throw 744;
+    val identity = storage.identityByItemIndex.get(index as uint64);
+    assert (identity.isFound) throw 744;
+    return calcDeployedPlateItem(
+        identity.loadValue(),
+        storage.nftItemCode,
+    ).calculateAddress();
+}
+
+get fun get_nft_content(index: int, individualContent: cell): cell {
+    val storage = TagitalSpaceRegistryStorage.load();
+    assert (index >= 0) throw 745;
+    assert (index < storage.nextItemIndex as int) throw 745;
+    // Item content is already a complete on-chain TEP-64 dictionary.
+    return individualContent;
 }
