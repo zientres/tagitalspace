@@ -1,5 +1,6 @@
 import "registry-state"
 import "registry-messages"
+import "plate-item-messages"
 import "registry-storage"
 import "registry-request"
 import "plate-item-state"
