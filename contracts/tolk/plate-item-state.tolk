@@ -15,6 +15,7 @@ struct PlateAuctionState {
 // This keeps the mutable item root comfortably below TON's 1023-bit limit.
 struct PlateItemImmutableData {
     identityKey: uint256
+    nftIndex: uint64
     collectionAddress: address
     plateBody: cell
     regionCode: uint16
