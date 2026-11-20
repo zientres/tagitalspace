@@ -89,6 +89,13 @@ fun TagitalSpaceRegistry.getAuctionRevenueAddress(self): address {
     return net.runGetMethod(self.address, "get_auction_revenue_address");
 }
 
+fun TagitalSpaceRegistry.getPlateStartingPrice(
+    self,
+    plateBody: string,
+): coins {
+    return net.runGetMethod(self.address, "get_plate_starting_price", [plateBody]);
+}
+
 fun TagitalSpaceRegistry.getCollectionData(
     self,
 ): (int, cell, address) {
