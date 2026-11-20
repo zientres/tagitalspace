@@ -35,7 +35,7 @@ NFT ownership is recorded after settlement and can be transferred by its current
 
 ### High — Registry deployment bounce recovery is missing
 
-The Registry sends the item deployment with `BounceMode.RichBounce`, but `TagitalSpaceRegistry.tolk` has no `onBouncedMessage` handler. If deployment fails after the Registry forwards the opening bid, the bounced value returns to the Registry rather than being refunded to the initiating wallet. This path needs a verified refund handler and dedicated Registry TVM tests.
+The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then returns the value actually bounced (after network fees) to the original first bidder. A Registry TVM test now exercises an actual failed deployment using an invalid item code and checks that the bidder receives the refund. This closes the previously identified missing-handler path, but the test still needs to be run in CI and reviewed for adversarial edge cases.
 
 ### High — outbid refund recovery is missing
 
@@ -64,7 +64,7 @@ The browser registry client and frontend message construction must be implemente
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build.
-2. TVM tests for Registry deployment, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution.
+2. TVM tests for Registry deployment bounce/refund, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
