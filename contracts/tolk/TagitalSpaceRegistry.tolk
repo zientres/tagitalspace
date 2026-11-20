@@ -102,7 +102,7 @@ fun onBouncedMessage(in: InMessageBounced) {
             refund.amount,
             mutate _storage,
         );
-        ___storage.save();
+        _storage.save();
         return;
     }
 
@@ -141,7 +141,7 @@ fun onBouncedMessage(in: InMessageBounced) {
         in.valueCoins,
         mutate _storage,
     );
-    ___storage.save();
+    _storage.save();
 }
 
 get fun get_plate_item_address(plateBody: string, regionCode: uint16): address {
