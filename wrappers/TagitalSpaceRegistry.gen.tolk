@@ -67,5 +67,5 @@ fun TagitalSpaceRegistry.getPlateItemAddress(
     plateBody: cell,
     regionCode: uint16,
 ): address {
-    return net.runGetMethod(self.address, "get_plate_item_address", plateBody, regionCode);
+    return net.runGetMethod(self.address, "get_plate_item_address", [plateBody, regionCode]);
 }
