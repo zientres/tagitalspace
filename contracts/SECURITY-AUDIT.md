@@ -19,11 +19,11 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ### Verification progress — build and core TVM paths now pass
 
-The current branch compiles with Acton 1.2.1 and passes 9 TVM tests: 7 PlateItem tests and 2 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+The current branch compiles with Acton 1.2.1 and passes 11 TVM tests: 9 PlateItem tests and 2 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
-Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement sends the complete winning bid with `BounceMode.RichBounce`. A bounced payout is recorded as a liability and can be retried. However, action-phase rollback, fee coverage, repeated retries, and recipient behavior still need exhaustive TVM tests. Outbid refunds remain non-bounceable and have no separate liability/recovery path. This remains a critical blocker before real funds are used.
+Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds now use `BounceMode.RichBounce`. A bounced refund is recorded in a `map<address, coins>` keyed by the original bidder, with an aggregate liability total. The bidder can claim the amount later; the claim clears the liability before sending and a subsequent RichBounce restores it if delivery fails again. Later bids and claims require explicit fee buffers, and settlement/withdrawal checks preserve active escrow, payout liabilities, refund liabilities and minimum storage. These paths have basic emulator coverage, but multi-bounce sequences, fee exhaustion, action-phase rollback and adversarial recipient behavior still need more tests. This remains a critical blocker before real funds are used.
 
 ### High — Registry deployment configuration is incomplete
 
@@ -37,9 +37,9 @@ NFT ownership is recorded after settlement and can be transferred by its current
 
 The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then returns the value actually bounced (after network fees) to the original first bidder. A Registry TVM test now exercises an actual failed deployment using an invalid item code and checks that the bidder receives the refund. This closes the previously identified missing-handler path for the tested compute-phase deployment failure. Both Registry integration tests pass in CI, including a real RichBounce refund and a successful item deployment followed by a duplicate first-bid request. Adversarial bounce and action-phase failure cases still require review.
 
-### High — outbid refund recovery is missing
+### High — outbid refund recovery needs expanded adversarial testing
 
-Outbid refunds are sent with `bounce: false`. If the previous bidder's address cannot receive the refund, the refund can be lost. There is no tracked refund liability or retry flow.
+The missing recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. CI covers a real bounce and a successful claim. Remaining tests should cover repeated failed claims, multiple bidders with simultaneous liabilities, fee exhaustion, and preservation of all liabilities through settlement and renewal.
 
 ### High — payout recovery needs more tests
 
@@ -53,9 +53,9 @@ The item has a RichBounce-based liability and retry mechanism for revenue payout
 
 The item uses custom `get_nft_data` fields and a custom `TransferPlateOwnership` opcode (`0x5fcc3d15`), rather than the standard TEP-62 NFT item getter and transfer message protocol. It also lacks the standard collection/content getters and metadata plumbing expected by NFT marketplaces. As written, this contract should not be assumed to appear or trade correctly on Getgems.
 
-### High — Registry TVM coverage is missing
+### High — Registry TVM coverage is still partial
 
-The current test suite exercises the PlateItem contract, but does not deploy and exercise `TagitalSpaceRegistry`. It does not prove first-bid forwarding, deterministic address derivation, duplicate requests, Registry-to-item bounce handling, or refund of a failed item deployment. The Registry path is a critical money-handling path and needs dedicated emulator tests before deployment.
+The Registry now has emulator coverage for failed item deployment/refund and successful item deployment followed by a duplicate first-bid request. Further coverage is still needed for invalid plate/region requests, deterministic address separation across regions, owner-only empty-body deployment, and action-phase failures.
 
 ### High — frontend integration is not verified
 
@@ -64,7 +64,7 @@ The browser registry client and frontend message construction must be implemente
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for Registry deployment bounce/refund, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, outbid refund, settlement and distribution. Current CI covers Registry bounce/refund and duplicate request behavior, plus core item auction paths.
+2. Expand TVM tests for Registry invalid inputs, deterministic StateInit, duplicate first-bid requests, first bid, 5% minimum, 3,600-second boundary, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/refund, duplicate request behavior, a bounced outbid refund and one successful bidder claim.
 3. Bounce tests proving no bid refund or auction revenue payout can be lost.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
