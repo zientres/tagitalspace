@@ -389,7 +389,7 @@ get fun `test bounced outbid refund becomes claimable`() {
 }
 
 get fun `test original bidder can claim a bounced refund`() {
-    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val (contract, _, firstBidder, secondBidder, _, _) = setupTest();
 
     // Seed the claim through a bounced message from the same address that
     // received the original refund. The value is actually attached to the test
