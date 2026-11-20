@@ -1,6 +1,6 @@
 --- a/src/tonconnect.rs
 +++ b/src/tonconnect.rs
-@@ -268,4 +268,7 @@
+@@ -268,4 +268,8 @@
                      self.persist_session(&state)?;
 +                    let code = error.code as u16;
                      let message = error.message;
