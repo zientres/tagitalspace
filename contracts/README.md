@@ -55,7 +55,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Implementation status
 
-The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. CI currently passes 13 TVM tests (11 PlateItem and 2 Registry), plus build, formatting, lint and JavaScript specification checks. The tested paths include payout bounce/retry, outbid refund bounce/claim, Registry deployment bounce/claim and duplicate first-bid refund accounting. Multi-bounce adversarial cases, action-phase accounting, frontend integration and a confirmed Testnet deployment remain incomplete. The Registry deployment script is `scripts/deploy-registry.tolk`; CI executes it in local emulation.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. CI currently passes 16 TVM tests (11 PlateItem and 5 Registry), plus build, formatting, lint and JavaScript specification checks. The tested paths include payout bounce/retry, outbid refund bounce/claim, Registry deployment bounce/claim and duplicate first-bid refund accounting. Multi-bounce adversarial cases, action-phase accounting, frontend integration and a confirmed Testnet deployment remain incomplete. The Registry deployment script is `scripts/deploy-registry.tolk`; CI executes it in local emulation.
 
 ## Source attribution
 
