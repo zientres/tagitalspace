@@ -85,6 +85,10 @@ fun TagitalSpaceRegistry.getPlateItemAddress(
     return net.runGetMethod(self.address, "get_plate_item_address", [plateBody, regionCode]);
 }
 
+fun TagitalSpaceRegistry.getAuctionRevenueAddress(self): address {
+    return net.runGetMethod(self.address, "get_auction_revenue_address");
+}
+
 fun TagitalSpaceRegistry.getClaimableRefund(
     self,
     ownerAddress: address,
