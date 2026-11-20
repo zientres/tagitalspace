@@ -275,3 +275,94 @@ get fun `test Registry refund bounce cannot inflate liability beyond returned va
     expect(registry.getClaimableRefundTotal()).toEqual(0);
 }
 
+get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
+    val owner = testing.treasury("registry-tep62-owner");
+    val bidder = testing.treasury("registry-tep62-bidder");
+    val secondBidder = testing.treasury("registry-tep62-second-bidder");
+    val revenue = testing.treasury("registry-tep62-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    val initialCollectionData = registry.getCollectionData();
+    expect(initialCollectionData.0).toEqual(0);
+    expect(initialCollectionData.2).toEqual(owner.address);
+    val collectionContentSlice = initialCollectionData.1.beginParse();
+    expect(collectionContentSlice.loadUint(8)).toEqual(0);
+    expect(collectionContentSlice.loadUint(1)).toEqual(1);
+
+    val plateOne = beginCell().storeUint(0x413132334243, 48).endCell();
+    val firstRequest = registry.sendStartPlateAuction(
+        bidder.address,
+        12,
+        plateOne,
+        77,
+        { value: grams("3.2") },
+    );
+    val itemOneAddress = registry.getNftAddressByIndex(0);
+    val itemOne = TagitalSpacePlateItem.fromAddress(itemOneAddress);
+    expect(firstRequest).toHaveSuccessfulDeploy({ to: itemOneAddress });
+    expect(itemOneAddress).toEqual(registry.getPlateItemAddress(plateOne, 77));
+
+    val (initFlag, itemIndex, collectionAddress, nftOwner, individualContent) =
+        itemOne.getNftStandardData();
+    expect(initFlag).toEqual(0);
+    expect(itemIndex).toEqual(0);
+    expect(collectionAddress).toEqual(registry.address);
+    expect(nftOwner).toBeNull();
+
+    val itemContentSlice = individualContent.beginParse();
+    expect(itemContentSlice.loadUint(8)).toEqual(0);
+    expect(itemContentSlice.loadUint(1)).toEqual(1);
+    expect(registry.getNftContent(0, individualContent).hash()).toEqual(individualContent.hash());
+
+    val staticData = itemOne.sendGetNftStaticData(
+        owner.address,
+        13,
+        { value: grams("0.05") },
+    );
+    expect(staticData).toHaveSuccessfulTx({ to: itemOneAddress });
+    expect(staticData).toHaveTx({ to: owner.address });
+
+    val disabledTransfer = createMessage({
+        bounce: false,
+        value: grams("0.05"),
+        dest: itemOneAddress,
+        body: beginCell().storeUint(0x5fcc3d14, 32).endCell(),
+    });
+    val rejectedTransfer = net.send(bidder.address, disabledTransfer);
+    expect(rejectedTransfer).toHaveFailedTx({
+        to: itemOneAddress,
+        exitCode: 805,
+    });
+
+    val firstAuction = itemOne.getAuctionInfo()!;
+    testing.setNow((firstAuction.auctionEndTime + 1) as uint32);
+    val settlement = itemOne.sendSettlePlateAuction(
+        owner.address,
+        14,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: itemOneAddress });
+
+    val (mintedFlag, mintedIndex, mintedCollection, mintedOwner, _) =
+        itemOne.getNftStandardData();
+    expect(mintedFlag).toEqual(1);
+    expect(mintedIndex).toEqual(0);
+    expect(mintedCollection).toEqual(registry.address);
+    expect(mintedOwner!).toEqual(bidder.address);
+
+    val plateTwo = beginCell().storeUint(0x423132334243, 48).endCell();
+    val secondRequest = registry.sendStartPlateAuction(
+        secondBidder.address,
+        15,
+        plateTwo,
+        77,
+        { value: grams("3.2") },
+    );
+    val itemTwoAddress = registry.getNftAddressByIndex(1);
+    expect(secondRequest).toHaveSuccessfulDeploy({ to: itemTwoAddress });
+    expect(registry.getPlateItemAddress(plateTwo, 77)).toEqual(itemTwoAddress);
+
+    val finalCollectionData = registry.getCollectionData();
+    expect(finalCollectionData.0).toEqual(2);
+}
+
