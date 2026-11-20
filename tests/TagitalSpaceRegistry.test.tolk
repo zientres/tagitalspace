@@ -32,7 +32,7 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     val result = registry.sendStartPlateAuction(
         bidder.address,
         1,
-        beginCell().storeString("A123BC").endCell(),
+        beginCell().storeUint(0x413132334243, 48).endCell(),
         77,
         { value: grams("3.2") },
     );
