@@ -13,7 +13,7 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 - Each plate item stores its own auction, bidder and deadline.
 - Later bids, outbid refunds and settlement are handled by that item contract.
 - No shared Auction Manager is part of the intended architecture.
-- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer is non-bounceable and has not been tested in TVM.
+- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer uses `BounceMode.RichBounce`; the item has a claimable-payout liability and retry path. The current tests exercise a payout bounce and a failed retry, but do not yet cover every action-phase failure mode or Registry deployment bounce.
 
 ## Blocking findings
 
@@ -23,7 +23,7 @@ The new project-specific Tolk files, including the automatic settlement payout, 
 
 ### Critical — escrow and bounce safety are incomplete
 
-Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement sends the complete winning bid in a non-bounceable message; there is no bounce-recovery path. Action-phase rollback, fee coverage, settlement retries and recipient behavior are unverified. This remains a critical blocker before real funds are used.
+Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds still use direct non-bounceable messages and do not have a separately tracked refund liability. Settlement sends the complete winning bid with `BounceMode.RichBounce`. A bounced payout is recorded as a liability and can be retried. However, action-phase rollback, fee coverage, repeated retries, and recipient behavior still need exhaustive TVM tests. Outbid refunds remain non-bounceable and have no separate liability/recovery path. This remains a critical blocker before real funds are used.
 
 ### High — Registry deployment configuration is incomplete
 
@@ -33,9 +33,17 @@ Registry storage now requires the owner address, the fixed auction revenue addre
 
 NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. The item now supports owner-only annual renewal and expiration-triggered release on the next first-bid request; each completed auction pays its full proceeds immediately to the configured revenue address. Renewal currently has no configured protocol fee. Safe recovery from failed payout actions remains unimplemented.
 
-### High — payout recovery is not implemented
+### High — Registry deployment bounce recovery is missing
 
-The settlement transfer is non-bounceable and there is no recovery mechanism for a failed or misconfigured payout. The configured address is immutable after Registry deployment, so it must be checked carefully before deployment.
+The Registry sends the item deployment with `BounceMode.RichBounce`, but `TagitalSpaceRegistry.tolk` has no `onBouncedMessage` handler. If deployment fails after the Registry forwards the opening bid, the bounced value returns to the Registry rather than being refunded to the initiating wallet. This path needs a verified refund handler and dedicated Registry TVM tests.
+
+### High — outbid refund recovery is missing
+
+Outbid refunds are sent with `bounce: false`. If the previous bidder's address cannot receive the refund, the refund can be lost. There is no tracked refund liability or retry flow.
+
+### High — payout recovery needs more tests
+
+The item has a RichBounce-based liability and retry mechanism for revenue payouts. The configured revenue address is immutable after Registry deployment, so it must be checked carefully before deployment.
 
 ### High — frontend integration is not verified
 
