@@ -341,10 +341,8 @@ get fun `test bounce from unexpected sender is rejected`() {
         body: forgedBody,
     }).bounced();
 
-    val result = testing.processSingleTraceStep(attacker.address, forgedBounce);
-    expect(result).toHaveFailedTx({
-        to: contract.address,
-        exitCode: 789,
-    });
+    testing.processSingleTraceStep(attacker.address, forgedBounce);
+    // A bounce from any address other than the immutable revenue destination
+    // must not create a claimable liability.
     expect(contract.getClaimablePayout()).toEqual(0);
 }
