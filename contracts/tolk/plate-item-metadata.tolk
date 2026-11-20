@@ -6,20 +6,23 @@ fun tagitalSpaceBuildPlateItemContent(
 ): cell {
     val plate = plateBody;
     val region = regionCode as int;
-    val name = StringBuilder.create()
+    val name = StringBuilder
+        .create()
         .append("TagitalSpace ")
         .append(plate)
         .append(" · ")
         .appendInt(region)
         .build();
-    val description = StringBuilder.create()
+    val description = StringBuilder
+        .create()
         .append("Digital Russian license plate ")
         .append(plate)
         .append(" from region ")
         .appendInt(region)
         .append(", registered in TagitalSpace.")
         .build();
-    val attributes = StringBuilder.create()
+    val attributes = StringBuilder
+        .create()
         .append("[{\"trait_type\":\"Country\",\"value\":\"Russia\"},")
         .append("{\"trait_type\":\"Plate\",\"value\":\"")
         .append(plate)
@@ -27,7 +30,8 @@ fun tagitalSpaceBuildPlateItemContent(
         .appendInt(region)
         .append("\"}]")
         .build();
-    val imageData = StringBuilder.create()
+    val imageData = StringBuilder
+        .create()
         .append("<svg xmlns='http://www.w3.org/2000/svg' width='720' height='240' viewBox='0 0 720 240'>")
         .append("<rect width='720' height='240' rx='28' fill='#f8fafc'/>")
         .append("<rect x='14' y='14' width='692' height='212' rx='20' fill='white' stroke='#111827' stroke-width='12'/>")
@@ -50,8 +54,5 @@ fun tagitalSpaceBuildPlateItemContent(
     metadata.set("attributes".sha256(), attributes);
     metadata.set("image_data".sha256(), imageData);
 
-    return beginCell()
-        .storeUint(0, 8)
-        .storeDict(metadata.toLowLevelDict())
-        .endCell();
+    return beginCell().storeUint(0, 8).storeDict(metadata.toLowLevelDict()).endCell();
 }
