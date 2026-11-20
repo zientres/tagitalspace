@@ -4,4 +4,7 @@ struct TagitalSpaceRegistryStorage {
     ownerAddress: address
     auctionRevenueAddress: address
     nftItemCode: cell
+    // Failed Registry deployments remain claimable by their original bidder.
+    claimableRefunds: map<address, coins>
+    claimableRefundTotal: coins
 }
