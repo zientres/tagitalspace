@@ -32,19 +32,33 @@ fun onInternalMessage(in: InMessage) {
     val msg = lazy AllowedRegistryMessage.fromSlice(in.body);
     match (msg) {
         StartPlateAuction => {
-            val storage = TagitalSpaceRegistryStorage.load();
+            var storage = TagitalSpaceRegistryStorage.load();
             val prepared = tagitalSpacePrepareRussiaFirstBid(
                 msg.plateBody,
                 msg.regionCode,
                 msg.queryId,
                 in.valueCoins,
             );
+
+            val existingIndex = storage.itemIndexByIdentity.get(prepared.identityKey);
+            var nftIndex: uint64 = 0;
+            if (existingIndex.isFound) {
+                nftIndex = existingIndex.loadValue();
+            } else {
+                nftIndex = storage.nextItemIndex;
+                storage.nextItemIndex += 1;
+                storage.itemIndexByIdentity.set(prepared.identityKey, nftIndex);
+                storage.identityByItemIndex.set(nftIndex, prepared.identityKey);
+                storage.save();
+            }
+
             val deployItem = createMessage({
                 bounce: BounceMode.RichBounce,
                 dest: calcDeployedPlateItem(prepared.identityKey, storage.nftItemCode),
                 value: 0,
                 body: PlateItemInitData {
                     firstBidder: in.senderAddress,
+                    nftIndex,
                     firstBidAmount: prepared.startingPrice,
                     plateBody: msg.plateBody,
                     regionCode: msg.regionCode,
@@ -107,6 +121,9 @@ fun onBouncedMessage(in: InMessageBounced) {
         originalInfo.valueCoins,
     );
     assert (prepared.startingPrice == init.firstBidAmount) throw 739;
+    val registeredIndex = storage.itemIndexByIdentity.get(prepared.identityKey);
+    assert (registeredIndex.isFound) throw 739;
+    assert (registeredIndex.loadValue() == init.nftIndex) throw 739;
 
     val expectedItemAddress = calcDeployedPlateItem(
         prepared.identityKey,
