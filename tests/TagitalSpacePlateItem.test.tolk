@@ -178,3 +178,49 @@ get fun `test settlement deadline boundaries`() {
     });
     expect(contract.getAuctionInfo()).toBeNull();
 }
+
+
+get fun `test bounced revenue payout becomes claimable`() {
+    val collection = testing.treasury("bounce-collection");
+    val firstBidder = testing.treasury("bounce-first-bidder");
+    val revenueAddress = randomAddress("missing-revenue");
+
+    val contract = TagitalSpacePlateItem.fromStorage({
+        identityKey: 2,
+        collectionAddress: collection.address,
+    });
+
+    val initMessage = createMessage({
+        bounce: false,
+        value: grams("3.2"),
+        dest: {
+            workchain: contract.address.getWorkchain(),
+            stateInit: contract.stateInit!,
+        },
+        body: PlateItemInitData {
+            firstBidder: firstBidder.address,
+            firstBidAmount: grams("3"),
+            plateBody: beginCell().storeString("A123BC").endCell(),
+            regionCode: 77,
+            auctionRevenueAddress: revenueAddress,
+        },
+    });
+
+    val deployResult = net.send(collection.address, initMessage);
+    expect(deployResult).toHaveSuccessfulDeploy({ to: contract.address });
+
+    val auction = contract.getAuctionInfo()!;
+    testing.setNow((auction.auctionEndTime + 1) as uint32);
+
+    // The destination is an uninitialized address, so the RichBounce payout
+    // must return to the item and be recorded as a claimable liability.
+    val settlement = contract.sendSettlePlateAuction(
+        collection.address,
+        20,
+        { value: grams("0.1") },
+    );
+
+    expect(settlement).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getAuctionInfo()).toBeNull();
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
+}
