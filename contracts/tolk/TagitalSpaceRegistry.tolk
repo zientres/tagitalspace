@@ -43,6 +43,45 @@ fun onInternalMessage(in: InMessage) {
     }
 }
 
+
+fun onBouncedMessage(in: InMessageBounced) {
+    val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
+    val init = lazy PlateItemInitData.fromSlice(rich.originalBody.beginParse());
+    val originalInfo = rich.originalInfo.load();
+    val storage = TagitalSpaceRegistryStorage.load();
+
+    // A Registry deployment bounce must come from the deterministic item
+    // address for the exact plate and region encoded in the original init.
+    assert (init.auctionRevenueAddress == storage.auctionRevenueAddress) throw 739;
+    assert (init.firstBidAmount > 0) throw 739;
+    assert (originalInfo.valueCoins >= init.firstBidAmount + 150_000_000) throw 739;
+
+    val prepared = tagitalSpacePrepareRussiaFirstBid(
+        init.plateBody,
+        init.regionCode,
+        1,
+        originalInfo.valueCoins,
+    );
+    assert (prepared.startingPrice == init.firstBidAmount) throw 739;
+
+    val expectedItemAddress = calcDeployedPlateItem(
+        prepared.identityKey,
+        storage.nftItemCode,
+    ).calculateAddress();
+    assert (in.senderAddress == expectedItemAddress) throw 739;
+    assert (in.valueCoins > 0) throw 739;
+
+    // Return the value that actually bounced (after network fees) to the
+    // wallet that initiated this specific first-bid request.
+    val refund = createMessage({
+        bounce: false,
+        dest: init.firstBidder,
+        value: 0,
+        body: PlateItemExcesses { queryId: blockchain.logicalTime() as uint64 },
+    });
+    refund.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+}
+
 get fun get_plate_item_address(plateBody: cell, regionCode: uint16): address {
     val storage = TagitalSpaceRegistryStorage.load();
     val plate = plateBody.beginParse();
