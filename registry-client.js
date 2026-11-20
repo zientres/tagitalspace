@@ -10,7 +10,7 @@
 
     function loadRuntime() {
         if (!runtimePromise) {
-            runtimePromise = import("https://esm.sh/@ton/ton@15.1.0?bundle").then((ton) => {
+            runtimePromise = import("https://esm.sh/@ton/ton@16.3.0?bundle").then((ton) => {
                 if (!ton.TonClient || !ton.Address || !ton.beginCell || !ton.TupleBuilder) {
                     throw new Error("Не удалось загрузить TON SDK.");
                 }
