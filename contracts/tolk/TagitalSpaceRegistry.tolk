@@ -1,10 +1,10 @@
-import "registry-state"
-import "registry-messages"
-import "plate-item-messages"
-import "registry-storage"
-import "registry-request"
-import "plate-item-state"
 import "plate-identity"
+import "plate-item-messages"
+import "plate-item-state"
+import "registry-messages"
+import "registry-request"
+import "registry-state"
+import "registry-storage"
 import "russia-regions"
 
 contract TagitalSpaceRegistry {
@@ -33,7 +33,10 @@ fun onInternalMessage(in: InMessage) {
         StartPlateAuction => {
             val storage = TagitalSpaceRegistryStorage.load();
             val prepared = tagitalSpacePrepareRussiaFirstBid(
-                msg.plateBody, msg.regionCode, msg.queryId, in.valueCoins,
+                msg.plateBody,
+                msg.regionCode,
+                msg.queryId,
+                in.valueCoins,
             );
             val deployItem = createMessage({
                 bounce: BounceMode.RichBounce,
