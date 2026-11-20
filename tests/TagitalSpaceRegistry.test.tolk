@@ -158,3 +158,31 @@ get fun `test Registry rejects empty-body messages from non-owner`() {
     });
 }
 
+get fun `test Registry restores a refund when the bidder claim bounces`() {
+    val owner = testing.treasury("registry-retry-owner");
+    val bidder = randomAddress("registry-retry-unavailable-bidder");
+    val revenue = testing.treasury("registry-retry-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpaceRegistry"));
+
+    val request = registry.sendStartPlateAuction(
+        bidder,
+        6,
+        beginCell().storeUint(0x413132334243, 48).endCell(),
+        77,
+        { value: grams("3.2") },
+    );
+    expect(request).toHaveSuccessfulTx({ to: registry.address });
+
+    val originalClaim = registry.getClaimableRefund(bidder);
+    expect(originalClaim > 0).toEqual(true);
+
+    val failedClaim = registry.sendClaimRegistryRefund(
+        bidder,
+        7,
+        { value: grams("0.1") },
+    );
+    expect(failedClaim).toHaveSuccessfulTx({ to: registry.address });
+    expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
+    expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+}
+
