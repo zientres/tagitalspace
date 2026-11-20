@@ -41,7 +41,7 @@ jobs:
         run: acton test
 
       - name: Check Tolk formatting
-        run: acton fmt --check contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk
+        run: acton fmt --check contracts/tolk/TagitalSpaceRegistry.tolk contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk
 
       - name: Lint Tolk contracts
         run: acton check --output-format github
