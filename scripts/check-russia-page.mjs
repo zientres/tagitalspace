@@ -16,8 +16,8 @@ if (blocks.length === 0) {
 
 blocks.forEach(([, , source], index) => {
     new Script(source, {
-        filename: \`From/Russia/Russia.html:inline-script-\${index + 1}\`,
+        filename: "From/Russia/Russia.html:inline-script-" + (index + 1),
     });
 });
 
-process.stdout.write(\`Validated \${blocks.length} inline JavaScript block(s) in Russia.html\n\`);
+process.stdout.write("Validated " + blocks.length + " inline JavaScript block(s) in Russia.html\n");
