@@ -73,7 +73,7 @@ fun onInternalMessage(in: InMessage) {
             tagitalSpaceClaimRegistryRefund(
                 in.senderAddress,
                 in.valueCoins,
-                mutate storage,
+                mutate _storage,
                 msg.queryId,
             );
         }
@@ -84,7 +84,7 @@ fun onBouncedMessage(in: InMessageBounced) {
     val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
     val originalBody = rich.originalBody.beginParse();
     val opcode = originalBody.preloadUint(32);
-    var storage = TagitalSpaceRegistryStorage.load();
+    var _storage = TagitalSpaceRegistryStorage.load();
 
     if (opcode == 0x54530003) {
         val refund = lazy RegistryRefund.fromSlice(rich.originalBody.beginParse());
@@ -102,7 +102,7 @@ fun onBouncedMessage(in: InMessageBounced) {
             refund.amount,
             mutate storage,
         );
-        storage.save();
+        _storage.save();
         return;
     }
 
@@ -139,9 +139,9 @@ fun onBouncedMessage(in: InMessageBounced) {
     tagitalSpaceRegistryRecordClaimableRefund(
         init.firstBidder,
         in.valueCoins,
-        mutate storage,
+        mutate _storage,
     );
-    storage.save();
+    _storage.save();
 }
 
 get fun get_plate_item_address(plateBody: string, regionCode: uint16): address {
