@@ -5,6 +5,14 @@ const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600
 const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60
 const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05")
 const TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER = grams("0.05")
+const TAGITALSPACE_ITEM_REFUND_FEE_BUFFER = grams("0.05")
+
+fun tagitalSpaceItemActiveBidAmount(storage: PlateItemStorageInitialized): coins {
+    if (storage.auction == null) {
+        return 0;
+    }
+    return storage.auction!.load().highestBid;
+}
 
 fun tagitalSpaceProcessPlateBid(
     senderAddress: address,
@@ -15,16 +23,29 @@ fun tagitalSpaceProcessPlateBid(
 ) {
     assert (blockchain.now() <= auction.auctionEndTime) throw 770;
     assert (bidAmount >= auction.highestBid * 105 / 100) throw 771;
-    assert (valueCoins >= bidAmount) throw 772;
+    assert (valueCoins >= bidAmount + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER) throw 772;
+
+    // Preserve all previous refund and revenue liabilities, the current escrow,
+    // and the minimum storage reserve before creating the outbid refund.
     val balanceBeforeMessage = contract.getOriginalBalance();
-    assert (balanceBeforeMessage >= auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE) throw 772;
+    assert (
+        balanceBeforeMessage >=
+        auction.highestBid + storage.claimablePayout +
+        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE
+    ) throw 772;
+
     val refund = createMessage({
-        bounce: false,
+        bounce: BounceMode.RichBounce,
         dest: auction.highestBidder,
         value: auction.highestBid,
-        body: PlateItemOutbid { queryId: blockchain.logicalTime() as uint64 },
+        body: PlateItemBidRefund {
+            queryId: blockchain.logicalTime() as uint64,
+            recipient: auction.highestBidder,
+            amount: auction.highestBid,
+        },
     });
     refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+
     auction.highestBidder = senderAddress;
     auction.highestBid = bidAmount;
     if (auction.auctionEndTime - blockchain.now() < TAGITALSPACE_ITEM_AUCTION_DURATION) {
@@ -42,10 +63,12 @@ fun tagitalSpaceSettlePlateAuction(
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
-    // Include the settlement message value and retain storage plus a fee buffer.
+    // Preserve previous payout/refund liabilities and the item storage reserve.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-        auction.highestBid + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        auction.highestBid + storage.claimablePayout +
+        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE +
+        TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 786;
     val immutable = storage.immutable.load();
     storage.ownerAddress = auction.highestBidder;
@@ -71,10 +94,12 @@ fun tagitalSpaceRetryPlatePayout(
 ) {
     val amount = storage.claimablePayout;
     assert (amount > 0) throw 787;
-    // The caller may top up bounce/forward fees; the full winning bid is never reduced.
+    // Keep all bidder refunds, any active bid, and storage funded while retrying.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-        amount + TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        amount + storage.claimableRefundTotal +
+        tagitalSpaceItemActiveBidAmount(storage) +
+        TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 788;
     val immutable = storage.immutable.load();
     storage.claimablePayout = 0;
@@ -86,6 +111,46 @@ fun tagitalSpaceRetryPlatePayout(
         body: PlateItemRevenuePayout { queryId, amount },
     });
     payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+}
+
+fun tagitalSpaceClaimPlateItemRefund(
+    senderAddress: address,
+    valueCoins: coins,
+    mutate storage: PlateItemStorageInitialized,
+    queryId: uint64,
+) {
+    var refunds = storage.claimableRefunds;
+    val lookup = refunds.get(senderAddress);
+    assert (lookup.isFound) throw 800;
+    val amount = lookup.loadValue();
+    assert (amount > 0) throw 800;
+    assert (storage.claimableRefundTotal >= amount) throw 800;
+
+    // Refund claims may not consume the active auction escrow, revenue payout
+    // liability, other bidders' refunds, or the minimum storage reserve.
+    assert (
+        contract.getOriginalBalance() + valueCoins >=
+        storage.claimableRefundTotal + storage.claimablePayout +
+        tagitalSpaceItemActiveBidAmount(storage) +
+        TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER
+    ) throw 801;
+
+    refunds.delete(senderAddress);
+    storage.claimableRefunds = refunds;
+    storage.claimableRefundTotal -= amount;
+    storage.save();
+
+    val refund = createMessage({
+        bounce: BounceMode.RichBounce,
+        dest: senderAddress,
+        value: amount,
+        body: PlateItemBidRefund {
+            queryId,
+            recipient: senderAddress,
+            amount,
+        },
+    });
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
 }
 
 fun tagitalSpaceRenewPlateOwnership(
