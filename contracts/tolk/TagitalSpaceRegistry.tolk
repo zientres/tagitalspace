@@ -78,7 +78,7 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (in.senderAddress == refund.recipient) throw 743;
         assert (refund.amount > 0) throw 743;
         assert (refund.amount == originalInfo.valueCoins) throw 743;
-        assert (in.valueCoins > 0) throw 743;
+        assert (in.valueCoins + TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER >= refund.amount) throw 743;
 
         // Restore the full claim; the claimant's attached fee buffer covers
         // the bounce cost if the receiving wallet/contract rejects the retry.
