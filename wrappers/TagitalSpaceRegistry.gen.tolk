@@ -33,7 +33,7 @@ fun TagitalSpaceRegistry.deploy(
     if (self.stateInit == null) {
         Assert.fail("Cannot deploy a contract created with 'fromAddress' because it lacks state init for deployment");
     }
-    val message = createMessage({
+    val deployMessage = createMessage({
         bounce: config.bounce,
         value: config.value,
         dest: {
@@ -42,7 +42,7 @@ fun TagitalSpaceRegistry.deploy(
             toShard: self.toShard,
         },
     });
-    return net.send(from, message);
+    return net.send(from, deployMessage);
 }
 
 fun TagitalSpaceRegistry.sendStartPlateAuction(
@@ -53,13 +53,13 @@ fun TagitalSpaceRegistry.sendStartPlateAuction(
     regionCode: uint16,
     config: SendParams = {},
 ): SendResultList {
-    val message = createMessage({
+    val startAuctionMessage = createMessage({
         bounce: config.bounce,
         value: config.value,
         dest: self.address,
         body: StartPlateAuction { queryId, plateBody, regionCode },
     });
-    return net.send(from, message);
+    return net.send(from, startAuctionMessage);
 }
 
 fun TagitalSpaceRegistry.sendClaimRegistryRefund(
@@ -68,13 +68,13 @@ fun TagitalSpaceRegistry.sendClaimRegistryRefund(
     queryId: uint64,
     config: SendParams = {},
 ): SendResultList {
-    val message = createMessage({
+    val claimRefundMessage = createMessage({
         bounce: config.bounce,
         value: config.value,
         dest: self.address,
         body: ClaimRegistryRefund { queryId },
     });
-    return net.send(from, message);
+    return net.send(from, claimRefundMessage);
 }
 
 fun TagitalSpaceRegistry.getPlateItemAddress(
