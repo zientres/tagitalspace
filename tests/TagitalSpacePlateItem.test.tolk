@@ -422,6 +422,17 @@ get fun `test original bidder can claim a bounced refund`() {
     testing.processSingleTraceStep(firstBidder.address, bouncedMessage);
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
 
+    val unauthorizedClaim = contract.sendClaimPlateItemRefund(
+        secondBidder.address,
+        50,
+        { value: grams("0.1") },
+    );
+    expect(unauthorizedClaim).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 800,
+    });
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
+
     val claim = contract.sendClaimPlateItemRefund(
         firstBidder.address,
         51,
@@ -433,6 +444,73 @@ get fun `test original bidder can claim a bounced refund`() {
         to: firstBidder.address,
         value: grams("3"),
     });
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
+    expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
+get fun `test bounced refund with mismatched amount is rejected`() {
+    val (contract, _, firstBidder, _, _, _) = setupTest();
+
+    val originalBody = PlateItemBidRefund {
+        queryId: 60,
+        recipient: firstBidder.address,
+        amount: grams("4"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("3"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(firstBidder.address, forgedBounce);
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
+    expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
+get fun `test bounced refund from unexpected sender is rejected`() {
+    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val attacker = testing.treasury("refund-bounce-attacker");
+
+    val originalBody = PlateItemBidRefund {
+        queryId: 61,
+        recipient: firstBidder.address,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("3"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    testing.processSingleTraceStep(attacker.address, forgedBounce);
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
     expect(contract.getClaimableRefundTotal()).toEqual(0);
 }
