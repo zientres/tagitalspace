@@ -868,8 +868,28 @@
           } else {
             addResultText(card, "registry-result-detail",
               auction.status === 1
-                ? localized("Аукцион завершён, ожидается подтверждение выпуска NFT.", "Auction ended; NFT mint confirmation is pending.")
+                ? localized("Время торгов истекло. Любой пользователь может завершить аукцион.", "Bidding time has ended. Anyone can settle the auction.")
                 : localized("Аукцион без ставок проходит процедуру закрытия.", "The no-bid auction is being closed."));
+            if (auction.status === 1) {
+              const settleButton = document.createElement("button");
+              settleButton.type = "button";
+              settleButton.className = "primary-button registry-action-button";
+              settleButton.textContent = localized("Завершить аукцион", "Settle auction");
+              settleButton.addEventListener("click", async () => {
+                settleButton.disabled = true;
+                settleButton.textContent = localized("Ожидание подтверждения…", "Waiting for confirmation…");
+                try {
+                  await window.tagitalSpaceRegistry.settleAuction(auction.auctionId);
+                  const updated = await window.tagitalSpaceRegistry.lookupRussianPlate(searchedPlate);
+                  renderLookup(searchedPlate, updated, localized("Аукцион завершён, NFT зарегистрирован за победителем.", "Auction settled; the NFT is now assigned to the winner."));
+                } catch (error) {
+                  settleButton.disabled = false;
+                  settleButton.textContent = localized("Завершить аукцион", "Settle auction");
+                  addResultText(card, "registry-result-message", error.message || localized("Не удалось завершить аукцион.", "Could not settle the auction."));
+                }
+              });
+              card.append(settleButton);
+            }
           }
         } else if (lookup.status === "minted") {
           addResultText(card, "registry-result-detail",
