@@ -277,3 +277,77 @@ get fun `test failed retry restores claimable payout`() {
     expect(retry).toHaveSuccessfulTx({ to: contract.address });
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
+
+
+get fun `test forged bounce with mismatched amount is rejected`() {
+    val (contract, _, _, _, _, revenue) = setupTest();
+
+    val originalBody = PlateItemRevenuePayout {
+        queryId: 40,
+        amount: grams("4"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: null,
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("0.1"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    val result = testing.processSingleTraceStep(revenue.address, forgedBounce);
+    expect(result).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 789,
+    });
+    expect(contract.getClaimablePayout()).toEqual(0);
+}
+
+get fun `test bounce from unexpected sender is rejected`() {
+    val (contract, _, _, _, _, revenue) = setupTest();
+    val attacker = testing.treasury("bounce-attacker");
+
+    val originalBody = PlateItemRevenuePayout {
+        queryId: 41,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: null,
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val forgedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+
+    val forgedBounce = createMessage({
+        bounce: false,
+        value: grams("0.1"),
+        dest: contract.address,
+        body: forgedBody,
+    }).bounced();
+
+    val result = testing.processSingleTraceStep(attacker.address, forgedBounce);
+    expect(result).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 789,
+    });
+    expect(contract.getClaimablePayout()).toEqual(0);
+}
