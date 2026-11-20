@@ -282,9 +282,35 @@
         return transaction;
     }
 
+    async function settleAuction(auctionId) {
+        const runtime = await getClientContext();
+        const itemAddress = runtime.Address.parse(auctionId);
+        const state = await getPlateState(runtime.client, itemAddress);
+        if (state.status !== 2) {
+            throw new Error("Аукцион ещё не завершён или уже обработан.");
+        }
+
+        const body = runtime.beginCell()
+            .storeUint(0x54531001, 32)
+            .storeUint(BigInt(Date.now()), 64)
+            .endCell();
+        const transaction = await sendWalletTransaction(
+            runtime,
+            itemAddress,
+            100_000_000n,
+            body,
+        );
+        await waitForConfirmation(async () => {
+            const updated = await getPlateState(runtime.client, itemAddress);
+            return updated.status === 3;
+        }, "завершение аукциона");
+        return transaction;
+    }
+
     window.tagitalSpaceRegistry = Object.freeze({
         lookupRussianPlate,
         startRussianAuctionWithFirstBid,
         placeBid,
+        settleAuction,
     });
 })();
