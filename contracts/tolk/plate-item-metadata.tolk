@@ -1,10 +1,10 @@
 import "@stdlib/strings"
 
 fun tagitalSpaceBuildPlateItemContent(
-    plateBody: cell,
+    plateBody: string,
     regionCode: uint16,
 ): cell {
-    val plate = plateBody as string;
+    val plate = plateBody;
     val region = regionCode as int;
     val name = StringBuilder.create()
         .append("TagitalSpace ")
