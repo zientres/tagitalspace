@@ -290,6 +290,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(collectionContentSlice.loadUint(1)).toEqual(1);
 
     val plateOne = "A123BC";
+    expect(registry.getPlateStartingPrice(plateOne)).toEqual(grams("3"));
     val firstRequest = registry.sendStartPlateAuction(
         bidder.address,
         12,
@@ -308,6 +309,11 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(itemIndex).toEqual(0);
     expect(collectionAddress).toEqual(registry.address);
     expect(nftOwner).toBeNull();
+    val (auctionStatus, auctionOwner, auctionBid, auctionEnd, _) = itemOne.getPlateState();
+    expect(auctionStatus).toEqual(1);
+    expect(auctionOwner).toBeNull();
+    expect(auctionBid).toEqual(grams("3"));
+    expect(auctionEnd).toEqual(itemOne.getAuctionInfo()!.auctionEndTime);
 
     var itemContentSlice = individualContent.beginParse();
     expect(itemContentSlice.loadUint(8)).toEqual(0);
@@ -349,6 +355,9 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(mintedIndex).toEqual(0);
     expect(mintedCollection).toEqual(registry.address);
     expect(mintedOwner!).toEqual(bidder.address);
+    val (mintedStatus, stateOwner, _, _, _) = itemOne.getPlateState();
+    expect(mintedStatus).toEqual(3);
+    expect(stateOwner!).toEqual(bidder.address);
 
     val plateTwo = "B123BC";
     val secondRequest = registry.sendStartPlateAuction(
