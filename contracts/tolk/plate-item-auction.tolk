@@ -14,6 +14,23 @@ fun tagitalSpaceItemActiveBidAmount(storage: PlateItemStorageInitialized): coins
     return storage.auction!.load().highestBid;
 }
 
+fun tagitalSpaceRecordClaimableRefund(
+    recipient: address,
+    amount: coins,
+    mutate storage: PlateItemStorageInitialized,
+) {
+    assert (amount > 0) throw 799;
+    var refunds = storage.claimableRefunds;
+    val previous = refunds.get(recipient);
+    var claimableAmount = amount;
+    if (previous.isFound) {
+        claimableAmount += previous.loadValue();
+    }
+    refunds.set(recipient, claimableAmount);
+    storage.claimableRefunds = refunds;
+    storage.claimableRefundTotal += amount;
+}
+
 fun tagitalSpaceProcessPlateBid(
     senderAddress: address,
     valueCoins: coins,
