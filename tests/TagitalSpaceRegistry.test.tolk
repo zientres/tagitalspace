@@ -285,7 +285,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     val initialCollectionData = registry.getCollectionData();
     expect(initialCollectionData.0).toEqual(0);
     expect(initialCollectionData.2).toEqual(owner.address);
-    val collectionContentSlice = initialCollectionData.1.beginParse();
+    var collectionContentSlice = initialCollectionData.1.beginParse();
     expect(collectionContentSlice.loadUint(8)).toEqual(0);
     expect(collectionContentSlice.loadUint(1)).toEqual(1);
 
@@ -309,7 +309,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(collectionAddress).toEqual(registry.address);
     expect(nftOwner).toBeNull();
 
-    val itemContentSlice = individualContent.beginParse();
+    var itemContentSlice = individualContent.beginParse();
     expect(itemContentSlice.loadUint(8)).toEqual(0);
     expect(itemContentSlice.loadUint(1)).toEqual(1);
     expect(registry.getNftContent(0, individualContent).hash()).toEqual(individualContent.hash());
