@@ -7,12 +7,14 @@ on:
       - "Acton.toml"
       - "contracts/tolk/**"
       - "contracts/tests/**"
+      - "tests/**"
       - ".github/workflows/acton-contracts.yml"
   pull_request:
     paths:
       - "Acton.toml"
       - "contracts/tolk/**"
       - "contracts/tests/**"
+      - "tests/**"
       - ".github/workflows/acton-contracts.yml"
 
 permissions: {}
@@ -34,6 +36,9 @@ jobs:
 
       - name: Build contracts
         run: acton build
+
+      - name: Run Acton TVM tests
+        run: acton test
 
       - name: Check Tolk formatting
         run: acton fmt --check contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk
