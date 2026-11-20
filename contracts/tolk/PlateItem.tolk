@@ -1,5 +1,8 @@
+import "plate-identity"
 import "plate-item-auction"
 import "plate-item-messages"
+import "plate-pricing"
+import "russia-regions"
 import "plate-item-metadata"
 import "plate-item-state"
 import "registry-messages"
@@ -36,6 +39,14 @@ fun onInternalMessage(in: InMessage) {
         assert (in.senderAddress == uninitialized.collectionAddress) throw 775;
 
         val init = lazy PlateItemInitData.fromSlice(in.body);
+        val initPlate = init.plateBody.beginParse();
+        assert (tagitalSpaceValidateRussiaRegionCode(init.regionCode as int)) throw 807;
+        assert (
+            tagitalSpaceBuildPlateIdentity(initPlate, init.regionCode as int).hash() ==
+            uninitialized.identityKey
+        ) throw 808;
+        assert (tagitalSpacePlateStartPrice(initPlate) == init.firstBidAmount) throw 809;
+        assert (init.auctionRevenueAddress.getWorkchain() == BASECHAIN) throw 810;
         assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
         val initialAuction = PlateAuctionState {
             highestBidder: init.firstBidder,
@@ -71,6 +82,14 @@ fun onInternalMessage(in: InMessage) {
     if (in.senderAddress == immutable.collectionAddress && in.body.preloadUint(32) == 0x54531006) {
         val init = lazy PlateItemInitData.fromSlice(in.body);
         assert (init.nftIndex == immutable.nftIndex) throw 804;
+        val initPlate = init.plateBody.beginParse();
+        assert (tagitalSpaceValidateRussiaRegionCode(init.regionCode as int)) throw 804;
+        assert (
+            tagitalSpaceBuildPlateIdentity(initPlate, init.regionCode as int).hash() ==
+            immutable.identityKey
+        ) throw 804;
+        assert (tagitalSpacePlateStartPrice(initPlate) == init.firstBidAmount) throw 804;
+        assert (init.auctionRevenueAddress == immutable.auctionRevenueAddress) throw 804;
         val expirationTime = storage.lastRenewalTime + TAGITALSPACE_ITEM_OWNERSHIP_PERIOD;
         val isExpired = storage.ownerAddress != null && storage.auction == null &&
             blockchain.now() >= expirationTime;
