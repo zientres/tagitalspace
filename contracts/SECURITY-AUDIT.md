@@ -19,7 +19,7 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ### Verification progress — build and core TVM paths now pass
 
-The current branch compiles with Acton 1.2.1 and passes 16 TVM tests: 11 PlateItem tests and 5 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+The current branch compiles with Acton 1.2.1 and passes 17 TVM tests: 11 PlateItem tests and 6 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
 
 ### Critical — escrow and bounce safety are incomplete
 
@@ -35,11 +35,11 @@ NFT ownership is recorded after settlement and can be transferred by its current
 
 ### High — Registry deployment bounce recovery needs expanded testing
 
-The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then records the value actually bounced (after network fees) as a claimable refund for the original first bidder. The bidder claims it through `ClaimRegistryRefund`; if that transfer bounces, the Registry restores the liability. Duplicate first-bid requests against an existing item are also recorded as claimable refunds inside that item instead of being sent through a non-bounceable transfer. CI covers a real Registry deployment bounce followed by a successful claim, and a duplicate request that creates a claimable balance. Multi-bounce and action-phase failure cases still require review.
+The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then records the value actually bounced (after network fees) as a claimable refund for the original first bidder. The bidder claims it through `ClaimRegistryRefund`; if that transfer bounces, the Registry restores the liability. Duplicate first-bid requests against an existing item are also recorded as claimable refunds inside that item instead of being sent through a non-bounceable transfer. CI covers a real Registry deployment bounce followed by a successful claim, a failed Registry refund claim that bounces and restores the liability, and a duplicate request that creates a claimable balance. Multi-bounce and action-phase failure cases still require review.
 
 ### High — outbid refund recovery needs expanded adversarial testing
 
-The recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. Registry deployment failures and duplicate first-bid requests also create claimable balances. CI covers the Registry deployment bounce/claim, duplicate request accounting, an outbid refund bounce/claim, and rejection of mismatched or unexpected refund bounces. Remaining tests should cover repeated failed claims, multiple bidders with simultaneous liabilities, fee exhaustion, and preservation of all liabilities through settlement and renewal.
+The recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. Registry deployment failures and duplicate first-bid requests also create claimable balances. CI covers the Registry deployment bounce/claim and failed-claim restoration, duplicate request accounting, an outbid refund bounce/claim and failed-claim restoration, multiple bidder refund isolation, and rejection of mismatched or unexpected refund bounces. Remaining tests should cover repeated failed claims, multiple bidders with simultaneous liabilities, fee exhaustion, and preservation of all liabilities through settlement and renewal.
 
 ### High — payout recovery needs more tests
 
