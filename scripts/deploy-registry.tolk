@@ -1,15 +1,13 @@
+import "../.acton/build"
 import "../.acton/io"
+import "../.acton/prompts"
+import "../wrappers/TagitalSpaceRegistry.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/scripts"
-import "../.acton/build"
-import "../.acton/prompts"
 import "../.acton/testing/assert"
-
-import "../wrappers/TagitalSpaceRegistry.gen"
 import "../contracts/tolk/registry-storage"
 
-const TAGITALSPACE_TESTNET_REVENUE_ADDRESS =
-    address("0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi")
+const TAGITALSPACE_TESTNET_REVENUE_ADDRESS = address("0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi")
 
 fun main() {
     val deployer = scripts.wallet(promptWallet("Select the Registry owner/deployer wallet:"));
