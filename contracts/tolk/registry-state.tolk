@@ -7,4 +7,7 @@ struct TagitalSpaceRegistryStorage {
     // Failed Registry deployments remain claimable by their original bidder.
     claimableRefunds: map<address, coins>
     claimableRefundTotal: coins
+    nextItemIndex: uint64
+    itemIndexByIdentity: map<uint256, uint64>
+    identityByItemIndex: map<uint64, uint256>
 }
