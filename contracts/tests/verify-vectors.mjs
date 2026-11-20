@@ -140,6 +140,8 @@ const itemState = readFileSync(resolve(here, "../tolk/plate-item-state.tolk"), "
 const itemMessages = readFileSync(resolve(here, "../tolk/plate-item-messages.tolk"), "utf8");
 const itemAuction = readFileSync(resolve(here, "../tolk/plate-item-auction.tolk"), "utf8");
 const itemContract = readFileSync(resolve(here, "../tolk/PlateItem.tolk"), "utf8");
+const registryMetadata = readFileSync(resolve(here, "../tolk/registry-metadata.tolk"), "utf8");
+const itemMetadata = readFileSync(resolve(here, "../tolk/plate-item-metadata.tolk"), "utf8");
 
 // Every item settlement sends the exact winning bid to the immutable revenue
 // recipient. A bounced transfer restores the full amount as a retryable liability.
@@ -164,6 +166,24 @@ assert.match(itemState, /claimableRefunds: map<address, coins>/);
 assert.match(itemState, /claimableRefundTotal: coins/);
 assert.match(itemMessages, /ClaimPlateItemRefund/);
 assert.match(itemMessages, /PlateItemBidRefund/);
+assert.match(itemMessages, /GetNftStaticData/);
+assert.match(itemMessages, /ReportNftStaticData/);
+assert.match(itemState, /nftIndex: uint64/);
+assert.match(registryProtocol, /nftIndex: uint64/);
+assert.match(registryState, /nextItemIndex: uint64/);
+assert.match(registryState, /itemIndexByIdentity: map<uint256, uint64>/);
+assert.match(registryState, /identityByItemIndex: map<uint64, uint256>/);
+assert.match(registryContract, /get_collection_data/);
+assert.match(registryContract, /get_nft_address_by_index/);
+assert.match(registryContract, /get_nft_content/);
+assert.match(itemContract, /get_plate_data/);
+assert.match(itemContract, /get_nft_data/);
+assert.match(itemContract, /GetNftStaticData =>/);
+assert.match(itemContract, /0x5fcc3d14/);
+assert.match(itemContract, /throw 805/);
+assert.match(registryMetadata, /TagitalSpace/);
+assert.match(itemMetadata, /image_data/);
+assert.match(itemMetadata, /attributes/);
 
 const protocolOpcodes = [...registryProtocol.matchAll(/struct \(0x([0-9A-Fa-f]{8})\) ([A-Za-z0-9_]+)/g)];
 assert.equal(protocolOpcodes.length, 4, "Registry auction and refund protocol messages are expected");
@@ -191,7 +211,7 @@ assert.match(registryRequest, /startingPrice \+ 150_000_000/);
 assert.match(itemContract, /highestBid: init\.firstBidAmount/);
 assert.match(itemMessages, /bidAmount: coins/);
 assert.match(itemContract, /msg\.bidAmount/);
-assert.match(itemAuction, /valueCoins >= bidAmount/);
+assert.match(itemAuction, /valueCoins >= bidAmount \+ TAGITALSPACE_ITEM_REFUND_FEE_BUFFER/);
 assert.match(itemAuction, /auction\.highestBid = bidAmount/);
 assert.match(registryProtocol, /struct \(0x54531006\) PlateItemInitData/);
 assert.match(itemContract, /tagitalSpaceProcessPlateBid/);
