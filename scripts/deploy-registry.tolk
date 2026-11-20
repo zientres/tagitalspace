@@ -37,7 +37,7 @@ fun main() {
     println(
         "Sample item address (A123BC / region 77): {}",
         registry.getPlateItemAddress(
-            beginCell().storeUint(0x413132334243, 48).endCell(),
+            "A123BC",
             77,
         ),
     );
