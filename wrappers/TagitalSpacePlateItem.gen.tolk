@@ -98,6 +98,21 @@ fun TagitalSpacePlateItem.sendRetryPlateItemPayout(
     return net.send(from, genericMsg);
 }
 
+fun TagitalSpacePlateItem.sendClaimPlateItemRefund(
+    self,
+    from: address,
+    queryId: uint64,
+    config: SendParams = {},
+): SendResultList {
+    val genericMsg = createMessage({
+        bounce: config.bounce,
+        value: config.value,
+        dest: self.address,
+        body: ClaimPlateItemRefund { queryId },
+    });
+    return net.send(from, genericMsg);
+}
+
 fun TagitalSpacePlateItem.sendRenewPlateOwnership(
     self,
     from: address,
@@ -155,6 +170,17 @@ fun TagitalSpacePlateItem.getAuctionInfo(self): PlateAuctionState? {
 
 fun TagitalSpacePlateItem.getClaimablePayout(self): coins {
     return net.runGetMethod(self.address, "get_claimable_payout");
+}
+
+fun TagitalSpacePlateItem.getClaimableRefund(
+    self,
+    ownerAddress: address,
+): coins {
+    return net.runGetMethod(self.address, "get_claimable_refund", [ownerAddress]);
+}
+
+fun TagitalSpacePlateItem.getClaimableRefundTotal(self): coins {
+    return net.runGetMethod(self.address, "get_claimable_refund_total");
 }
 
 fun TagitalSpacePlateItem.getExpirationTime(self): uint64 {
