@@ -25,8 +25,5 @@ fun tagitalSpacePrepareRussiaFirstBid(
     assert (attachedValue >= startingPrice + 150_000_000) throw 733;
 
     val identityCell = tagitalSpaceBuildPlateIdentity(plate, regionCode as int);
-    return {
-        identityKey: identityCell.hash(),
-        startingPrice,
-    };
+    return { identityKey: identityCell.hash(), startingPrice };
 }
