@@ -245,13 +245,7 @@ get fun get_nft_data(): (int, int, address, address?, cell) {
     val loading = startLoadingPlateItemStorage();
     if (!loading.isInitialized()) {
         val uninitialized = loading.parseNotInitialized();
-        return (
-            0,
-            0,
-            uninitialized.collectionAddress,
-            null,
-            beginCell().endCell(),
-        );
+        return (0, 0, uninitialized.collectionAddress, null, beginCell().endCell());
     }
 
     val storage = loading.parseInitialized();
@@ -269,13 +263,7 @@ get fun get_nft_data(): (int, int, address, address?, cell) {
         immutable.regionCode,
     );
 
-    return (
-        initialized,
-        immutable.nftIndex as int,
-        immutable.collectionAddress,
-        owner,
-        content,
-    );
+    return (initialized, immutable.nftIndex as int, immutable.collectionAddress, owner, content);
 }
 
 get fun get_auction_info(): PlateAuctionState? {
