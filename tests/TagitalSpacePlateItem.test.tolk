@@ -569,3 +569,86 @@ get fun `test bounced refund from unexpected sender is rejected`() {
     expect(contract.getClaimableRefundTotal()).toEqual(0);
 }
 
+get fun `test only the current owner can renew and renewal extends one year`() {
+    val (contract, collection, owner, secondBidder, _, _) = setupTest();
+    val auction = contract.getAuctionInfo()!;
+    testing.setNow((auction.auctionEndTime + 1) as uint32);
+
+    val settlement = contract.sendSettlePlateAuction(
+        collection.address,
+        70,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: contract.address });
+
+    val originalExpiration = contract.getExpirationTime();
+    val unauthorizedRenewal = contract.sendRenewPlateOwnership(
+        secondBidder.address,
+        71,
+        { value: grams("0.05") },
+    );
+    expect(unauthorizedRenewal).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 797,
+    });
+
+    testing.setNow((originalExpiration - 1) as uint32);
+    val renewal = contract.sendRenewPlateOwnership(
+        owner.address,
+        72,
+        { value: grams("0.05") },
+    );
+    expect(renewal).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getExpirationTime()).toEqual(
+        (testing.getNow() as uint64) + 365 * 24 * 60 * 60,
+    );
+
+    val renewedExpiration = contract.getExpirationTime();
+    testing.setNow(renewedExpiration as uint32);
+    val atExpiration = contract.sendRenewPlateOwnership(
+        owner.address,
+        73,
+        { value: grams("0.05") },
+    );
+    expect(atExpiration).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 798,
+    });
+}
+
+get fun `test only the owner can transfer plate ownership`() {
+    val (contract, collection, owner, secondBidder, thirdBidder, _) = setupTest();
+    val auction = contract.getAuctionInfo()!;
+    testing.setNow((auction.auctionEndTime + 1) as uint32);
+
+    val settlement = contract.sendSettlePlateAuction(
+        collection.address,
+        80,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: contract.address });
+
+    val unauthorizedTransfer = contract.sendTransferPlateOwnership(
+        secondBidder.address,
+        81,
+        thirdBidder.address,
+        { value: grams("0.05") },
+    );
+    expect(unauthorizedTransfer).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 792,
+    });
+
+    val transfer = contract.sendTransferPlateOwnership(
+        owner.address,
+        82,
+        secondBidder.address,
+        { value: grams("0.05") },
+    );
+    expect(transfer).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getNftData().ownerAddress!).toEqual(secondBidder.address);
+    expect(contract.getExpirationTime()).toEqual(
+        (testing.getNow() as uint64) + 365 * 24 * 60 * 60,
+    );
+}
+
