@@ -20,6 +20,14 @@ type AllowedRegistryMessage = StartPlateAuction
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and deploy that item with its opening bid.
 fun onInternalMessage(in: InMessage) {
+    // Allow the configured owner to deploy the Registry with an empty body.
+    // All later non-empty messages must use the typed auction request below.
+    if (in.body.isEmpty()) {
+        val storage = TagitalSpaceRegistryStorage.load();
+        assert (in.senderAddress == storage.ownerAddress) throw 734;
+        return;
+    }
+
     val msg = lazy StartPlateAuction.fromSlice(in.body);
     match (msg) {
         StartPlateAuction => {
