@@ -60,6 +60,7 @@ The selected wallet must be funded with Testnet TON. Review the wallet address, 
 - A bounced outbid refund is recorded per bidder; the bidder withdraws it with `ClaimPlateItemRefund`.
 - A failed refund claim is restored by RichBounce. Claim transactions must include the configured fee buffer.
 - A settled winning bid is sent in full to the fixed revenue address using RichBounce. If it bounces, the item records `claimablePayout` and can retry it with `RetryPlateItemPayout`.
+- The Registry and item expose the read-only TEP-62 collection/item getters and on-chain TEP-64 metadata. The standard TEP-62 transfer opcode is rejected intentionally; TagitalSpace's custom owner-authorized transfer remains separate. Actual Getgems Testnet indexing, SVG rendering and failed sale behavior must be verified after deploying and minting a test item.
 - Settlement, payout retries and refund claims preserve active auction escrow, outstanding refund/payout liabilities and the minimum storage reserve.
 
 These flows have emulator coverage, but the current source-level review is not an independent security audit. Multi-bounce adversarial cases, action-phase accounting, Testnet end-to-end behavior, frontend integration and independent review remain required before using real funds.
