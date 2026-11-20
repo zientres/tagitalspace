@@ -288,7 +288,7 @@ get fun `test forged bounce with mismatched amount is rejected`() {
     }.toCell();
     val originalInfo = RichBounceOriginalMsgInfo {
         valueCoins: grams("3"),
-        valueExtra: null,
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
         createdLt: 1,
         createdAt: testing.getNow(),
     }.toCell();
@@ -322,7 +322,7 @@ get fun `test bounce from unexpected sender is rejected`() {
     }.toCell();
     val originalInfo = RichBounceOriginalMsgInfo {
         valueCoins: grams("3"),
-        valueExtra: null,
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
         createdLt: 1,
         createdAt: testing.getNow(),
     }.toCell();
