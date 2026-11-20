@@ -1,4 +1,5 @@
 import "plate-identity"
+import "plate-pricing"
 import "plate-item-messages"
 import "plate-item-state"
 import "registry-messages"
@@ -155,6 +156,12 @@ get fun get_plate_item_address(plateBody: string, regionCode: uint16): address {
 
 get fun get_auction_revenue_address(): address {
     return TagitalSpaceRegistryStorage.load().auctionRevenueAddress;
+}
+
+get fun get_plate_starting_price(plateBody: string): coins {
+    val plate = plateBody.beginParse();
+    assert (tagitalSpaceValidatePlateBody(plate)) throw 730;
+    return tagitalSpacePlateStartPrice(plate);
 }
 
 get fun get_claimable_registry_refund(ownerAddress: address): coins {
