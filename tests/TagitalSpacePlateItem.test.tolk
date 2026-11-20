@@ -389,7 +389,7 @@ get fun `test bounced outbid refund becomes claimable`() {
 }
 
 get fun `test original bidder can claim a bounced refund`() {
-    val (contract, _, firstBidder, secondBidder, _, _) = setupTest();
+    val (contract, _, firstBidder, secondBidder, thirdBidder, _) = setupTest();
 
     // Seed the claim through a bounced message from the same address that
     // received the original refund. The value is actually attached to the test
@@ -422,8 +422,37 @@ get fun `test original bidder can claim a bounced refund`() {
     testing.processSingleTraceStep(firstBidder.address, bouncedMessage);
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
 
+    // A second bidder's liability must remain isolated in the address-keyed map.
+    val secondOriginalBody = PlateItemBidRefund {
+        queryId: 52,
+        recipient: secondBidder.address,
+        amount: grams("4"),
+    }.toCell();
+    val secondOriginalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("4"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 2,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val secondBounceBody = RichBounceBody {
+        originalBody: secondOriginalBody,
+        originalInfo: secondOriginalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val secondBouncedMessage = createMessage({
+        bounce: false,
+        value: grams("4"),
+        dest: contract.address,
+        body: secondBounceBody,
+    }).bounced();
+    testing.processSingleTraceStep(secondBidder.address, secondBouncedMessage);
+    expect(contract.getClaimableRefund(secondBidder.address)).toEqual(grams("4"));
+    expect(contract.getClaimableRefundTotal()).toEqual(grams("7"));
+
     val unauthorizedClaim = contract.sendClaimPlateItemRefund(
-        secondBidder.address,
+        thirdBidder.address,
         50,
         { value: grams("0.1") },
     );
@@ -445,6 +474,20 @@ get fun `test original bidder can claim a bounced refund`() {
         value: grams("3"),
     });
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(0);
+    expect(contract.getClaimableRefund(secondBidder.address)).toEqual(grams("4"));
+    expect(contract.getClaimableRefundTotal()).toEqual(grams("4"));
+
+    val secondClaim = contract.sendClaimPlateItemRefund(
+        secondBidder.address,
+        53,
+        { value: grams("0.1") },
+    );
+    expect(secondClaim).toHaveSuccessfulTx({ to: contract.address });
+    expect(secondClaim).toHaveTx({
+        to: secondBidder.address,
+        value: grams("4"),
+    });
+    expect(contract.getClaimableRefund(secondBidder.address)).toEqual(0);
     expect(contract.getClaimableRefundTotal()).toEqual(0);
 }
 
