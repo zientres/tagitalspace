@@ -37,7 +37,7 @@ fun tagitalSpaceProcessPlateBid(
     bidAmount: coins,
     mutate storage: PlateItemStorageInitialized,
     auctionState: PlateAuctionState,
- ) {
+) {
     var auction = auctionState;
     assert (blockchain.now() <= auction.auctionEndTime) throw 770;
     assert (bidAmount >= auction.highestBid * 105 / 100) throw 771;
