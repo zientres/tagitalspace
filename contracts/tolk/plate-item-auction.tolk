@@ -30,8 +30,8 @@ fun tagitalSpaceProcessPlateBid(
     val balanceBeforeMessage = contract.getOriginalBalance();
     assert (
         balanceBeforeMessage >=
-        auction.highestBid + storage.claimablePayout +
-        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE
+        auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
+        TAGITALSPACE_ITEM_MIN_STORAGE
     ) throw 772;
 
     val refund = createMessage({
@@ -66,8 +66,8 @@ fun tagitalSpaceSettlePlateAuction(
     // Preserve previous payout/refund liabilities and the item storage reserve.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-        auction.highestBid + storage.claimablePayout +
-        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE +
+        auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
+        TAGITALSPACE_ITEM_MIN_STORAGE +
         TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 786;
     val immutable = storage.immutable.load();
@@ -97,9 +97,9 @@ fun tagitalSpaceRetryPlatePayout(
     // Keep all bidder refunds, any active bid, and storage funded while retrying.
     assert (
         contract.getOriginalBalance() + valueCoins >=
-        amount + storage.claimableRefundTotal +
-        tagitalSpaceItemActiveBidAmount(storage) +
-        TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        amount + storage.claimableRefundTotal + tagitalSpaceItemActiveBidAmount(storage) +
+        TAGITALSPACE_ITEM_MIN_STORAGE +
+        TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
     ) throw 788;
     val immutable = storage.immutable.load();
     storage.claimablePayout = 0;
@@ -132,7 +132,8 @@ fun tagitalSpaceClaimPlateItemRefund(
         contract.getOriginalBalance() + valueCoins >=
         storage.claimableRefundTotal + storage.claimablePayout +
         tagitalSpaceItemActiveBidAmount(storage) +
-        TAGITALSPACE_ITEM_MIN_STORAGE + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER
+        TAGITALSPACE_ITEM_MIN_STORAGE +
+        TAGITALSPACE_ITEM_REFUND_FEE_BUFFER
     ) throw 801;
 
     refunds.delete(senderAddress);
