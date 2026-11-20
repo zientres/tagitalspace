@@ -240,6 +240,24 @@ get fun get_claimable_payout(): coins {
     return storage.claimablePayout;
 }
 
+get fun get_claimable_refund(ownerAddress: address): coins {
+    val loading = startLoadingPlateItemStorage();
+    assert (loading.isInitialized()) throw 794;
+    val storage = loading.parseInitialized();
+    val lookup = storage.claimableRefunds.get(ownerAddress);
+    if (!lookup.isFound) {
+        return 0;
+    }
+    return lookup.loadValue();
+}
+
+get fun get_claimable_refund_total(): coins {
+    val loading = startLoadingPlateItemStorage();
+    assert (loading.isInitialized()) throw 794;
+    val storage = loading.parseInitialized();
+    return storage.claimableRefundTotal;
+}
+
 get fun get_expiration_time(): uint64 {
     val loading = startLoadingPlateItemStorage();
     assert (loading.isInitialized()) throw 794;
