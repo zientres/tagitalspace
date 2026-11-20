@@ -69,11 +69,9 @@ fun onInternalMessage(in: InMessage) {
             deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
         }
         ClaimRegistryRefund => {
-            var storage = TagitalSpaceRegistryStorage.load();
             tagitalSpaceClaimRegistryRefund(
                 in.senderAddress,
                 in.valueCoins,
-                mutate storage,
                 msg.queryId,
             );
         }
@@ -84,7 +82,7 @@ fun onBouncedMessage(in: InMessageBounced) {
     val rich = lazy RichBounceBody.fromSlice(in.bouncedBody);
     val originalBody = rich.originalBody.beginParse();
     val opcode = originalBody.preloadUint(32);
-    var _storage = TagitalSpaceRegistryStorage.load();
+    var storage = TagitalSpaceRegistryStorage.load();
 
     if (opcode == 0x54530003) {
         val refund = lazy RegistryRefund.fromSlice(rich.originalBody.beginParse());
@@ -100,9 +98,9 @@ fun onBouncedMessage(in: InMessageBounced) {
         tagitalSpaceRegistryRecordClaimableRefund(
             refund.recipient,
             refund.amount,
-            mutate _storage,
+            mutate storage,
         );
-        _storage.save();
+        storage.save();
         return;
     }
 
