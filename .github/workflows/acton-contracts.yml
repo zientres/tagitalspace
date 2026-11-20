@@ -9,6 +9,7 @@ on:
       - "contracts/tests/**"
       - "tests/**"
       - "wrappers/**"
+      - "scripts/**"
       - ".github/workflows/acton-contracts.yml"
   pull_request:
     paths:
@@ -40,6 +41,9 @@ jobs:
 
       - name: Run Acton TVM tests
         run: acton test
+
+      - name: Exercise Registry deployment script in local emulation
+        run: acton script scripts/deploy-registry.tolk
 
       - name: Check Tolk formatting
         run: acton fmt --check contracts/tolk/TagitalSpaceRegistry.tolk contracts/tolk/PlateItem.tolk contracts/tolk/plate-item-state.tolk contracts/tolk/plate-item-auction.tolk
