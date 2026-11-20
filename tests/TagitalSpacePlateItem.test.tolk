@@ -200,6 +200,7 @@ get fun `test bounced revenue payout becomes claimable`() {
         },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
+            nftIndex: 0,
             firstBidAmount: grams("3"),
             plateBody: "A123BC",
             regionCode: 77,
@@ -246,6 +247,7 @@ get fun `test failed retry restores claimable payout`() {
         },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
+            nftIndex: 0,
             firstBidAmount: grams("3"),
             plateBody: "A123BC",
             regionCode: 77,
