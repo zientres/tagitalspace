@@ -1,52 +1,69 @@
-# TagitalSpace Testnet deployment configuration
+# TagitalSpace Testnet deployment
 
-**Network:** TON Testnet (network id -3)
+**Target network:** TON Testnet only (network id -3).  
+**Mainnet deployment is not approved.**
 
-## Auction revenue recipient
+## Fixed auction revenue recipient
 
-The Registry collection must be initialized with this exact address as
-`auctionRevenueAddress`:
+The Registry must be initialized with this exact address as `auctionRevenueAddress`:
 
 ```text
 0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi
 ```
 
-This is a testnet-friendly TON address (workchain 0). Do not replace it with
-the collection owner's wallet or the former development/security fund address.
+The Registry passes this address to every per-plate item. It cannot be changed after deployment.
 
-## Registry initial storage
+## What the deployment script does
 
-Build the Registry initial data with the existing initializer:
+`scripts/deploy-registry.tolk`:
 
-```tolk
-tagitalSpaceRegistryCreateInitialStorage(
-    collectionOwnerAddress,
-    auctionRevenueAddress,
-    compiledPlateItemCode,
-)
+1. asks you to select the Registry owner/deployer wallet;
+2. builds the current `TagitalSpacePlateItem` code cell;
+3. initializes Registry storage, including empty refund-liability maps;
+4. deploys the Registry with 0.2 TON attached;
+5. waits for the transaction trace and verifies the revenue-recipient getter;
+6. prints the Registry address and a sample deterministic item address.
+
+The script deploys only the Registry. Individual plate item contracts are deployed lazily when a user starts the first bid for a plate.
+
+## Safe execution order
+
+First build and run the full local test suite:
+
+```bash
+source "$HOME/.acton/bin/env"
+acton build
+acton test
+acton script scripts/deploy-registry.tolk
 ```
 
-For this deployment, `auctionRevenueAddress` must be the address above.
-The Registry has no message that can change this field after deployment.
-The Registry passes the stored address to each new deterministic PlateItem;
-each item retains that address for its lifetime, including after reauction.
+The script without `--net` runs in local emulation and does not broadcast transactions.
 
-## How auction proceeds are paid
+Only after the local run succeeds, deploy to Testnet:
 
-1. The winning bid remains escrowed in that plate's item contract until settlement.
-2. After the deadline, any wallet can send `SettlePlateAuction`.
-3. In the settlement transaction, the item sends exactly 100% of the winning
-   bid to `auctionRevenueAddress`. Network fees are paid separately from the
-   item's remaining balance, which must retain its storage reserve.
-4. There is no 50/30/20 split, no treasury balance and no manual claim step.
+```bash
+acton script scripts/deploy-registry.tolk --net testnet
+```
 
-The payout message is currently non-bounceable. Bounce recovery and actual
-TVM action-phase behavior are not yet verified, so this configuration is not
-a deployment approval. Compile the Tolk contracts and pass the settlement,
-balance-reserve and Testnet end-to-end tests before deploying or using funds.
+Alternatively, connect a wallet through TON Connect:
 
-## Current deployment limitation
+```bash
+acton script scripts/deploy-registry.tolk --net testnet --tonconnect
+```
 
-The repository does not yet contain a Registry deployment script. The address
-above is documented as the required initializer value, but no Registry has
-been deployed or configured on Testnet by this change.
+The selected wallet must be funded with Testnet TON. Review the wallet address, deployment value and printed Registry address before approving the transaction. Do not use `--net mainnet`.
+
+## Refund and auction accounting
+
+- A failed Registry-to-item deployment is recorded as a claimable Registry refund. The original bidder withdraws it with `ClaimRegistryRefund`.
+- A duplicate first-bid request against an existing item is recorded as a claimable refund in that item.
+- A bounced outbid refund is recorded per bidder; the bidder withdraws it with `ClaimPlateItemRefund`.
+- A failed refund claim is restored by RichBounce. Claim transactions must include the configured fee buffer.
+- A settled winning bid is sent in full to the fixed revenue address using RichBounce. If it bounces, the item records `claimablePayout` and can retry it with `RetryPlateItemPayout`.
+- Settlement, payout retries and refund claims preserve active auction escrow, outstanding refund/payout liabilities and the minimum storage reserve.
+
+These flows have emulator coverage, but the current source-level review is not an independent security audit. Multi-bounce adversarial cases, action-phase accounting, Testnet end-to-end behavior, frontend integration and independent review remain required before using real funds.
+
+## Current status
+
+The Registry deployment script is implemented and is exercised by CI in local emulation. No Registry has been deployed to Testnet by this change. Save the printed Registry address after a successful Testnet deployment; do not assume an address before the deployment transaction is confirmed.
