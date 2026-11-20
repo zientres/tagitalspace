@@ -30,6 +30,8 @@ struct PlateItemStorageInitialized {
     claimablePayout: coins
     // Outbid refunds that bounced, indexed by the original bidder.
     claimableRefunds: map<address, coins>
+    // Aggregate liability used to protect every bidder's pending refund.
+    claimableRefundTotal: coins
 }
 
 fun PlateItemStorageInitialized.save(self) {
