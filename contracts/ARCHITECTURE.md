@@ -11,6 +11,7 @@ TagitalSpace follows the architecture of TON DNS:
 - There is no Auction Manager and no shared contract that stores or operates all auctions.
 - The item address is deterministic from the identity key and Registry address, matching the DnsCollection / DnsItem StateInit pattern.
 - Repeating a first-bid request for an existing item must not overwrite its auction; the initialized item returns the attached value to the new requester.
+- If a newly requested item deployment fails, the Registry validates the RichBounce against the deterministic item address and original init payload, then refunds the bounced value (minus network fees) to the first bidder.
 
 ## Identity and uniqueness
 
