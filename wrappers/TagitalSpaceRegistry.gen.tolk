@@ -49,7 +49,7 @@ fun TagitalSpaceRegistry.sendStartPlateAuction(
     self,
     from: address,
     queryId: uint64,
-    plateBody: cell,
+    plateBody: string,
     regionCode: uint16,
     config: SendParams = {},
 ): SendResultList {
