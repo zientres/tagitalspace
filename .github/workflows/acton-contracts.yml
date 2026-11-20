@@ -10,6 +10,10 @@ on:
       - "tests/**"
       - "wrappers/**"
       - "scripts/**"
+      - "registry-client.js"
+      - "registry-config.js"
+      - "script.js"
+      - "From/Russia/Russia.html"
       - ".github/workflows/acton-contracts.yml"
   pull_request:
     paths:
@@ -52,6 +56,12 @@ jobs:
 
       - name: Lint Tolk contracts
         run: acton check --output-format github
+
+      - name: Check browser client JavaScript syntax
+        run: |
+          node --check registry-client.js
+          node --check registry-config.js
+          node --check script.js
 
       - name: Verify JavaScript specification checks
         run: |
