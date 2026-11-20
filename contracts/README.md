@@ -39,7 +39,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 - No bid history is stored.
 - **100% of every settled winning bid** is allocated to the single auction revenue address configured in the Registry at deployment: `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`.
 - When an auction is settled, its item contract sends **the entire winning bid** to the immutable revenue address in the same transaction. No claim request or manual withdrawal is required.
-- The payout is non-bounceable and has no bounce-recovery path yet; action-phase behavior must be verified in TVM before deployment.
+- The payout uses `BounceMode.RichBounce`. If the revenue transfer bounces, the item records the exact amount in `claimablePayout`; anyone can trigger `RetryPlateItemPayout`, and a second bounce restores the liability. The bounce and retry paths have emulator tests, but action-phase edge cases and the full Registry deployment path still require verification.
 
 ## NFT ownership lifecycle
 
@@ -52,7 +52,7 @@ Allowed canonical ASCII letters: ABEKMHOPCTYX. Cyrillic input is transliterated 
 
 ## Implementation status
 
-The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The current source has not yet passed Tolk compilation, full TVM tests, payout-bounce tests or a Testnet end-to-end run. Bounce-safe refund recovery, payout action-phase verification, frontend integration and deployment configuration remain incomplete.
+The Registry-to-item deployment path, per-item auctions, settlement accounting, basic ownership transfer, annual renewal and expiration-triggered release are present in source. The latest test run is not yet confirmed successful. The per-item payout-bounce and retry paths have dedicated emulator tests, but Registry-to-item bounce recovery, outbid-refund recovery, action-phase accounting, frontend integration and deployment configuration remain incomplete. The repository currently has no Registry deployment script.
 
 ## Source attribution
 
