@@ -1,7 +1,7 @@
 import "plate-identity"
-import "plate-pricing"
 import "plate-item-messages"
 import "plate-item-state"
+import "plate-pricing"
 import "registry-messages"
 import "registry-metadata"
 import "registry-refunds"
