@@ -19,6 +19,9 @@ fun deployTestRegistry(
         nftItemCode: itemCode,
         claimableRefunds: [],
         claimableRefundTotal: 0,
+        nextItemIndex: 0,
+        itemIndexByIdentity: [],
+        identityByItemIndex: [],
     });
     val deployed = registry.deploy(owner.address, { value: grams("0.2") });
     expect(deployed).toHaveSuccessfulDeploy({ to: registry.address });
