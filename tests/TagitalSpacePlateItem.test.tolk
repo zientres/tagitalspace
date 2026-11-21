@@ -57,7 +57,6 @@ fun setupTest(): (
     );
 }
 
-
 fun setActionPhaseForwardFeeStress() {
     var config = testing.getConfig();
     var prices = config.getMsgForwardPrices(BASECHAIN);
@@ -949,7 +948,6 @@ get fun `test expired item rejects changes to immutable identity and payout dest
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getNftData().ownerAddress).toBeNotNull();
 }
-
 
 get fun `test outbid refund action-phase failure preserves the previous auction`() {
     val (contract, _, firstBidder, secondBidder, _, _) = setupTest();

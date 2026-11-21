@@ -566,7 +566,6 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expectPlateItemSolvent(item);
 }
 
-
 get fun `test Registry deployment action-phase failure does not consume the item index`() {
     val owner = testing.treasury("registry-action-fail-owner");
     val bidder = testing.treasury("registry-action-fail-bidder");
