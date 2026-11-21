@@ -4,6 +4,7 @@ import "plate-item-state"
 const TAGITALSPACE_ITEM_AUCTION_DURATION = 3600
 const TAGITALSPACE_ITEM_OWNERSHIP_PERIOD = 365 * 24 * 60 * 60
 const TAGITALSPACE_ITEM_MIN_STORAGE = grams("0.05")
+const TAGITALSPACE_ITEM_MIN_MESSAGE_VALUE = grams("0.05")
 const TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER = grams("0.05")
 const TAGITALSPACE_ITEM_REFUND_FEE_BUFFER = grams("0.05")
 
@@ -43,12 +44,11 @@ fun tagitalSpaceProcessPlateBid(
     assert (bidAmount >= auction.highestBid * 105 / 100) throw 771;
     assert (valueCoins >= bidAmount + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER) throw 772;
 
-    // Preserve all previous refund and revenue liabilities, the current escrow,
-    // and the minimum storage reserve before creating the outbid refund.
-    val balanceBeforeMessage = contract.getOriginalBalance();
+    // getOriginalBalance already includes this incoming bid. Require the
+    // pre-existing balance, excluding the new bid, to cover all old liabilities.
     assert (
-        balanceBeforeMessage >=
-        auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
+        contract.getOriginalBalance() >=
+        valueCoins + auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
         TAGITALSPACE_ITEM_MIN_STORAGE
     ) throw 772;
 
@@ -62,7 +62,7 @@ fun tagitalSpaceProcessPlateBid(
             amount: auction.highestBid,
         },
     });
-    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 
     auction.highestBidder = senderAddress;
     auction.highestBid = bidAmount;
@@ -74,16 +74,16 @@ fun tagitalSpaceProcessPlateBid(
 }
 
 fun tagitalSpaceSettlePlateAuction(
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     auction: PlateAuctionState,
     queryId: uint64,
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
+    // getOriginalBalance already includes the inbound settlement message value.
     // Preserve previous payout/refund liabilities and the item storage reserve.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
         TAGITALSPACE_ITEM_MIN_STORAGE +
         TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
@@ -102,19 +102,19 @@ fun tagitalSpaceSettlePlateAuction(
             amount: auction.highestBid,
         },
     });
-    payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    payout.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceRetryPlatePayout(
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     queryId: uint64,
 ) {
     val amount = storage.claimablePayout;
     assert (amount > 0) throw 787;
+    // getOriginalBalance already includes the inbound retry message value.
     // Keep all bidder refunds, any active bid, and storage funded while retrying.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         amount + storage.claimableRefundTotal + tagitalSpaceItemActiveBidAmount(storage) +
         TAGITALSPACE_ITEM_MIN_STORAGE +
         TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
@@ -128,12 +128,11 @@ fun tagitalSpaceRetryPlatePayout(
         value: amount,
         body: PlateItemRevenuePayout { queryId, amount },
     });
-    payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    payout.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceClaimPlateItemRefund(
     senderAddress: address,
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     queryId: uint64,
 ) {
@@ -144,10 +143,11 @@ fun tagitalSpaceClaimPlateItemRefund(
     assert (amount > 0) throw 800;
     assert (storage.claimableRefundTotal >= amount) throw 800;
 
+    // getOriginalBalance already includes the inbound claim message value.
     // Refund claims may not consume the active auction escrow, revenue payout
     // liability, other bidders' refunds, or the minimum storage reserve.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         storage.claimableRefundTotal + storage.claimablePayout +
         tagitalSpaceItemActiveBidAmount(storage) +
         TAGITALSPACE_ITEM_MIN_STORAGE +
@@ -169,7 +169,7 @@ fun tagitalSpaceClaimPlateItemRefund(
             amount,
         },
     });
-    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceRenewPlateOwnership(

@@ -26,6 +26,9 @@ type AllowedPlateItemMessage =
     | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
+    // Reject dust messages before they can make the item pay compute fees.
+    assert (in.valueCoins >= TAGITALSPACE_ITEM_MIN_MESSAGE_VALUE) throw 802;
+
     if (!in.body.isEmpty() && in.body.preloadUint(32) == 0x5fcc3d14) {
         // TEP-62 read interface is exposed for indexing, but marketplace
         // transfers are intentionally disabled. Use TagitalSpace transfer flow.
@@ -99,6 +102,13 @@ fun onInternalMessage(in: InMessage) {
             // Keep the immutable revenue destination configured by the Registry.
             storage.lastRenewalTime = blockchain.now();
             assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
+            // The new auction bid must not mask an underfunded payout or refund
+            // liability left by the previous ownership period.
+            assert (
+                contract.getOriginalBalance() >=
+                in.valueCoins + storage.claimablePayout + storage.claimableRefundTotal +
+                TAGITALSPACE_ITEM_MIN_STORAGE
+            ) throw 776;
             storage.auction = PlateAuctionState {
                 highestBidder: init.firstBidder,
                 highestBid: init.firstBidAmount,
@@ -112,6 +122,15 @@ fun onInternalMessage(in: InMessage) {
         // incoming bid to their sender.
         // Keep duplicate-request funds claimable in the item instead of
         // risking a non-bounceable transfer to a contract that rejects it.
+        // The new refund liability must be fully backed without consuming the
+        // active bid, earlier claims, or the minimum storage reserve.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal +
+            in.valueCoins +
+            TAGITALSPACE_ITEM_MIN_STORAGE
+        ) throw 776;
         tagitalSpaceRecordClaimableRefund(
             init.firstBidder,
             in.valueCoins,
@@ -138,7 +157,6 @@ fun onInternalMessage(in: InMessage) {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 778;
             tagitalSpaceSettlePlateAuction(
-                in.valueCoins,
                 mutate storage,
                 unpacked.1,
                 msg.queryId,
@@ -146,7 +164,6 @@ fun onInternalMessage(in: InMessage) {
         }
         RetryPlateItemPayout => {
             tagitalSpaceRetryPlatePayout(
-                in.valueCoins,
                 mutate storage,
                 msg.queryId,
             );
@@ -154,7 +171,6 @@ fun onInternalMessage(in: InMessage) {
         ClaimPlateItemRefund => {
             tagitalSpaceClaimPlateItemRefund(
                 in.senderAddress,
-                in.valueCoins,
                 mutate storage,
                 msg.queryId,
             );
@@ -170,7 +186,9 @@ fun onInternalMessage(in: InMessage) {
                     collectionAddress: immutable.collectionAddress,
                 },
             });
-            response.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            response.send(
+                SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE + SEND_MODE_BOUNCE_ON_ACTION_FAIL,
+            );
         }
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
@@ -203,7 +221,16 @@ fun onBouncedMessage(in: InMessageBounced) {
 
         // The payload amount must match the actual value of the bounced outgoing message.
         assert (payout.amount == originalInfo.valueCoins) throw 789;
-        assert (in.valueCoins + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER >= payout.amount) throw 789;
+        // Bounce fees depend on network configuration. Restore the full payout
+        // only when the actual balance still covers every escrow and liability.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal +
+            payout.amount +
+            TAGITALSPACE_ITEM_MIN_STORAGE +
+            TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
+        ) throw 789;
 
         storage.claimablePayout += payout.amount;
         storage.save();
@@ -220,7 +247,15 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (in.senderAddress == refund.recipient) throw 799;
         assert (refund.amount > 0) throw 799;
         assert (refund.amount == originalInfo.valueCoins) throw 799;
-        assert (in.valueCoins + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER >= refund.amount) throw 799;
+        // Use the actual post-bounce balance instead of a fixed fee allowance.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal +
+            refund.amount +
+            TAGITALSPACE_ITEM_MIN_STORAGE +
+            TAGITALSPACE_ITEM_REFUND_FEE_BUFFER
+        ) throw 799;
 
         tagitalSpaceRecordClaimableRefund(
             refund.recipient,

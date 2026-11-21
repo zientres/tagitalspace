@@ -1,6 +1,7 @@
 import "../.acton/build"
 import "../wrappers/TagitalSpacePlateItem.gen"
 import "../wrappers/TagitalSpaceRegistry.gen"
+import "../.acton/emulation/config"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
 import "../.acton/testing/expect"
@@ -27,6 +28,23 @@ fun deployTestRegistry(
     return registry;
 }
 
+fun expectRegistrySolvent(registry: TagitalSpaceRegistry) {
+    val liabilities = registry.getClaimableRefundTotal();
+    val balance = testing.getAccountBalance(registry.address);
+    expect(balance >= liabilities + grams("0.05")).toEqual(true);
+}
+
+fun expectPlateItemSolvent(item: TagitalSpacePlateItem) {
+    val auction = item.getAuctionInfo();
+    var activeBid: coins = 0;
+    if (auction != null) {
+        activeBid = auction.highestBid;
+    }
+    val liabilities = item.getClaimablePayout() + item.getClaimableRefundTotal();
+    val balance = testing.getAccountBalance(item.address);
+    expect(balance >= activeBid + liabilities + grams("0.05")).toEqual(true);
+}
+
 get fun `test bounced Registry item deployment refunds the first bidder`() {
     val owner = testing.treasury("registry-owner");
     val bidder = testing.treasury("registry-bidder");
@@ -48,6 +66,7 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     val claimable = registry.getClaimableRefund(bidder.address);
     expect(claimable > 0).toEqual(true);
     expect(registry.getClaimableRefundTotal()).toEqual(claimable);
+    expectRegistrySolvent(registry);
 
     val claim = registry.sendClaimRegistryRefund(
         bidder.address,
@@ -179,14 +198,45 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     val originalClaim = registry.getClaimableRefund(bidder);
     expect(originalClaim > 0).toEqual(true);
 
+    val topUp = createMessage({
+        bounce: false,
+        value: grams("0.2"),
+        dest: registry.address,
+    });
+    val topUpResult = net.send(owner.address, topUp);
+    expect(topUpResult).toHaveSuccessfulTx({ to: registry.address });
+
+    val defaultConfig = testing.getConfig();
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 180_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
     val failedClaim = registry.sendClaimRegistryRefund(
         bidder,
         7,
-        { value: grams("0.1") },
+        { value: grams("0.5") },
     );
     expect(failedClaim).toHaveSuccessfulTx({ to: registry.address });
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+    expectRegistrySolvent(registry);
+    expect(
+        testing.getAccountBalance(registry.address) >= originalClaim + grams("0.1"),
+    ).toEqual(true);
+    expect(testing.setConfig(defaultConfig)).toEqual(true);
+
+    // A second consecutive failed claim must not erase or inflate the liability.
+    val secondFailedClaim = registry.sendClaimRegistryRefund(
+        bidder,
+        8,
+        { value: grams("0.1") },
+    );
+    expect(secondFailedClaim).toHaveSuccessfulTx({ to: registry.address });
+    expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
+    expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+    expectRegistrySolvent(registry);
 }
 
 get fun `test expired plate item can start a new auction at the same address`() {
@@ -376,4 +426,204 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
 
     val finalCollectionData = registry.getCollectionData();
     expect(finalCollectionData.0).toEqual(2);
+}
+
+get fun `test combined payout and multiple refund liabilities survive reauction and repeated bounces`() {
+    val owner = testing.treasury("combined-liability-owner");
+    val firstBidder = randomAddress("combined-first-unavailable-bidder");
+    val secondAuctionBidder = randomAddress("combined-second-unavailable-bidder");
+    val firstOutbidder = testing.treasury("combined-first-outbidder");
+    val secondOutbidder = testing.treasury("combined-second-outbidder");
+    val revenue = randomAddress("combined-unavailable-revenue");
+
+    val registry = TagitalSpaceRegistry.fromStorage({
+        ownerAddress: owner.address,
+        auctionRevenueAddress: revenue,
+        nftItemCode: build("TagitalSpacePlateItem"),
+        claimableRefunds: [],
+        claimableRefundTotal: 0,
+        nextItemIndex: 0,
+        itemIndexByIdentity: [],
+        identityByItemIndex: [],
+    });
+    val deployedRegistry = registry.deploy(owner.address, { value: grams("0.2") });
+    expect(deployedRegistry).toHaveSuccessfulDeploy({ to: registry.address });
+
+    val plateBody = "A123BC";
+    val firstRequest = registry.sendStartPlateAuction(
+        firstBidder,
+        20,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    val itemAddress = registry.getPlateItemAddress(plateBody, 77);
+    val item = TagitalSpacePlateItem.fromAddress(itemAddress);
+    expect(firstRequest).toHaveSuccessfulDeploy({ to: itemAddress });
+    expectPlateItemSolvent(item);
+
+    val firstOutbid = item.sendPlateItemBid(
+        firstOutbidder.address,
+        21,
+        grams("3.15"),
+        { value: grams("3.3") },
+    );
+    expect(firstOutbid).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
+
+    val firstAuction = item.getAuctionInfo()!;
+    testing.setNow((firstAuction.auctionEndTime + 1) as uint32);
+    val settlement = item.sendSettlePlateAuction(
+        owner.address,
+        22,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expect(item.getNftData().ownerAddress!).toEqual(firstOutbidder.address);
+    expectPlateItemSolvent(item);
+
+    testing.setNow(item.getExpirationTime() as uint32);
+    val secondRequest = registry.sendStartPlateAuction(
+        secondAuctionBidder,
+        23,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    expect(secondRequest).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expectPlateItemSolvent(item);
+
+    val secondOutbid = item.sendPlateItemBid(
+        secondOutbidder.address,
+        24,
+        grams("3.15"),
+        { value: grams("3.3") },
+    );
+    expect(secondOutbid).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("6"));
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
+    expectPlateItemSolvent(item);
+
+    val firstFailedClaim = item.sendClaimPlateItemRefund(
+        firstBidder,
+        25,
+        { value: grams("0.1") },
+    );
+    expect(firstFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
+
+    val secondFailedClaim = item.sendClaimPlateItemRefund(
+        firstBidder,
+        26,
+        { value: grams("0.1") },
+    );
+    expect(secondFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
+
+    val otherBidderFailedClaim = item.sendClaimPlateItemRefund(
+        secondAuctionBidder,
+        27,
+        { value: grams("0.1") },
+    );
+    expect(otherBidderFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
+
+    val firstPayoutRetry = item.sendRetryPlateItemPayout(
+        owner.address,
+        28,
+        { value: grams("0.1") },
+    );
+    expect(firstPayoutRetry).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expectPlateItemSolvent(item);
+
+    val secondPayoutRetry = item.sendRetryPlateItemPayout(
+        owner.address,
+        29,
+        { value: grams("0.1") },
+    );
+    expect(secondPayoutRetry).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("6"));
+    expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
+    expectPlateItemSolvent(item);
+}
+
+get fun `test Registry deployment action-phase failure does not consume the item index`() {
+    val owner = testing.treasury("registry-action-fail-owner");
+    val bidder = testing.treasury("registry-action-fail-bidder");
+    val revenue = testing.treasury("registry-action-fail-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 5_500_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
+    val message = createMessage({
+        bounce: true,
+        // The normal request minimum is sufficient to enter compute, but
+        // cannot fund the deliberately inflated forwarding fee.
+        value: grams("3.2"),
+        dest: registry.address,
+        body: StartPlateAuction {
+            queryId: 120,
+            plateBody: "A123BC",
+            regionCode: 77,
+        },
+    });
+    val cursor = testing.createTraceIterationCursor(bidder.address, message);
+    val trace = cursor.executeAllRemaining();
+    expect(trace).toHaveTx({
+        to: registry.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    // The 5.5 TON forwarding fee exceeds the inbound 3.2 TON, so the failed
+    // Registry transaction cannot fund a bounce message to the bidder.
+
+    expect(registry.getCollectionData().0).toEqual(0);
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
+}
+
+get fun `test Registry rejects dust messages before they can consume contract balance`() {
+    val owner = testing.treasury("registry-dust-owner");
+    val revenue = testing.treasury("registry-dust-revenue");
+    val attacker = testing.treasury("registry-dust-attacker");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+    val balanceBefore = testing.getAccountBalance(registry.address);
+
+    val message = createMessage({
+        bounce: false,
+        value: grams("0.01"),
+        dest: registry.address,
+        body: ClaimRegistryRefund { queryId: 130 },
+    });
+    val result = net.send(attacker.address, message);
+
+    expect(result).toHaveFailedTx({
+        to: registry.address,
+        exitCode: 746,
+    });
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
+    expect(testing.getAccountBalance(registry.address) >= balanceBefore).toEqual(true);
 }

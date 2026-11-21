@@ -3,6 +3,7 @@ import "registry-state"
 import "registry-storage"
 
 const TAGITALSPACE_REGISTRY_MIN_STORAGE = grams("0.05")
+const TAGITALSPACE_REGISTRY_MIN_MESSAGE_VALUE = grams("0.05")
 const TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER = grams("0.05")
 
 fun tagitalSpaceRegistryRecordClaimableRefund(
@@ -24,7 +25,6 @@ fun tagitalSpaceRegistryRecordClaimableRefund(
 
 fun tagitalSpaceClaimRegistryRefund(
     senderAddress: address,
-    valueCoins: coins,
     queryId: uint64,
 ) {
     var storage = TagitalSpaceRegistryStorage.load();
@@ -35,8 +35,9 @@ fun tagitalSpaceClaimRegistryRefund(
     assert (amount > 0) throw 741;
     assert (storage.claimableRefundTotal >= amount) throw 741;
 
+    // getOriginalBalance already includes the inbound claim message value.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         storage.claimableRefundTotal + TAGITALSPACE_REGISTRY_MIN_STORAGE +
         TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER
     ) throw 742;
@@ -56,5 +57,5 @@ fun tagitalSpaceClaimRegistryRefund(
             amount,
         },
     });
-    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }

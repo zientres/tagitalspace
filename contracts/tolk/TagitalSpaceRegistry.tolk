@@ -22,6 +22,9 @@ type AllowedRegistryMessage = StartPlateAuction | ClaimRegistryRefund
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and deploy that item with its opening bid.
 fun onInternalMessage(in: InMessage) {
+    // Reject dust messages before they can make the Registry pay compute fees.
+    assert (in.valueCoins >= TAGITALSPACE_REGISTRY_MIN_MESSAGE_VALUE) throw 746;
+
     // Allow the configured owner to deploy the Registry with an empty body.
     // All later non-empty messages must use the typed messages below.
     if (in.body.isEmpty()) {
@@ -66,12 +69,13 @@ fun onInternalMessage(in: InMessage) {
                     auctionRevenueAddress: storage.auctionRevenueAddress,
                 },
             });
-            deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            deployItem.send(
+                SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE + SEND_MODE_BOUNCE_ON_ACTION_FAIL,
+            );
         }
         ClaimRegistryRefund => {
             tagitalSpaceClaimRegistryRefund(
                 in.senderAddress,
-                in.valueCoins,
                 msg.queryId,
             );
         }
@@ -91,10 +95,15 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (in.senderAddress == refund.recipient) throw 743;
         assert (refund.amount > 0) throw 743;
         assert (refund.amount == originalInfo.valueCoins) throw 743;
-        assert (in.valueCoins + TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER >= refund.amount) throw 743;
+        // Bounce fees depend on network configuration. Restore the full claim
+        // only when the actual balance covers all refunds and minimum storage.
+        assert (
+            contract.getOriginalBalance() >=
+            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_REGISTRY_MIN_STORAGE +
+            TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER
+        ) throw 743;
 
-        // Restore the full claim; the claimant's attached fee buffer covers
-        // the bounce cost if the receiving wallet/contract rejects the retry.
+        // Restore the full claim only when the Registry's actual balance covers it.
         tagitalSpaceRegistryRecordClaimableRefund(
             refund.recipient,
             refund.amount,
@@ -130,6 +139,12 @@ fun onBouncedMessage(in: InMessageBounced) {
     ).calculateAddress();
     assert (in.senderAddress == expectedItemAddress) throw 739;
     assert (in.valueCoins > 0) throw 739;
+    // A new failed-deployment refund must not conceal a shortfall in refunds
+    // already owed by the Registry.
+    assert (
+        contract.getOriginalBalance() >=
+        storage.claimableRefundTotal + in.valueCoins + TAGITALSPACE_REGISTRY_MIN_STORAGE
+    ) throw 743;
 
     // Keep failed deployment funds in the Registry until the original bidder
     // explicitly claims them. This also handles contract wallets that reject
