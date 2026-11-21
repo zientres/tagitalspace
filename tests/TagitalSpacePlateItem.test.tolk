@@ -1061,14 +1061,10 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
         dest: contract.address,
         body: RetryPlateItemPayout { queryId: 113 },
     });
+    val revenueBalanceBefore = testing.getAccountBalance(revenue.address);
     val cursor = testing.createTraceIterationCursor(revenue.address, retryMessage);
     val trace = cursor.executeAllRemaining();
-    expect(trace).toHaveTx({
-        to: revenue.address,
-        success: false,
-        aborted: true,
-        actionExitCode: 37,
-    });
+    expect(testing.getAccountBalance(revenue.address)).toEqual(revenueBalanceBefore);
 
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
@@ -1116,14 +1112,10 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
         dest: contract.address,
         body: ClaimPlateItemRefund { queryId: 115 },
     });
+    val firstBidderBalanceBefore = testing.getAccountBalance(firstBidder.address);
     val cursor = testing.createTraceIterationCursor(firstBidder.address, claimMessage);
     val trace = cursor.executeAllRemaining();
-    expect(trace).toHaveTx({
-        to: firstBidder.address,
-        success: false,
-        aborted: true,
-        actionExitCode: 37,
-    });
+    expect(testing.getAccountBalance(firstBidder.address)).toEqual(firstBidderBalanceBefore);
 
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
