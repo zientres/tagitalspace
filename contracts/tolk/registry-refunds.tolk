@@ -3,6 +3,7 @@ import "registry-state"
 import "registry-storage"
 
 const TAGITALSPACE_REGISTRY_MIN_STORAGE = grams("0.05")
+const TAGITALSPACE_REGISTRY_MIN_MESSAGE_VALUE = grams("0.05")
 const TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER = grams("0.05")
 
 fun tagitalSpaceRegistryRecordClaimableRefund(

@@ -26,6 +26,9 @@ type AllowedPlateItemMessage =
     | TransferPlateOwnership
 
 fun onInternalMessage(in: InMessage) {
+    // Reject dust messages before they can make the item pay compute fees.
+    assert (in.valueCoins >= TAGITALSPACE_ITEM_MIN_MESSAGE_VALUE) throw 802;
+
     if (!in.body.isEmpty() && in.body.preloadUint(32) == 0x5fcc3d14) {
         // TEP-62 read interface is exposed for indexing, but marketplace
         // transfers are intentionally disabled. Use TagitalSpace transfer flow.

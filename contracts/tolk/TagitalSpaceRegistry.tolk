@@ -22,6 +22,9 @@ type AllowedRegistryMessage = StartPlateAuction | ClaimRegistryRefund
 // TON DNS collection pattern: validate the requested identity, derive the
 // deterministic item StateInit, and deploy that item with its opening bid.
 fun onInternalMessage(in: InMessage) {
+    // Reject dust messages before they can make the Registry pay compute fees.
+    assert (in.valueCoins >= TAGITALSPACE_REGISTRY_MIN_MESSAGE_VALUE) throw 746;
+
     // Allow the configured owner to deploy the Registry with an empty body.
     // All later non-empty messages must use the typed messages below.
     if (in.body.isEmpty()) {
