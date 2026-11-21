@@ -66,7 +66,7 @@ fun onInternalMessage(in: InMessage) {
                     auctionRevenueAddress: storage.auctionRevenueAddress,
                 },
             });
-            deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            deployItem.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
         }
         ClaimRegistryRefund => {
             tagitalSpaceClaimRegistryRefund(

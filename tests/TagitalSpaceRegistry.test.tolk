@@ -589,14 +589,14 @@ get fun `test Registry deployment action-phase failure does not consume the item
         },
     });
     val cursor = testing.createTraceIterationCursor(bidder.address, message);
-    val trace = cursor.executeN(1);
+    val trace = cursor.executeAllRemaining();
     expect(trace).toHaveTx({
         to: registry.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
-    cursor.close();
+    expect(trace).toHaveBouncedTx({ to: bidder.address });
 
     expect(registry.getCollectionData().0).toEqual(0);
     expect(registry.getClaimableRefundTotal()).toEqual(0);

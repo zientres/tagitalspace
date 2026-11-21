@@ -61,7 +61,7 @@ fun tagitalSpaceProcessPlateBid(
             amount: auction.highestBid,
         },
     });
-    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 
     auction.highestBidder = senderAddress;
     auction.highestBid = bidAmount;
@@ -101,7 +101,7 @@ fun tagitalSpaceSettlePlateAuction(
             amount: auction.highestBid,
         },
     });
-    payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    payout.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceRetryPlatePayout(
@@ -127,7 +127,7 @@ fun tagitalSpaceRetryPlatePayout(
         value: amount,
         body: PlateItemRevenuePayout { queryId, amount },
     });
-    payout.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    payout.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceClaimPlateItemRefund(
@@ -168,7 +168,7 @@ fun tagitalSpaceClaimPlateItemRefund(
             amount,
         },
     });
-    refund.send(SEND_MODE_PAY_FEES_SEPARATELY);
+    refund.send(SEND_MODE_PAY_FEES_SEPARATELY + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
 }
 
 fun tagitalSpaceRenewPlateOwnership(

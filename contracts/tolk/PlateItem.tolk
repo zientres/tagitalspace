@@ -167,7 +167,7 @@ fun onInternalMessage(in: InMessage) {
                     collectionAddress: immutable.collectionAddress,
                 },
             });
-            response.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE);
+            response.send(SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE + SEND_MODE_BOUNCE_ON_ACTION_FAIL);
         }
         RenewPlateOwnership => {
             tagitalSpaceRenewPlateOwnership(in.senderAddress, mutate storage);
