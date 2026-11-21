@@ -572,15 +572,17 @@ get fun `test Registry deployment action-phase failure does not consume the item
     val revenue = testing.treasury("registry-action-fail-revenue");
     val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
 
+    registry.sendTopUp(owner.address, 1, { value: grams("1") });
+
     var config = testing.getConfig();
     var prices = config.getMsgForwardPrices(BASECHAIN);
-    prices.lumpPrice += 5_000_000_000;
+    prices.lumpPrice += 5_500_000_000;
     config.setMsgForwardPrices(prices, BASECHAIN);
     expect(testing.setConfig(config)).toEqual(true);
 
     val message = createMessage({
         bounce: true,
-        value: grams("3.2"),
+        value: grams("5.1"),
         dest: registry.address,
         body: StartPlateAuction {
             queryId: 120,

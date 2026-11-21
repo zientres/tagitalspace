@@ -60,7 +60,7 @@ fun setupTest(): (
 fun setActionPhaseForwardFeeStress() {
     var config = testing.getConfig();
     var prices = config.getMsgForwardPrices(BASECHAIN);
-    prices.lumpPrice += 5_000_000_000;
+    prices.lumpPrice += 5_500_000_000;
     config.setMsgForwardPrices(prices, BASECHAIN);
     expect(testing.setConfig(config)).toEqual(true);
 }
@@ -1000,7 +1000,7 @@ get fun `test settlement payout action-phase failure preserves the auction`() {
 
     val message = createMessage({
         bounce: true,
-        value: grams("0.1"),
+        value: grams("5.1"),
         dest: contract.address,
         body: SettlePlateAuction { queryId: 111 },
     });
@@ -1059,7 +1059,7 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
     setActionPhaseForwardFeeStress();
     val retryMessage = createMessage({
         bounce: true,
-        value: grams("0.1"),
+        value: grams("5.1"),
         dest: contract.address,
         body: RetryPlateItemPayout { queryId: 113 },
     });
@@ -1115,7 +1115,7 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     setActionPhaseForwardFeeStress();
     val claimMessage = createMessage({
         bounce: true,
-        value: grams("0.1"),
+        value: grams("5.1"),
         dest: contract.address,
         body: ClaimPlateItemRefund { queryId: 115 },
     });
