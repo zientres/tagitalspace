@@ -1138,7 +1138,6 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
 }
 
-
 get fun `test item rejects dust messages before they can consume contract balance`() {
     val (
         contract,

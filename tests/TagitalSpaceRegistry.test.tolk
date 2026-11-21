@@ -605,7 +605,6 @@ get fun `test Registry deployment action-phase failure does not consume the item
     expect(registry.getClaimableRefundTotal()).toEqual(0);
 }
 
-
 get fun `test Registry rejects dust messages before they can consume contract balance`() {
     val owner = testing.treasury("registry-dust-owner");
     val revenue = testing.treasury("registry-dust-revenue");
