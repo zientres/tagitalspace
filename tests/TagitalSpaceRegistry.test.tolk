@@ -388,8 +388,7 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
     expect(finalCollectionData.0).toEqual(2);
 }
 
-
-get fun `test combined payout and multiple refund liabilities survive reauction and repeated bounces`() {
+get fun `test combined payout and multiple refund liabilities survive reauction and repeated bounces()` {
     val owner = testing.treasury("combined-liability-owner");
     val firstBidder = randomAddress("combined-first-unavailable-bidder");
     val secondAuctionBidder = randomAddress("combined-second-unavailable-bidder");
