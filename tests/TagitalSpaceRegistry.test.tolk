@@ -604,3 +604,27 @@ get fun `test Registry deployment action-phase failure does not consume the item
     expect(registry.getCollectionData().0).toEqual(0);
     expect(registry.getClaimableRefundTotal()).toEqual(0);
 }
+
+
+get fun `test Registry rejects dust messages before they can consume contract balance`() {
+    val owner = testing.treasury("registry-dust-owner");
+    val revenue = testing.treasury("registry-dust-revenue");
+    val attacker = testing.treasury("registry-dust-attacker");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+    val balanceBefore = testing.getAccountBalance(registry.address);
+
+    val message = createMessage({
+        bounce: false,
+        value: grams("0.01"),
+        dest: registry.address,
+        body: ClaimRegistryRefund { queryId: 130 },
+    });
+    val result = net.send(attacker.address, message);
+
+    expect(result).toHaveFailedTx({
+        to: registry.address,
+        exitCode: 746,
+    });
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
+    expect(testing.getAccountBalance(registry.address) >= balanceBefore).toEqual(true);
+}

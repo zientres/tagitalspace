@@ -1137,3 +1137,33 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
 }
+
+
+get fun `test item rejects dust messages before they can consume contract balance`() {
+    val (
+        contract,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = setupTest();
+    val attacker = testing.treasury("item-dust-attacker");
+    val balanceBefore = testing.getAccountBalance(contract.address);
+    val auctionBefore = contract.getAuctionInfo()!;
+
+    val message = createMessage({
+        bounce: false,
+        value: grams("0.01"),
+        dest: contract.address,
+        body: SettlePlateAuction { queryId: 130 },
+    });
+    val result = net.send(attacker.address, message);
+
+    expect(result).toHaveFailedTx({
+        to: contract.address,
+        exitCode: 802,
+    });
+    expect(contract.getAuctionInfo()!.highestBid).toEqual(auctionBefore.highestBid);
+    expect(testing.getAccountBalance(contract.address) >= balanceBefore).toEqual(true);
+}
