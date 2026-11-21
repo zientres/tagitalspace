@@ -1,89 +1,72 @@
 # Pre-deployment security review
 
-Date: 2026-11-19  
-Repository reviewed: zientres/tagitalspace, branch main.
+Date: 2026-11-21  
+Repository: `zientres/tagitalspace`  
+Reviewed branch: `audit/combined-liability-tests`
 
 ## Scope and conclusion
 
-This is a source-level pre-deployment review, not an independent smart-contract audit. The repository now contains a TagitalSpace Registry collection entrypoint and a per-plate auction item implementation modeled on TON DNS DnsCollection / DnsItem. The current implementation is an early integration slice and is **not safe to deploy**.
+This is a source-level review of the current Tolk contracts, emulator tests, deployment configuration and CI checks. It is not an independent third-party smart-contract audit.
 
-## Current architecture
+**Deployment verdict: NOT APPROVED.** The current branch passes its automated checks, but fee-exhaustion behavior, storage economics and live Testnet integration still require validation. Do not deploy to Mainnet or accept real funds on the basis of this review.
 
-- Registry validates canonical plate identity and Russia region, computes the deterministic item identity, and deploys the item with the first bid.
-- Each plate item stores its own auction, bidder and deadline.
-- Later bids, outbid refunds and settlement are handled by that item contract.
-- No shared Auction Manager is part of the intended architecture.
-- Settlement sends 100% of the winning bid directly from the item contract to the immutable revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi` in the settlement transaction. The transfer uses `BounceMode.RichBounce`; the item has a claimable-payout liability and retry path. The current tests exercise payout bounce/retry, outbid refund recovery, Registry deployment bounce/claim and duplicate-request refund accounting, owner-only renewal/transfer, expiration/re-auction, and rejection of underfunded forged bounce liabilities. They do not cover every action-phase failure mode or all multi-bounce sequences.
+## Architecture reviewed
 
-## Blocking findings
+- Registry validates the canonical plate and supported Russian region, derives the deterministic item StateInit and forwards the first bid.
+- Each plate has its own contract and auction state; there is no shared Auction Manager.
+- Later bids, settlement, owner lifecycle, payout recovery and bidder refund recovery are handled by the item.
+- 100% of a settled winning bid is sent to the immutable revenue address configured in Registry storage.
+- Failed Registry deployments and bounced refunds are recorded as claimable liabilities.
 
-### Balance accounting correction — inbound message value was counted twice
+## Findings addressed in this branch
 
-A follow-up review found that four reserve checks added `valueCoins` to
-`contract.getOriginalBalance()`. In Tolk, `getOriginalBalance()` is the
-contract balance at the start of the compute phase, after the inbound message
-has been credited. Adding `valueCoins` again overstated available funds and
-could allow settlement, payout retry, or refund claims to pass a solvency check
-without actually preserving all liabilities. The redundant parameter and
-addition have been removed from item settlement, item payout retry, item refund
-claim, and Registry refund claim. The bid path was also corrected: it now
-subtracts the attached bid from the compute-phase balance conceptually by
-requiring the balance to cover both the incoming value and all pre-existing
-liabilities, so the new bid cannot mask an underfunded prior escrow. This
-correction must pass the full TVM and CI suites before the branch is considered
-ready. It does not resolve the separate worst-case fee-exhaustion question.
+### Balance accounting
 
-### Verification progress — build and core TVM paths now pass
+The reserve checks use `contract.getOriginalBalance()`, which includes the inbound value credited before compute. The checks no longer add that inbound value a second time. The bid path explicitly preserves the previous escrow and liabilities while accounting for the new bid.
 
-The current branch compiles with Acton 1.2.1 and passes 24 TVM tests: 15 PlateItem tests and 9 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.
+### Liability preservation
 
-### Critical — escrow and bounce safety are incomplete
+Solvency checks cover active bid escrow, pending payout, aggregate bidder refunds and minimum storage. Additional checks now prevent a new auction bid or a duplicate-request refund from masking an existing shortfall. Registry deployment-bounce recovery likewise checks that old refunds remain backed before recording another refund.
 
-Bid amounts are now explicit message fields, separate from attached TON reserves. The Registry requires an opening payment buffer and each item records only the configured starting bid. Outbid refunds now use `BounceMode.RichBounce`. A bounced refund is recorded in a `map<address, coins>` keyed by the original bidder, with an aggregate liability total. The bidder can claim the amount later; the claim clears the liability before sending and a subsequent RichBounce restores it if delivery fails again. Later bids and claims require explicit fee buffers, and settlement/withdrawal checks preserve active escrow, payout liabilities, refund liabilities and minimum storage. These paths have basic emulator coverage, but multi-bounce sequences, fee exhaustion, action-phase rollback and adversarial recipient behavior still need more tests. This remains a critical blocker before real funds are used.
+### Bounce validation and recovery
 
-### High — Testnet deployment has not yet been performed
+Payout and refund bounce handlers validate the original opcode, expected sender/recipient and original message amount. Claimable refunds are tracked per address with an aggregate total. Claims clear the liability before sending; a failed delivery restores it when the actual balance can cover the restored amount and fee reserve.
 
-Registry storage now requires the owner address, the fixed auction revenue address `0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi`, and NFT item code. The Registry deployment script now initializes the fixed revenue address, owner and compiled item code, and is exercised in local emulation by CI. The script has not yet been broadcast to Testnet; on-chain deployment confirmation and an independent check of the deployed StateInit/address remain required.
+### Action-phase failure behavior
 
-### High — item lifecycle and renewal economics need further verification
+The emulator suite now exercises action-phase exit code 37 for outbid refunds, settlement payouts, payout retries, refund claims and Registry item deployment. These tests assert transaction rollback and preservation of the relevant auction/liability state.
 
-NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. Owner-only annual renewal, renewal boundary behavior, owner-only transfer and expiration-triggered re-auction at the same deterministic address now have TVM coverage. Renewal currently has no configured protocol fee. Payout recovery is implemented and repeated payout bounce is covered alongside simultaneous refund liabilities and a live auction escrow. Worst-case action-phase fee exhaustion and real-network bounce accounting still need verification.
+A failed action phase does not guarantee that the inbound message will bounce: the bounce phase also needs enough value to pay its forwarding fee. Under the deliberately stressed 5.5 TON forwarding-fee configuration, the tests correctly do not expect a bounce when the inbound value is smaller than that fee. No recipient payment is emitted and the contract state remains unchanged.
 
-### High — Registry deployment bounce recovery needs expanded testing
+### Low-value message spam
 
-The Registry now has an `onBouncedMessage` handler for failed item deployments. It parses the original init payload, recomputes the expected deterministic item address from the plate/region and configured item code, verifies the immutable revenue destination and opening bid, then records the value actually bounced (after network fees) as a claimable refund for the original first bidder. The bidder claims it through `ClaimRegistryRefund`; if that transfer bounces, the Registry restores the liability. Duplicate first-bid requests against an existing item are also recorded as claimable refunds inside that item instead of being sent through a non-bounceable transfer. CI covers a real Registry deployment bounce followed by a successful claim, a failed Registry refund claim that bounces and restores the liability, and a duplicate request that creates a claimable balance. Multi-bounce and action-phase failure cases still require review.
+Both contracts reject internal messages carrying less than 0.05 TON before processing their body. Tests verify that dust messages cannot make the contracts pay compute fees out of existing escrow or refund balances.
 
-### High — outbid refund recovery needs expanded adversarial testing
+## Automated verification
 
-The recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. Registry deployment failures and duplicate first-bid requests also create claimable balances. CI covers the Registry deployment bounce/claim and failed-claim restoration, duplicate request accounting, an outbid refund bounce/claim and failed-claim restoration, multiple bidder refund isolation, and rejection of mismatched or unexpected refund bounces. TVM tests now cover repeated failed claims, simultaneous refund liabilities for multiple bidders, payout liability, active escrow, repeated payout retries, and preservation of all liabilities through expiration and re-auction. Exact action-phase fee exhaustion under network-level worst-case conditions remains unproven.
+The latest branch head passed GitHub Actions:
 
-### High — payout recovery needs more tests
+- Acton 1.2.1 contract build.
+- **35 TVM tests passed**: 23 PlateItem and 12 Registry.
+- Registry deployment script in local emulation.
+- Tolk formatting and lint.
+- Browser JavaScript syntax and Russia page checks.
+- Pricing, timing, identity and protocol specification vectors.
 
-The item has a RichBounce-based liability and retry mechanism for revenue payouts. The configured revenue address is immutable after Registry deployment, so it must be checked carefully before deployment.
+These checks establish only the behavior covered by the tests; they are not proof of safety under every TON network configuration.
 
-### High — browser client is implemented; Testnet end-to-end validation remains
+## Remaining risks and deployment blockers
 
-`registry-config.js` now holds the Testnet Registry address (intentionally blank until deployment). `registry-client.js` uses TON SDK/TonCenter to query the Registry's deterministic item address and starting price, read the compact item state, and submit first bids, later bids and permissionless settlement through TonConnect. `From/Russia/Russia.html` loads the config/client and exposes settlement and refund-claim actions. CI checks both browser client syntax and the page's inline JavaScript, but no live wallet/RPC test has been performed because no Registry has been deployed to Testnet.
+1. **Fee buffers are fixed constants.** The 0.05 TON storage/forwarding buffers are not dynamically derived from the active TON configuration. Stress tests prove that action-phase failures roll back state, but do not prove that every possible bounce can be funded or that every bounced liability can always be restored. Validate against current Testnet configuration and worst-case message sizes/fees.
+2. **Refund dictionaries can grow.** Per-bidder refund maps have no explicit cardinality bound or storage-fee funding policy. Long-lived contracts need a defined storage-economics plan.
+3. **No live Testnet end-to-end validation.** Wallet connection, first bid, outbid, settlement, payout bounce, refund claims, expiration and re-auction have not been validated against deployed contracts and real Testnet transactions.
+4. **TEP-62 transfer is intentionally disabled.** The standard transfer opcode is rejected; the item is read-only compatible for indexing and uses a separate owner-authorized transfer flow. Marketplace sale/transfer compatibility must not be assumed.
+5. **Independent review is still required.** Review the final compiled code, StateInit derivation, deployment parameters and operational wallet controls before any real funds are accepted.
 
-### High — read-only TEP-62 surface is implemented; Getgems indexing remains unverified
+## Required next gates
 
-The item now exposes the standard `get_nft_data` tuple and `get_static_data` response. Registry exposes `get_collection_data`, `get_nft_address_by_index` and `get_nft_content`, with sequential identity-to-index mapping. Collection and item metadata use on-chain TEP-64 dictionaries; each item includes a generated SVG plate image and plate/region attributes. The standard TEP-62 transfer opcode `0x5fcc3d14` is deliberately rejected, so marketplace transfers and sales cannot complete through Getgems. TagitalSpace's separate owner-authorized transfer message remains available. This is intentionally read-only compatibility, not full TEP-62 transfer compliance. Getgems Testnet must still be checked for actual indexing, image rendering and failed sale behavior after deployment.
-
-### High — Registry TVM coverage is still partial
-
-CI now covers failed item deployment and claim, successful item deployment, duplicate-request refund accounting, invalid plate/region rejection, different deterministic item addresses for different regions, revenue-recipient getter, and owner-only empty-body deployment. Remaining gaps include exact action-phase failure/fee-exhaustion cases and StateInit code-hash assertions. Repeated claim bounce and combined payout/refund liability preservation now have TVM coverage.
-
-### High — live frontend integration is not yet verified
-
-The browser registry client and message construction are implemented against the current Registry/item getters and opcodes. They still require a live Testnet wallet flow, including lookup, first bid, later bid, settlement, refund claims and handling of bounced transactions.
-
-## Required verification gates
-
-1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for deterministic StateInit code-hash assertions and exact action-phase fee-exhaustion boundaries. Combined liability preservation, repeated outbid refund failures/claims and settlement recovery now have TVM coverage. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment, expired-item re-auction and TEP-62 collection enumeration/read-only transfer rejection, plus outbid refund bounce/claim and annual renewal/transfer authorization.
-3. Bounce tests covering combined refund and payout liabilities, repeated failed claims/retries, and active escrow preservation. Worst-case network fee behavior still requires separate validation.
-4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
-5. Testnet end-to-end auction using controlled wallets.
-6. Independent security review of the final compiled contracts and deployment configuration.
-
-JavaScript source checks and documentation are not proof of compilation, TVM correctness or security. Do not deploy or send real funds until every gate passes.
+1. Validate fee and bounce behavior against the active TON Testnet configuration, including larger message bodies and repeated bounce sequences.
+2. Define a storage-fee and refund-map growth policy.
+3. Deploy only to Testnet with controlled wallets and verify the deployed code hashes and deterministic item addresses.
+4. Run the full wallet flow and inspect real transaction traces.
+5. Obtain an independent security review of the final compiled contracts.
