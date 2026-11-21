@@ -187,6 +187,16 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(failedClaim).toHaveSuccessfulTx({ to: registry.address });
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+
+    // A second consecutive failed claim must not erase or inflate the liability.
+    val secondFailedClaim = registry.sendClaimRegistryRefund(
+        bidder,
+        8,
+        { value: grams("0.1") },
+    );
+    expect(secondFailedClaim).toHaveSuccessfulTx({ to: registry.address });
+    expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
+    expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
 }
 
 get fun `test expired plate item can start a new auction at the same address`() {
@@ -376,4 +386,133 @@ get fun `test TEP-62 collection enumeration and read-only NFT metadata`() {
 
     val finalCollectionData = registry.getCollectionData();
     expect(finalCollectionData.0).toEqual(2);
+}
+
+ 
+get fun `test combined payout and multiple refund liabilities survive reauction and repeated bounces`() {
+    val owner = testing.treasury("combined-liability-owner");
+    val firstBidder = randomAddress("combined-first-unavailable-bidder");
+    val secondAuctionBidder = randomAddress("combined-second-unavailable-bidder");
+    val firstOutbidder = testing.treasury("combined-first-outbidder");
+    val secondOutbidder = testing.treasury("combined-second-outbidder");
+    val revenue = randomAddress("combined-unavailable-revenue");
+
+    val registry = TagitalSpaceRegistry.fromStorage({
+        ownerAddress: owner.address,
+        auctionRevenueAddress: revenue,
+        nftItemCode: build("TagitalSpacePlateItem"),
+        claimableRefunds: [],
+        claimableRefundTotal: 0,
+        nextItemIndex: 0,
+        itemIndexByIdentity: [],
+        identityByItemIndex: [],
+    });
+    val deployedRegistry = registry.deploy(owner.address, { value: grams("0.2") });
+    expect(deployedRegistry).toHaveSuccessfulDeploy({ to: registry.address });
+
+    val plateBody = "A123BC";
+    val firstRequest = registry.sendStartPlateAuction(
+        firstBidder,
+        20,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    val itemAddress = registry.getPlateItemAddress(plateBody, 77);
+    val item = TagitalSpacePlateItem.fromAddress(itemAddress);
+    expect(firstRequest).toHaveSuccessfulDeploy({ to: itemAddress });
+
+    val firstOutbid = item.sendPlateItemBid(
+        firstOutbidder.address,
+        21,
+        grams("3.15"),
+        { value: grams("3.3") },
+    );
+    expect(firstOutbid).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("3"));
+
+    val firstAuction = item.getAuctionInfo()!;
+    testing.setNow((firstAuction.auctionEndTime + 1) as uint32);
+    val settlement = item.sendSettlePlateAuction(
+        owner.address,
+        22,
+        { value: grams("0.1") },
+    );
+    expect(settlement).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expect(item.getNftData().ownerAddress!).toEqual(firstOutbidder.address);
+
+    testing.setNow(item.getExpirationTime() as uint32);
+    val secondRequest = registry.sendStartPlateAuction(
+        secondAuctionBidder,
+        23,
+        plateBody,
+        77,
+        { value: grams("3.2") },
+    );
+    expect(secondRequest).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+
+    val secondOutbid = item.sendPlateItemBid(
+        secondOutbidder.address,
+        24,
+        grams("3.15"),
+        { value: grams("3.3") },
+    );
+    expect(secondOutbid).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("6"));
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
+
+    val firstFailedClaim = item.sendClaimPlateItemRefund(
+        firstBidder,
+        25,
+        { value: grams("0.1") },
+    );
+    expect(firstFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+
+    val secondFailedClaim = item.sendClaimPlateItemRefund(
+        firstBidder,
+        26,
+        { value: grams("0.1") },
+    );
+    expect(secondFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+
+    val otherBidderFailedClaim = item.sendClaimPlateItemRefund(
+        secondAuctionBidder,
+        27,
+        { value: grams("0.1") },
+    );
+    expect(otherBidderFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+
+    val firstPayoutRetry = item.sendRetryPlateItemPayout(
+        owner.address,
+        28,
+        { value: grams("0.1") },
+    );
+    expect(firstPayoutRetry).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+
+    val secondPayoutRetry = item.sendRetryPlateItemPayout(
+        owner.address,
+        29,
+        { value: grams("0.1") },
+    );
+    expect(secondPayoutRetry).toHaveSuccessfulTx({ to: itemAddress });
+    expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+
+    expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expect(item.getClaimableRefundTotal()).toEqual(grams("6"));
+    expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
+    expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
 }

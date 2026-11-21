@@ -300,6 +300,15 @@ get fun `test failed retry restores claimable payout`() {
 
     expect(retry).toHaveSuccessfulTx({ to: contract.address });
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
+
+    // A second consecutive failed retry must restore the same full liability.
+    val secondRetry = contract.sendRetryPlateItemPayout(
+        collection.address,
+        32,
+        { value: grams("0.1") },
+    );
+    expect(secondRetry).toHaveSuccessfulTx({ to: contract.address });
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
 
 get fun `test forged bounce with mismatched amount is rejected`() {

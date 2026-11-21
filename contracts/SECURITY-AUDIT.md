@@ -31,7 +31,7 @@ Registry storage now requires the owner address, the fixed auction revenue addre
 
 ### High — item lifecycle and renewal economics need further verification
 
-NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. Owner-only annual renewal, renewal boundary behavior, owner-only transfer and expiration-triggered re-auction at the same deterministic address now have TVM coverage. Renewal currently has no configured protocol fee. Payout recovery is implemented, but multi-bounce and fee-exhaustion behavior still needs more testing.
+NFT ownership is recorded after settlement and can be transferred by its current owner after the auction. Owner-only annual renewal, renewal boundary behavior, owner-only transfer and expiration-triggered re-auction at the same deterministic address now have TVM coverage. Renewal currently has no configured protocol fee. Payout recovery is implemented and repeated payout bounce is covered alongside simultaneous refund liabilities and a live auction escrow. Worst-case action-phase fee exhaustion and real-network bounce accounting still need verification.
 
 ### High — Registry deployment bounce recovery needs expanded testing
 
@@ -39,7 +39,7 @@ The Registry now has an `onBouncedMessage` handler for failed item deployments. 
 
 ### High — outbid refund recovery needs expanded adversarial testing
 
-The recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. Registry deployment failures and duplicate first-bid requests also create claimable balances. CI covers the Registry deployment bounce/claim and failed-claim restoration, duplicate request accounting, an outbid refund bounce/claim and failed-claim restoration, multiple bidder refund isolation, and rejection of mismatched or unexpected refund bounces. Remaining tests should cover repeated failed claims, multiple bidders with simultaneous liabilities, fee exhaustion, and preservation of all liabilities through settlement and renewal.
+The recovery mechanism has been implemented: bounced outbid refunds are tracked per bidder, and the original bidder can claim the stored amount later. Registry deployment failures and duplicate first-bid requests also create claimable balances. CI covers the Registry deployment bounce/claim and failed-claim restoration, duplicate request accounting, an outbid refund bounce/claim and failed-claim restoration, multiple bidder refund isolation, and rejection of mismatched or unexpected refund bounces. TVM tests now cover repeated failed claims, simultaneous refund liabilities for multiple bidders, payout liability, active escrow, repeated payout retries, and preservation of all liabilities through expiration and re-auction. Exact action-phase fee exhaustion under network-level worst-case conditions remains unproven.
 
 ### High — payout recovery needs more tests
 
@@ -55,7 +55,7 @@ The item now exposes the standard `get_nft_data` tuple and `get_static_data` res
 
 ### High — Registry TVM coverage is still partial
 
-CI now covers failed item deployment and claim, successful item deployment, duplicate-request refund accounting, invalid plate/region rejection, different deterministic item addresses for different regions, revenue-recipient getter, and owner-only empty-body deployment. Remaining gaps include action-phase failures, StateInit code-hash assertions and repeated claim bounce scenarios.
+CI now covers failed item deployment and claim, successful item deployment, duplicate-request refund accounting, invalid plate/region rejection, different deterministic item addresses for different regions, revenue-recipient getter, and owner-only empty-body deployment. Remaining gaps include exact action-phase failure/fee-exhaustion cases and StateInit code-hash assertions. Repeated claim bounce and combined payout/refund liability preservation now have TVM coverage.
 
 ### High — live frontend integration is not yet verified
 
@@ -64,8 +64,8 @@ The browser registry client and message construction are implemented against the
 ## Required verification gates
 
 1. Tolk formatter, compiler and Acton build (currently passing in CI).
-2. Expand TVM tests for deterministic StateInit code-hash assertions, repeated outbid refund failures/claims, settlement and distribution. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment, expired-item re-auction and TEP-62 collection enumeration/read-only transfer rejection, plus outbid refund bounce/claim and annual renewal/transfer authorization.
-3. Bounce tests proving no bid refund or auction revenue payout can be lost.
+2. Expand TVM tests for deterministic StateInit code-hash assertions and exact action-phase fee-exhaustion boundaries. Combined liability preservation, repeated outbid refund failures/claims and settlement recovery now have TVM coverage. Current CI covers Registry bounce/claim and failed-claim restoration, rejection of underfunded forged refund bounces, duplicate request refund accounting, invalid inputs, region-separated addresses, owner-only deployment, expired-item re-auction and TEP-62 collection enumeration/read-only transfer rejection, plus outbid refund bounce/claim and annual renewal/transfer authorization.
+3. Bounce tests covering combined refund and payout liabilities, repeated failed claims/retries, and active escrow preservation. Worst-case network fee behavior still requires separate validation.
 4. Accounting invariants for active escrow, refund liabilities and settlement reserve accounting.
 5. Testnet end-to-end auction using controlled wallets.
 6. Independent security review of the final compiled contracts and deployment configuration.
