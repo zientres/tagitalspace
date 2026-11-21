@@ -148,7 +148,7 @@ const itemMetadata = readFileSync(resolve(here, "../tolk/plate-item-metadata.tol
 const revenueRecipient = "0QAlaQjrvRz8GCm2IJ1QXA6rNGSyyYfH6uNPT0RzKja6VsLi";
 assert.match(itemAuction, /dest: immutable.auctionRevenueAddress/);
 assert.match(itemAuction, /value: auction\.highestBid/);
-assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
+assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY \+ SEND_MODE_BOUNCE_ON_ACTION_FAIL\)/);
 assert.match(itemAuction, /BounceMode\.RichBounce/);
 assert.match(registryState, /auctionRevenueAddress: address/);
 assert.match(registryStorage, /auctionRevenueAddress/);
@@ -245,7 +245,7 @@ assert.match(itemContract, /RenewPlateOwnership =>/);
 assert.match(itemContract, /get_expiration_time/);
 assert.match(itemContract, /if \(isExpired\)/);
 assert.doesNotMatch(itemContract, /hasUnpaidLiabilities/);
-assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY\)/);
+assert.match(itemAuction, /payout\.send\(SEND_MODE_PAY_FEES_SEPARATELY \+ SEND_MODE_BOUNCE_ON_ACTION_FAIL\)/);
 assert.doesNotMatch(registryContract, /RequestAuctionRevenuePayout|ClaimPlatePayout/);
 
 console.log(`PASS: ${prices.length} plate-pricing vectors, ${timings.length} auction-timing vectors, annual lifecycle boundaries, identity, bid-policy and TON DNS-style per-item auction source checks.`);
