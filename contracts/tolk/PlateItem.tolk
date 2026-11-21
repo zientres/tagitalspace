@@ -138,7 +138,6 @@ fun onInternalMessage(in: InMessage) {
             val unpacked = storage.unpackAuction();
             assert (!unpacked.0) throw 778;
             tagitalSpaceSettlePlateAuction(
-                in.valueCoins,
                 mutate storage,
                 unpacked.1,
                 msg.queryId,
@@ -146,7 +145,6 @@ fun onInternalMessage(in: InMessage) {
         }
         RetryPlateItemPayout => {
             tagitalSpaceRetryPlatePayout(
-                in.valueCoins,
                 mutate storage,
                 msg.queryId,
             );
@@ -154,7 +152,6 @@ fun onInternalMessage(in: InMessage) {
         ClaimPlateItemRefund => {
             tagitalSpaceClaimPlateItemRefund(
                 in.senderAddress,
-                in.valueCoins,
                 mutate storage,
                 msg.queryId,
             );

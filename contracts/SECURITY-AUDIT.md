@@ -17,6 +17,19 @@ This is a source-level pre-deployment review, not an independent smart-contract 
 
 ## Blocking findings
 
+### Balance accounting correction — inbound message value was counted twice
+
+A follow-up review found that four reserve checks added `valueCoins` to
+`contract.getOriginalBalance()`. In Tolk, `getOriginalBalance()` is the
+contract balance at the start of the compute phase, after the inbound message
+has been credited. Adding `valueCoins` again overstated available funds and
+could allow settlement, payout retry, or refund claims to pass a solvency check
+without actually preserving all liabilities. The redundant parameter and
+addition have been removed from item settlement, item payout retry, item refund
+claim, and Registry refund claim. This correction must pass the full TVM and
+CI suites before the branch is considered ready. It does not resolve the
+separate worst-case fee-exhaustion question.
+
 ### Verification progress — build and core TVM paths now pass
 
 The current branch compiles with Acton 1.2.1 and passes 24 TVM tests: 15 PlateItem tests and 9 Registry integration tests. The CI pipeline also passes Tolk formatting, lint and JavaScript specification checks. This verifies the currently covered paths only; it is not an independent audit and does not establish safety for Mainnet. Additional adversarial and action-phase tests remain required.

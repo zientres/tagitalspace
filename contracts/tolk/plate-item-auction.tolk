@@ -74,16 +74,16 @@ fun tagitalSpaceProcessPlateBid(
 }
 
 fun tagitalSpaceSettlePlateAuction(
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     auction: PlateAuctionState,
     queryId: uint64,
 ) {
     assert (blockchain.now() > auction.auctionEndTime) throw 773;
     assert (storage.ownerAddress == null) throw 774;
+    // getOriginalBalance already includes the inbound settlement message value.
     // Preserve previous payout/refund liabilities and the item storage reserve.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
         TAGITALSPACE_ITEM_MIN_STORAGE +
         TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
@@ -106,15 +106,15 @@ fun tagitalSpaceSettlePlateAuction(
 }
 
 fun tagitalSpaceRetryPlatePayout(
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     queryId: uint64,
 ) {
     val amount = storage.claimablePayout;
     assert (amount > 0) throw 787;
+    // getOriginalBalance already includes the inbound retry message value.
     // Keep all bidder refunds, any active bid, and storage funded while retrying.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         amount + storage.claimableRefundTotal + tagitalSpaceItemActiveBidAmount(storage) +
         TAGITALSPACE_ITEM_MIN_STORAGE +
         TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
@@ -133,7 +133,6 @@ fun tagitalSpaceRetryPlatePayout(
 
 fun tagitalSpaceClaimPlateItemRefund(
     senderAddress: address,
-    valueCoins: coins,
     mutate storage: PlateItemStorageInitialized,
     queryId: uint64,
 ) {
@@ -144,10 +143,11 @@ fun tagitalSpaceClaimPlateItemRefund(
     assert (amount > 0) throw 800;
     assert (storage.claimableRefundTotal >= amount) throw 800;
 
+    // getOriginalBalance already includes the inbound claim message value.
     // Refund claims may not consume the active auction escrow, revenue payout
     // liability, other bidders' refunds, or the minimum storage reserve.
     assert (
-        contract.getOriginalBalance() + valueCoins >=
+        contract.getOriginalBalance() >=
         storage.claimableRefundTotal + storage.claimablePayout +
         tagitalSpaceItemActiveBidAmount(storage) +
         TAGITALSPACE_ITEM_MIN_STORAGE +

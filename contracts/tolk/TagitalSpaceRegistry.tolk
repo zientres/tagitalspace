@@ -71,7 +71,6 @@ fun onInternalMessage(in: InMessage) {
         ClaimRegistryRefund => {
             tagitalSpaceClaimRegistryRefund(
                 in.senderAddress,
-                in.valueCoins,
                 msg.queryId,
             );
         }
