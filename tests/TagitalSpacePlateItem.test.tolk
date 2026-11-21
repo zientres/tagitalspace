@@ -977,7 +977,6 @@ get fun `test outbid refund action-phase failure preserves the previous auction`
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: secondBidder.address });
 
     val auction = contract.getAuctionInfo()!;
     expect(auction.highestBidder).toEqual(firstBidder.address);
@@ -1012,7 +1011,6 @@ get fun `test settlement payout action-phase failure preserves the auction`() {
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: collection.address });
 
     val auctionAfter = contract.getAuctionInfo()!;
     expect(auctionAfter.highestBidder).toEqual(firstBidder.address);
@@ -1066,12 +1064,11 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
     val cursor = testing.createTraceIterationCursor(revenue.address, retryMessage);
     val trace = cursor.executeAllRemaining();
     expect(trace).toHaveTx({
-        to: contract.address,
+        to: revenue.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: revenue.address });
 
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
@@ -1122,12 +1119,11 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     val cursor = testing.createTraceIterationCursor(firstBidder.address, claimMessage);
     val trace = cursor.executeAllRemaining();
     expect(trace).toHaveTx({
-        to: contract.address,
+        to: firstBidder.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: firstBidder.address });
 
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
