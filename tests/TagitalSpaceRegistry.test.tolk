@@ -27,6 +27,23 @@ fun deployTestRegistry(
     return registry;
 }
 
+fun expectRegistrySolvent(registry: TagitalSpaceRegistry) {
+    val liabilities = registry.getClaimableRefundTotal();
+    val balance = testing.getAccountBalance(registry.address);
+    expect(balance >= liabilities + grams("0.05")).toEqual(true);
+}
+
+fun expectPlateItemSolvent(item: TagitalSpacePlateItem) {
+    val auction = item.getAuctionInfo();
+    var activeBid: coins = 0;
+    if (auction != null) {
+        activeBid = auction!.highestBid;
+    }
+    val liabilities = item.getClaimablePayout() + item.getClaimableRefundTotal();
+    val balance = testing.getAccountBalance(item.address);
+    expect(balance >= activeBid + liabilities + grams("0.05")).toEqual(true);
+}
+
 get fun `test bounced Registry item deployment refunds the first bidder`() {
     val owner = testing.treasury("registry-owner");
     val bidder = testing.treasury("registry-bidder");
@@ -48,6 +65,7 @@ get fun `test bounced Registry item deployment refunds the first bidder`() {
     val claimable = registry.getClaimableRefund(bidder.address);
     expect(claimable > 0).toEqual(true);
     expect(registry.getClaimableRefundTotal()).toEqual(claimable);
+    expectRegistrySolvent(registry);
 
     val claim = registry.sendClaimRegistryRefund(
         bidder.address,
@@ -187,6 +205,7 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(failedClaim).toHaveSuccessfulTx({ to: registry.address });
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+    expectRegistrySolvent(registry);
 
     // A second consecutive failed claim must not erase or inflate the liability.
     val secondFailedClaim = registry.sendClaimRegistryRefund(
@@ -197,6 +216,7 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(secondFailedClaim).toHaveSuccessfulTx({ to: registry.address });
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
+    expectRegistrySolvent(registry);
 }
 
 get fun `test expired plate item can start a new auction at the same address`() {
@@ -420,6 +440,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     val itemAddress = registry.getPlateItemAddress(plateBody, 77);
     val item = TagitalSpacePlateItem.fromAddress(itemAddress);
     expect(firstRequest).toHaveSuccessfulDeploy({ to: itemAddress });
+    expectPlateItemSolvent(item);
 
     val firstOutbid = item.sendPlateItemBid(
         firstOutbidder.address,
@@ -430,6 +451,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(firstOutbid).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
     expect(item.getClaimableRefundTotal()).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
 
     val firstAuction = item.getAuctionInfo()!;
     testing.setNow((firstAuction.auctionEndTime + 1) as uint32);
@@ -441,6 +463,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(settlement).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimablePayout()).toEqual(grams("3.15"));
     expect(item.getNftData().ownerAddress!).toEqual(firstOutbidder.address);
+    expectPlateItemSolvent(item);
 
     testing.setNow(item.getExpirationTime() as uint32);
     val secondRequest = registry.sendStartPlateAuction(
@@ -453,6 +476,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(secondRequest).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
     expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expectPlateItemSolvent(item);
 
     val secondOutbid = item.sendPlateItemBid(
         secondOutbidder.address,
@@ -467,6 +491,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(item.getClaimablePayout()).toEqual(grams("3.15"));
     expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
     expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
+    expectPlateItemSolvent(item);
 
     val firstFailedClaim = item.sendClaimPlateItemRefund(
         firstBidder,
@@ -492,6 +517,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     );
     expect(otherBidderFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
 
     val firstPayoutRetry = item.sendRetryPlateItemPayout(
         owner.address,
@@ -514,4 +540,5 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(item.getClaimableRefundTotal()).toEqual(grams("6"));
     expect(item.getAuctionInfo()!.highestBid).toEqual(grams("3.15"));
     expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
+    expectPlateItemSolvent(item);
 }
