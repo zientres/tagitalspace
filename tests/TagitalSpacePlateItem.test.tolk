@@ -57,6 +57,15 @@ fun setupTest(): (
     );
 }
 
+
+fun setActionPhaseForwardFeeStress() {
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 5_000_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+}
+
 get fun `test bid refund auction extension and payout`() {
     val (
         contract,
@@ -939,4 +948,161 @@ get fun `test expired item rejects changes to immutable identity and payout dest
     });
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getNftData().ownerAddress).toBeNotNull();
+}
+
+
+get fun `test outbid refund action-phase failure preserves the previous auction`() {
+    val (contract, _, firstBidder, secondBidder, _, _) = setupTest();
+    setActionPhaseForwardFeeStress();
+
+    val message = createMessage({
+        bounce: true,
+        value: grams("3.3"),
+        dest: contract.address,
+        body: PlateItemBid {
+            queryId: 110,
+            bidAmount: grams("3.15"),
+        },
+    });
+    val cursor = testing.createTraceIterationCursor(secondBidder.address, message);
+    val trace = cursor.executeN(1);
+    expect(trace).toHaveTx({
+        to: contract.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    cursor.close();
+
+    val auction = contract.getAuctionInfo()!;
+    expect(auction.highestBidder).toEqual(firstBidder.address);
+    expect(auction.highestBid).toEqual(grams("3"));
+    expect(contract.getClaimableRefundTotal()).toEqual(0);
+}
+
+get fun `test settlement payout action-phase failure preserves the auction`() {
+    val (contract, collection, firstBidder, _, _, _) = setupTest();
+    val auctionBefore = contract.getAuctionInfo()!;
+    testing.setNow((auctionBefore.auctionEndTime + 1) as uint32);
+    setActionPhaseForwardFeeStress();
+
+    val message = createMessage({
+        bounce: true,
+        value: grams("0.1"),
+        dest: contract.address,
+        body: SettlePlateAuction { queryId: 111 },
+    });
+    val cursor = testing.createTraceIterationCursor(collection.address, message);
+    val trace = cursor.executeN(1);
+    expect(trace).toHaveTx({
+        to: contract.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    cursor.close();
+
+    val auctionAfter = contract.getAuctionInfo()!;
+    expect(auctionAfter.highestBidder).toEqual(firstBidder.address);
+    expect(auctionAfter.highestBid).toEqual(grams("3"));
+    expect(contract.getNftData().ownerAddress).toBeNull();
+    expect(contract.getClaimablePayout()).toEqual(0);
+}
+
+get fun `test payout retry action-phase failure preserves the payout liability`() {
+    val (contract, _, _, _, _, revenue) = setupTest();
+    val originalBody = PlateItemRevenuePayout {
+        queryId: 112,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val bouncedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val bouncedMessage = createMessage({
+        bounce: false,
+        value: grams("3"),
+        dest: contract.address,
+        body: bouncedBody,
+    }).bounced();
+    testing.processSingleTraceStep(revenue.address, bouncedMessage);
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
+
+    setActionPhaseForwardFeeStress();
+    val retryMessage = createMessage({
+        bounce: true,
+        value: grams("0.1"),
+        dest: contract.address,
+        body: RetryPlateItemPayout { queryId: 113 },
+    });
+    val cursor = testing.createTraceIterationCursor(revenue.address, retryMessage);
+    val trace = cursor.executeN(1);
+    expect(trace).toHaveTx({
+        to: contract.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    cursor.close();
+
+    expect(contract.getClaimablePayout()).toEqual(grams("3"));
+}
+
+get fun `test refund claim action-phase failure preserves the bidder liability`() {
+    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val originalBody = PlateItemBidRefund {
+        queryId: 114,
+        recipient: firstBidder.address,
+        amount: grams("3"),
+    }.toCell();
+    val originalInfo = RichBounceOriginalMsgInfo {
+        valueCoins: grams("3"),
+        valueExtra: createMapFromLowLevelDict<int32, varuint32>(null),
+        createdLt: 1,
+        createdAt: testing.getNow(),
+    }.toCell();
+    val bouncedBody = RichBounceBody {
+        originalBody,
+        originalInfo,
+        bouncedByPhase: 1,
+        exitCode: 1,
+        computePhase: null,
+    };
+    val bouncedMessage = createMessage({
+        bounce: false,
+        value: grams("3"),
+        dest: contract.address,
+        body: bouncedBody,
+    }).bounced();
+    testing.processSingleTraceStep(firstBidder.address, bouncedMessage);
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
+
+    setActionPhaseForwardFeeStress();
+    val claimMessage = createMessage({
+        bounce: true,
+        value: grams("0.1"),
+        dest: contract.address,
+        body: ClaimPlateItemRefund { queryId: 115 },
+    });
+    val cursor = testing.createTraceIterationCursor(firstBidder.address, claimMessage);
+    val trace = cursor.executeN(1);
+    expect(trace).toHaveTx({
+        to: contract.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    cursor.close();
+
+    expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
+    expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
 }

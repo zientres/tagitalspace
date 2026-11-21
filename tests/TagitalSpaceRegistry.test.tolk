@@ -565,3 +565,40 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(item.getAuctionInfo()!.highestBidder).toEqual(secondOutbidder.address);
     expectPlateItemSolvent(item);
 }
+
+
+get fun `test Registry deployment action-phase failure does not consume the item index`() {
+    val owner = testing.treasury("registry-action-fail-owner");
+    val bidder = testing.treasury("registry-action-fail-bidder");
+    val revenue = testing.treasury("registry-action-fail-revenue");
+    val registry = deployTestRegistry(owner, revenue, build("TagitalSpacePlateItem"));
+
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 5_000_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
+    val message = createMessage({
+        bounce: true,
+        value: grams("3.2"),
+        dest: registry.address,
+        body: StartPlateAuction {
+            queryId: 120,
+            plateBody: "A123BC",
+            regionCode: 77,
+        },
+    });
+    val cursor = testing.createTraceIterationCursor(bidder.address, message);
+    val trace = cursor.executeN(1);
+    expect(trace).toHaveTx({
+        to: registry.address,
+        success: false,
+        aborted: true,
+        actionExitCode: 37,
+    });
+    cursor.close();
+
+    expect(registry.getCollectionData().0).toEqual(0);
+    expect(registry.getClaimableRefundTotal()).toEqual(0);
+}
