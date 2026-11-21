@@ -124,7 +124,9 @@ fun onInternalMessage(in: InMessage) {
         assert (
             contract.getOriginalBalance() >=
             tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
-            storage.claimableRefundTotal + in.valueCoins + TAGITALSPACE_ITEM_MIN_STORAGE
+            storage.claimableRefundTotal +
+            in.valueCoins +
+            TAGITALSPACE_ITEM_MIN_STORAGE
         ) throw 776;
         tagitalSpaceRecordClaimableRefund(
             init.firstBidder,
