@@ -1,7 +1,7 @@
 import "../wrappers/TagitalSpacePlateItem.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
-import "@acton/emulation/config"
+import "../.acton/emulation/config"
 import "../.acton/testing/expect"
 import "../contracts/tolk/plate-identity"
 import "../contracts/tolk/plate-item-messages"
