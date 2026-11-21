@@ -47,8 +47,8 @@ fun tagitalSpaceProcessPlateBid(
     // pre-existing balance, excluding the new bid, to cover all old liabilities.
     assert (
         contract.getOriginalBalance() >=
-        valueCoins + auction.highestBid + storage.claimablePayout +
-        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE
+        valueCoins + auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
+        TAGITALSPACE_ITEM_MIN_STORAGE
     ) throw 772;
 
     val refund = createMessage({
