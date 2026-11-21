@@ -501,6 +501,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     expect(firstFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
     expect(item.getClaimableRefund(secondAuctionBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
 
     val secondFailedClaim = item.sendClaimPlateItemRefund(
         firstBidder,
@@ -509,6 +510,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     );
     expect(secondFailedClaim).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimableRefund(firstBidder)).toEqual(grams("3"));
+    expectPlateItemSolvent(item);
 
     val otherBidderFailedClaim = item.sendClaimPlateItemRefund(
         secondAuctionBidder,
@@ -526,6 +528,7 @@ get fun `test combined payout and multiple refund liabilities survive reauction 
     );
     expect(firstPayoutRetry).toHaveSuccessfulTx({ to: itemAddress });
     expect(item.getClaimablePayout()).toEqual(grams("3.15"));
+    expectPlateItemSolvent(item);
 
     val secondPayoutRetry = item.sendRetryPlateItemPayout(
         owner.address,
