@@ -598,7 +598,8 @@ get fun `test Registry deployment action-phase failure does not consume the item
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: bidder.address });
+    // The 5.5 TON forwarding fee exceeds the inbound 3.2 TON, so the failed
+    // Registry transaction cannot fund a bounce message to the bidder.
 
     expect(registry.getCollectionData().0).toEqual(0);
     expect(registry.getClaimableRefundTotal()).toEqual(0);

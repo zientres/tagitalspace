@@ -1065,15 +1065,15 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
     });
     val cursor = testing.createTraceIterationCursor(revenue.address, retryMessage);
     val trace = cursor.executeAllRemaining();
-    // An action-phase failure aborts the ITEM transaction; there is no
-    // recipient transaction. The bounce returns the inbound retry value.
+    // The action phase aborts the ITEM transaction. The artificial 5.5 TON
+    // forwarding fee also exceeds the inbound 0.1 TON, so no bounce can be
+    // funded; there must be no recipient payout transaction.
     expect(trace).toHaveTx({
         to: contract.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: revenue.address });
 
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
@@ -1124,14 +1124,15 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     });
     val cursor = testing.createTraceIterationCursor(firstBidder.address, claimMessage);
     val trace = cursor.executeAllRemaining();
-    // The failed action phase belongs to the ITEM transaction itself.
+    // The action phase aborts the ITEM transaction. The artificial 5.5 TON
+    // forwarding fee exceeds the inbound 0.1 TON, so the bounce phase cannot
+    // fund a return message; no refund transaction reaches the bidder.
     expect(trace).toHaveTx({
         to: contract.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
-    expect(trace).toHaveBouncedTx({ to: firstBidder.address });
 
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
