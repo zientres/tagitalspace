@@ -43,13 +43,12 @@ fun tagitalSpaceProcessPlateBid(
     assert (bidAmount >= auction.highestBid * 105 / 100) throw 771;
     assert (valueCoins >= bidAmount + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER) throw 772;
 
-    // Preserve all previous refund and revenue liabilities, the current escrow,
-    // and the minimum storage reserve before creating the outbid refund.
-    val balanceBeforeMessage = contract.getOriginalBalance();
+    // getOriginalBalance already includes this incoming bid. Require the
+    // pre-existing balance, excluding the new bid, to cover all old liabilities.
     assert (
-        balanceBeforeMessage >=
-        auction.highestBid + storage.claimablePayout + storage.claimableRefundTotal +
-        TAGITALSPACE_ITEM_MIN_STORAGE
+        contract.getOriginalBalance() >=
+        valueCoins + auction.highestBid + storage.claimablePayout +
+        storage.claimableRefundTotal + TAGITALSPACE_ITEM_MIN_STORAGE
     ) throw 772;
 
     val refund = createMessage({

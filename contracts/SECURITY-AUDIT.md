@@ -26,9 +26,12 @@ has been credited. Adding `valueCoins` again overstated available funds and
 could allow settlement, payout retry, or refund claims to pass a solvency check
 without actually preserving all liabilities. The redundant parameter and
 addition have been removed from item settlement, item payout retry, item refund
-claim, and Registry refund claim. This correction must pass the full TVM and
-CI suites before the branch is considered ready. It does not resolve the
-separate worst-case fee-exhaustion question.
+claim, and Registry refund claim. The bid path was also corrected: it now
+subtracts the attached bid from the compute-phase balance conceptually by
+requiring the balance to cover both the incoming value and all pre-existing
+liabilities, so the new bid cannot mask an underfunded prior escrow. This
+correction must pass the full TVM and CI suites before the branch is considered
+ready. It does not resolve the separate worst-case fee-exhaustion question.
 
 ### Verification progress — build and core TVM paths now pass
 
