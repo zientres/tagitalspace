@@ -950,7 +950,14 @@ get fun `test expired item rejects changes to immutable identity and payout dest
 }
 
 get fun `test outbid refund action-phase failure preserves the previous auction`() {
-    val (contract, _, firstBidder, secondBidder, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        secondBidder,
+        _,
+        _,
+    ) = setupTest();
     setActionPhaseForwardFeeStress();
 
     val message = createMessage({
@@ -979,7 +986,14 @@ get fun `test outbid refund action-phase failure preserves the previous auction`
 }
 
 get fun `test settlement payout action-phase failure preserves the auction`() {
-    val (contract, collection, firstBidder, _, _, _) = setupTest();
+    val (
+        contract,
+        collection,
+        firstBidder,
+        _,
+        _,
+        _,
+    ) = setupTest();
     val auctionBefore = contract.getAuctionInfo()!;
     testing.setNow((auctionBefore.auctionEndTime + 1) as uint32);
     setActionPhaseForwardFeeStress();
@@ -1008,7 +1022,14 @@ get fun `test settlement payout action-phase failure preserves the auction`() {
 }
 
 get fun `test payout retry action-phase failure preserves the payout liability`() {
-    val (contract, _, _, _, _, revenue) = setupTest();
+    val (
+        contract,
+        _,
+        _,
+        _,
+        _,
+        revenue,
+    ) = setupTest();
     val originalBody = PlateItemRevenuePayout {
         queryId: 112,
         amount: grams("3"),
@@ -1056,7 +1077,14 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
 }
 
 get fun `test refund claim action-phase failure preserves the bidder liability`() {
-    val (contract, _, firstBidder, _, _, _) = setupTest();
+    val (
+        contract,
+        _,
+        firstBidder,
+        _,
+        _,
+        _,
+    ) = setupTest();
     val originalBody = PlateItemBidRefund {
         queryId: 114,
         recipient: firstBidder.address,
