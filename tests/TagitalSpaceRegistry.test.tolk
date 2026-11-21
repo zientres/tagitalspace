@@ -222,6 +222,7 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
     expectRegistrySolvent(registry);
+    expect(testing.getAccountBalance(registry.address) >= originalClaim + grams("0.1")).toEqual(true);
     expect(testing.setConfig(defaultConfig)).toEqual(true);
 
     // A second consecutive failed claim must not erase or inflate the liability.

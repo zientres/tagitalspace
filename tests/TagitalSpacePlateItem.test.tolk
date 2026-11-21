@@ -257,7 +257,7 @@ get fun `test bounced revenue payout becomes claimable`() {
     expect(settlement).toHaveSuccessfulTx({ to: contract.address });
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
-    expect(testing.getAccountBalance(contract.address) >= grams("3.05")).toEqual(true);
+    expect(testing.getAccountBalance(contract.address) >= grams("3.1")).toEqual(true);
 }
 
 get fun `test failed retry restores claimable payout`() {
@@ -457,7 +457,7 @@ get fun `test bounced outbid refund becomes claimable`() {
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
     expect(
         testing.getAccountBalance(contract.address) >=
-        grams("3.15") + grams("3") + grams("0.05")
+        grams("3.15") + grams("3") + grams("0.1")
     ).toEqual(true);
 }
 

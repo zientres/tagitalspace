@@ -94,7 +94,8 @@ fun onBouncedMessage(in: InMessageBounced) {
         // only when the actual balance covers all refunds and minimum storage.
         assert (
             contract.getOriginalBalance() >=
-            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_REGISTRY_MIN_STORAGE
+            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_REGISTRY_MIN_STORAGE +
+            TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER
         ) throw 743;
 
         // Restore the full claim only when the Registry's actual balance covers it.

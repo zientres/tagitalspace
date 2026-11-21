@@ -205,7 +205,8 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (
             contract.getOriginalBalance() >=
             tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
-            storage.claimableRefundTotal + payout.amount + TAGITALSPACE_ITEM_MIN_STORAGE
+            storage.claimableRefundTotal + payout.amount + TAGITALSPACE_ITEM_MIN_STORAGE +
+            TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER
         ) throw 789;
 
         storage.claimablePayout += payout.amount;
@@ -227,7 +228,8 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (
             contract.getOriginalBalance() >=
             tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
-            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_ITEM_MIN_STORAGE
+            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_ITEM_MIN_STORAGE +
+            TAGITALSPACE_ITEM_REFUND_FEE_BUFFER
         ) throw 799;
 
         tagitalSpaceRecordClaimableRefund(
