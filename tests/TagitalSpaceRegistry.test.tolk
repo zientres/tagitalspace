@@ -1,9 +1,9 @@
 import "../.acton/build"
 import "../wrappers/TagitalSpacePlateItem.gen"
 import "../wrappers/TagitalSpaceRegistry.gen"
+import "../.acton/emulation/config"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
-import "../.acton/emulation/config"
 import "../.acton/testing/expect"
 import "../contracts/tolk/registry-messages"
 import "../contracts/tolk/registry-state"
@@ -222,7 +222,9 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
     expectRegistrySolvent(registry);
-    expect(testing.getAccountBalance(registry.address) >= originalClaim + grams("0.1")).toEqual(true);
+    expect(
+        testing.getAccountBalance(registry.address) >= originalClaim + grams("0.1"),
+    ).toEqual(true);
     expect(testing.setConfig(defaultConfig)).toEqual(true);
 
     // A second consecutive failed claim must not erase or inflate the liability.

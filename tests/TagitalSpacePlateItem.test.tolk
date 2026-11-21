@@ -1,7 +1,7 @@
 import "../wrappers/TagitalSpacePlateItem.gen"
+import "../.acton/emulation/config"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
-import "../.acton/emulation/config"
 import "../.acton/testing/expect"
 import "../contracts/tolk/plate-identity"
 import "../contracts/tolk/plate-item-messages"
@@ -456,8 +456,7 @@ get fun `test bounced outbid refund becomes claimable`() {
     expect(contract.getClaimableRefund(unavailableBidder)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
     expect(
-        testing.getAccountBalance(contract.address) >=
-        grams("3.15") + grams("3") + grams("0.1")
+        testing.getAccountBalance(contract.address) >= grams("3.15") + grams("3") + grams("0.1"),
     ).toEqual(true);
 }
 
