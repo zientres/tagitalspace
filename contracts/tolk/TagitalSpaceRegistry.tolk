@@ -136,6 +136,12 @@ fun onBouncedMessage(in: InMessageBounced) {
     ).calculateAddress();
     assert (in.senderAddress == expectedItemAddress) throw 739;
     assert (in.valueCoins > 0) throw 739;
+    // A new failed-deployment refund must not conceal a shortfall in refunds
+    // already owed by the Registry.
+    assert (
+        contract.getOriginalBalance() >=
+        storage.claimableRefundTotal + in.valueCoins + TAGITALSPACE_REGISTRY_MIN_STORAGE
+    ) throw 743;
 
     // Keep failed deployment funds in the Registry until the original bidder
     // explicitly claims them. This also handles contract wallets that reject

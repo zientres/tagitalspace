@@ -99,6 +99,13 @@ fun onInternalMessage(in: InMessage) {
             // Keep the immutable revenue destination configured by the Registry.
             storage.lastRenewalTime = blockchain.now();
             assert (in.valueCoins >= init.firstBidAmount + TAGITALSPACE_ITEM_MIN_STORAGE) throw 776;
+            // The new auction bid must not mask an underfunded payout or refund
+            // liability left by the previous ownership period.
+            assert (
+                contract.getOriginalBalance() >=
+                in.valueCoins + storage.claimablePayout + storage.claimableRefundTotal +
+                TAGITALSPACE_ITEM_MIN_STORAGE
+            ) throw 776;
             storage.auction = PlateAuctionState {
                 highestBidder: init.firstBidder,
                 highestBid: init.firstBidAmount,
@@ -112,6 +119,13 @@ fun onInternalMessage(in: InMessage) {
         // incoming bid to their sender.
         // Keep duplicate-request funds claimable in the item instead of
         // risking a non-bounceable transfer to a contract that rejects it.
+        // The new refund liability must be fully backed without consuming the
+        // active bid, earlier claims, or the minimum storage reserve.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal + in.valueCoins + TAGITALSPACE_ITEM_MIN_STORAGE
+        ) throw 776;
         tagitalSpaceRecordClaimableRefund(
             init.firstBidder,
             in.valueCoins,
