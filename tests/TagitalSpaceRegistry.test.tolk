@@ -38,7 +38,7 @@ fun expectPlateItemSolvent(item: TagitalSpacePlateItem) {
     val auction = item.getAuctionInfo();
     var activeBid: coins = 0;
     if (auction != null) {
-        activeBid = auction!.highestBid;
+        activeBid = auction.highestBid;
     }
     val liabilities = item.getClaimablePayout() + item.getClaimableRefundTotal();
     val balance = testing.getAccountBalance(item.address);
