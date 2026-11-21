@@ -580,7 +580,9 @@ get fun `test Registry deployment action-phase failure does not consume the item
 
     val message = createMessage({
         bounce: true,
-        value: grams("10.1"),
+        // The normal request minimum is sufficient to enter compute, but
+        // cannot fund the deliberately inflated forwarding fee.
+        value: grams("3.2"),
         dest: registry.address,
         body: StartPlateAuction {
             queryId: 120,

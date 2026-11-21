@@ -1055,20 +1055,25 @@ get fun `test payout retry action-phase failure preserves the payout liability`(
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 
     setActionPhaseForwardFeeStress();
+    // The inbound value is deliberately small: the contract must not be able
+    // to subsidize the stressed forwarding fee from the payout liability.
     val retryMessage = createMessage({
         bounce: true,
-        value: grams("5.1"),
+        value: grams("0.1"),
         dest: contract.address,
         body: RetryPlateItemPayout { queryId: 113 },
     });
     val cursor = testing.createTraceIterationCursor(revenue.address, retryMessage);
     val trace = cursor.executeAllRemaining();
+    // An action-phase failure aborts the ITEM transaction; there is no
+    // recipient transaction. The bounce returns the inbound retry value.
     expect(trace).toHaveTx({
-        to: revenue.address,
+        to: contract.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
+    expect(trace).toHaveBouncedTx({ to: revenue.address });
 
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
 }
@@ -1110,20 +1115,23 @@ get fun `test refund claim action-phase failure preserves the bidder liability`(
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
 
     setActionPhaseForwardFeeStress();
+    // Do not fund the action fee from unrelated escrow or liabilities.
     val claimMessage = createMessage({
         bounce: true,
-        value: grams("5.1"),
+        value: grams("0.1"),
         dest: contract.address,
         body: ClaimPlateItemRefund { queryId: 115 },
     });
     val cursor = testing.createTraceIterationCursor(firstBidder.address, claimMessage);
     val trace = cursor.executeAllRemaining();
+    // The failed action phase belongs to the ITEM transaction itself.
     expect(trace).toHaveTx({
-        to: firstBidder.address,
+        to: contract.address,
         success: false,
         aborted: true,
         actionExitCode: 37,
     });
+    expect(trace).toHaveBouncedTx({ to: firstBidder.address });
 
     expect(contract.getClaimableRefund(firstBidder.address)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
