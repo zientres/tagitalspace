@@ -580,7 +580,7 @@ get fun `test Registry deployment action-phase failure does not consume the item
 
     val message = createMessage({
         bounce: true,
-        value: grams("5.1"),
+        value: grams("10.1"),
         dest: registry.address,
         body: StartPlateAuction {
             queryId: 120,
