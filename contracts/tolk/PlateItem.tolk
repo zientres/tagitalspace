@@ -200,7 +200,13 @@ fun onBouncedMessage(in: InMessageBounced) {
 
         // The payload amount must match the actual value of the bounced outgoing message.
         assert (payout.amount == originalInfo.valueCoins) throw 789;
-        assert (in.valueCoins + TAGITALSPACE_ITEM_PAYOUT_FEE_BUFFER >= payout.amount) throw 789;
+        // Bounce fees depend on network configuration. Restore the full payout
+        // only when the actual balance still covers every escrow and liability.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal + payout.amount + TAGITALSPACE_ITEM_MIN_STORAGE
+        ) throw 789;
 
         storage.claimablePayout += payout.amount;
         storage.save();
@@ -217,7 +223,12 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (in.senderAddress == refund.recipient) throw 799;
         assert (refund.amount > 0) throw 799;
         assert (refund.amount == originalInfo.valueCoins) throw 799;
-        assert (in.valueCoins + TAGITALSPACE_ITEM_REFUND_FEE_BUFFER >= refund.amount) throw 799;
+        // Use the actual post-bounce balance instead of a fixed fee allowance.
+        assert (
+            contract.getOriginalBalance() >=
+            tagitalSpaceItemActiveBidAmount(storage) + storage.claimablePayout +
+            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_ITEM_MIN_STORAGE
+        ) throw 799;
 
         tagitalSpaceRecordClaimableRefund(
             refund.recipient,

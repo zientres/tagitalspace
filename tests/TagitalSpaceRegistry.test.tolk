@@ -3,6 +3,7 @@ import "../wrappers/TagitalSpacePlateItem.gen"
 import "../wrappers/TagitalSpaceRegistry.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
+import "@acton/emulation/config"
 import "../.acton/testing/expect"
 import "../contracts/tolk/registry-messages"
 import "../contracts/tolk/registry-state"
@@ -197,15 +198,31 @@ get fun `test Registry restores a refund when the bidder claim bounces`() {
     val originalClaim = registry.getClaimableRefund(bidder);
     expect(originalClaim > 0).toEqual(true);
 
+    val topUp = createMessage({
+        bounce: false,
+        value: grams("0.2"),
+        dest: registry.address,
+    });
+    val topUpResult = net.send(owner.address, topUp);
+    expect(topUpResult).toHaveSuccessfulTx({ to: registry.address });
+
+    val defaultConfig = testing.getConfig();
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 180_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
     val failedClaim = registry.sendClaimRegistryRefund(
         bidder,
         7,
-        { value: grams("0.1") },
+        { value: grams("0.5") },
     );
     expect(failedClaim).toHaveSuccessfulTx({ to: registry.address });
     expect(registry.getClaimableRefund(bidder)).toEqual(originalClaim);
     expect(registry.getClaimableRefundTotal()).toEqual(originalClaim);
     expectRegistrySolvent(registry);
+    expect(testing.setConfig(defaultConfig)).toEqual(true);
 
     // A second consecutive failed claim must not erase or inflate the liability.
     val secondFailedClaim = registry.sendClaimRegistryRefund(

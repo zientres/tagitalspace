@@ -90,10 +90,14 @@ fun onBouncedMessage(in: InMessageBounced) {
         assert (in.senderAddress == refund.recipient) throw 743;
         assert (refund.amount > 0) throw 743;
         assert (refund.amount == originalInfo.valueCoins) throw 743;
-        assert (in.valueCoins + TAGITALSPACE_REGISTRY_REFUND_FEE_BUFFER >= refund.amount) throw 743;
+        // Bounce fees depend on network configuration. Restore the full claim
+        // only when the actual balance covers all refunds and minimum storage.
+        assert (
+            contract.getOriginalBalance() >=
+            storage.claimableRefundTotal + refund.amount + TAGITALSPACE_REGISTRY_MIN_STORAGE
+        ) throw 743;
 
-        // Restore the full claim; the claimant's attached fee buffer covers
-        // the bounce cost if the receiving wallet/contract rejects the retry.
+        // Restore the full claim only when the Registry's actual balance covers it.
         tagitalSpaceRegistryRecordClaimableRefund(
             refund.recipient,
             refund.amount,

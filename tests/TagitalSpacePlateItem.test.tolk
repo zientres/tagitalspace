@@ -1,6 +1,7 @@
 import "../wrappers/TagitalSpacePlateItem.gen"
 import "../.acton/emulation/network"
 import "../.acton/emulation/testing"
+import "@acton/emulation/config"
 import "../.acton/testing/expect"
 import "../contracts/tolk/plate-identity"
 import "../contracts/tolk/plate-item-messages"
@@ -221,7 +222,7 @@ get fun `test bounced revenue payout becomes claimable`() {
 
     val initMessage = createMessage({
         bounce: false,
-        value: grams("3.2"),
+        value: grams("3.5"),
         dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: firstBidder.address,
@@ -236,6 +237,12 @@ get fun `test bounced revenue payout becomes claimable`() {
     val deployResult = net.send(collection.address, initMessage);
     expect(deployResult).toHaveSuccessfulDeploy({ to: contract.address });
 
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 180_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
     val auction = contract.getAuctionInfo()!;
     testing.setNow((auction.auctionEndTime + 1) as uint32);
 
@@ -244,12 +251,13 @@ get fun `test bounced revenue payout becomes claimable`() {
     val settlement = contract.sendSettlePlateAuction(
         collection.address,
         20,
-        { value: grams("0.1") },
+        { value: grams("0.5") },
     );
 
     expect(settlement).toHaveSuccessfulTx({ to: contract.address });
     expect(contract.getAuctionInfo()).toBeNull();
     expect(contract.getClaimablePayout()).toEqual(grams("3"));
+    expect(testing.getAccountBalance(contract.address) >= grams("3.05")).toEqual(true);
 }
 
 get fun `test failed retry restores claimable payout`() {
@@ -405,7 +413,7 @@ get fun `test bounced outbid refund becomes claimable`() {
     });
     val initMessage = createMessage({
         bounce: false,
-        value: grams("3.2"),
+        value: grams("3.5"),
         dest: { workchain: contract.address.getWorkchain(), stateInit: contract.stateInit! },
         body: PlateItemInitData {
             firstBidder: unavailableBidder,
@@ -419,11 +427,17 @@ get fun `test bounced outbid refund becomes claimable`() {
     val deployed = net.send(collection.address, initMessage);
     expect(deployed).toHaveSuccessfulDeploy({ to: contract.address });
 
+    var config = testing.getConfig();
+    var prices = config.getMsgForwardPrices(BASECHAIN);
+    prices.lumpPrice += 180_000_000;
+    config.setMsgForwardPrices(prices, BASECHAIN);
+    expect(testing.setConfig(config)).toEqual(true);
+
     val nextBid = contract.sendPlateItemBid(
         nextBidder.address,
         40,
         grams("3.15"),
-        { value: grams("3.3") },
+        { value: grams("3.6") },
     );
 
     expect(nextBid).toHaveSuccessfulTx({ to: contract.address });
@@ -436,11 +450,15 @@ get fun `test bounced outbid refund becomes claimable`() {
     val failedClaim = contract.sendClaimPlateItemRefund(
         unavailableBidder,
         41,
-        { value: grams("0.1") },
+        { value: grams("0.5") },
     );
     expect(failedClaim).toHaveSuccessfulTx({ to: contract.address });
     expect(contract.getClaimableRefund(unavailableBidder)).toEqual(grams("3"));
     expect(contract.getClaimableRefundTotal()).toEqual(grams("3"));
+    expect(
+        testing.getAccountBalance(contract.address) >=
+        grams("3.15") + grams("3") + grams("0.05")
+    ).toEqual(true);
 }
 
 get fun `test original bidder can claim a bounced refund`() {
